@@ -25,25 +25,25 @@ export default function AdminDashboardPage() {
       </div>
 
       <section className="mt-10">
-        <h2 className="font-semibold text-[var(--rq-navy)]">Review queue</h2>
+        <h2 className="font-semibold text-[var(--rq-ink)]">Review queue</h2>
         <ul className="mt-3 space-y-3">
           {pendingReviews.map((r) => (
             <li
               key={r.id}
-              className="rounded-lg border border-[var(--rq-border)] bg-white p-4"
+              className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <div className="font-medium text-[var(--rq-navy)]">
+                  <div className="font-medium text-[var(--rq-ink)]">
                     {r.title}
                   </div>
-                  <div className="text-sm text-slate-500">
+                  <div className="text-sm text-[var(--rq-muted)]">
                     {r.companySlug} · {r.rating}/5
                   </div>
                 </div>
                 <Badge variant="warning">pending</Badge>
               </div>
-              <p className="mt-2 text-sm text-slate-600">{r.body}</p>
+              <p className="mt-2 text-sm text-[var(--rq-slate)]">{r.body}</p>
               <div className="mt-3 flex gap-2">
                 <Button
                   size="sm"
@@ -82,23 +82,23 @@ export default function AdminDashboardPage() {
             </li>
           ))}
           {pendingReviews.length === 0 ? (
-            <p className="text-sm text-slate-500">Queue clear.</p>
+            <p className="text-sm text-[var(--rq-muted)]">Queue clear.</p>
           ) : null}
         </ul>
       </section>
 
       <section className="mt-10">
-        <h2 className="font-semibold text-[var(--rq-navy)]">Company claims</h2>
+        <h2 className="font-semibold text-[var(--rq-ink)]">Company claims</h2>
         <ul className="mt-3 space-y-3">
           {pendingClaims.map((c) => (
             <li
               key={c.id}
-              className="rounded-lg border border-[var(--rq-border)] bg-white p-4"
+              className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4"
             >
-              <div className="font-medium text-[var(--rq-navy)]">
+              <div className="font-medium text-[var(--rq-ink)]">
                 {c.companyName}
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-[var(--rq-muted)]">
                 {c.claimant} · {c.notes}
               </p>
               <div className="mt-3 flex gap-2">
@@ -142,17 +142,17 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="font-semibold text-[var(--rq-navy)]">Audit log</h2>
+        <h2 className="font-semibold text-[var(--rq-ink)]">Audit log</h2>
         <ul className="mt-3 space-y-2 text-sm">
           {demoAudit.map((a) => (
             <li
               key={a.id}
-              className="flex justify-between rounded-md border border-[var(--rq-border)] bg-white px-3 py-2"
+              className="flex justify-between rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 py-2"
             >
               <span>
                 {a.action} · {a.actor}
               </span>
-              <span className="text-slate-400">
+              <span className="text-[var(--rq-muted)]">
                 {new Date(a.createdAt).toLocaleString()}
               </span>
             </li>
@@ -165,11 +165,11 @@ export default function AdminDashboardPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-[var(--rq-border)] bg-white p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-400">
+    <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4">
+      <div className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
         {label}
       </div>
-      <div className="mt-1 text-2xl font-bold text-[var(--rq-navy)]">{value}</div>
+      <div className="mt-1 text-2xl font-bold text-[var(--rq-ink)]">{value}</div>
     </div>
   );
 }

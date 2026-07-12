@@ -34,10 +34,10 @@ export default function OnboardingPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-navy)]">
+      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">
         Welcome to RateQuip
       </h1>
-      <p className="mt-2 text-slate-600">
+      <p className="mt-2 text-[var(--rq-slate)]">
         Choose your account type and create or join an organisation.
       </p>
 
@@ -50,11 +50,11 @@ export default function OnboardingPage() {
             className={`rounded-lg border p-4 text-left transition ${
               role === r.id
                 ? "border-orange-400 bg-orange-50"
-                : "border-[var(--rq-border)] bg-white"
+                : "border-[var(--rq-border)] bg-[var(--rq-card)]"
             }`}
           >
-            <div className="font-semibold text-[var(--rq-navy)]">{r.title}</div>
-            <div className="mt-1 text-sm text-slate-600">{r.description}</div>
+            <div className="font-semibold text-[var(--rq-ink)]">{r.title}</div>
+            <div className="mt-1 text-sm text-[var(--rq-slate)]">{r.description}</div>
           </button>
         ))}
       </div>

@@ -9,10 +9,10 @@ export function SupplierCard({ company }: { company: DemoCompany }) {
       <Link href={`/suppliers/${company.slug}`} className="block h-full">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-bold text-[var(--rq-navy)]">
+            <h3 className="text-lg font-bold text-[var(--rq-ink)]">
               {company.name}
             </h3>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-[var(--rq-muted)]">
               {company.city}, {company.country}
             </p>
           </div>
@@ -25,7 +25,7 @@ export function SupplierCard({ company }: { company: DemoCompany }) {
             </div>
           </div>
         </div>
-        <p className="mb-4 line-clamp-2 text-sm text-slate-600">
+        <p className="mb-4 line-clamp-2 text-sm text-[var(--rq-slate)]">
           {company.headline}
         </p>
         <div className="flex flex-wrap gap-2">

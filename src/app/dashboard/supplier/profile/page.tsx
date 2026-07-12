@@ -12,7 +12,7 @@ export default function SupplierProfilePage() {
 
   return (
     <DashboardShell role="supplier" title="Company profile">
-      <form className="max-w-xl space-y-4 rounded-lg border border-[var(--rq-border)] bg-white p-5">
+      <form className="max-w-xl space-y-4 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
         <div>
           <Label htmlFor="name">Company name</Label>
           <Input id="name" defaultValue={company.name} className="mt-1" />

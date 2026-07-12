@@ -38,16 +38,16 @@ export default async function WorkspacePage({
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
       <Badge variant="success">{project.status}</Badge>
-      <h1 className="mt-3 text-3xl font-bold text-[var(--rq-navy)]">
+      <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         {project.name}
       </h1>
-      <p className="mt-2 text-slate-600">{project.summary}</p>
-      <p className="mt-1 text-sm text-slate-400">
+      <p className="mt-2 text-[var(--rq-slate)]">{project.summary}</p>
+      <p className="mt-1 text-sm text-[var(--rq-muted)]">
         {project.memberCount} members
       </p>
 
       <section className="mt-10">
-        <h2 className="text-xl font-bold text-[var(--rq-navy)]">
+        <h2 className="text-xl font-bold text-[var(--rq-ink)]">
           Linked RFQs
         </h2>
         <ul className="mt-4 space-y-3">
@@ -55,10 +55,10 @@ export default async function WorkspacePage({
             <li key={r.id}>
               <Link
                 href={`/requests/${r.id}`}
-                className="block rounded-lg border border-[var(--rq-border)] bg-white p-4 hover:border-orange-300"
+                className="block rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4 hover:border-orange-300"
               >
-                <div className="font-medium text-[var(--rq-navy)]">{r.title}</div>
-                <div className="text-sm text-slate-500">
+                <div className="font-medium text-[var(--rq-ink)]">{r.title}</div>
+                <div className="text-sm text-[var(--rq-muted)]">
                   {r.quoteCount} quotes · {r.status}
                 </div>
               </Link>
@@ -68,8 +68,8 @@ export default async function WorkspacePage({
       </section>
 
       <section className="mt-10">
-        <h2 className="text-xl font-bold text-[var(--rq-navy)]">Notes</h2>
-        <div className="mt-3 rounded-lg border border-[var(--rq-border)] bg-white p-4 text-sm text-slate-600">
+        <h2 className="text-xl font-bold text-[var(--rq-ink)]">Notes</h2>
+        <div className="mt-3 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4 text-sm text-[var(--rq-slate)]">
           Workspace lite: attach RFQs, quotes and evidence documents here.
           Messaging arrives in Phase 3.
         </div>

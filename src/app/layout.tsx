@@ -30,8 +30,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} h-full`}>
-      <body className="flex min-h-full flex-col antialiased">
+    <html lang="en" className={`${montserrat.variable} h-full`} suppressHydrationWarning>
+      <body className="flex min-h-full flex-col bg-background text-foreground antialiased">
         <Providers>
           <SiteHeader />
           <main className="flex-1">{children}</main>

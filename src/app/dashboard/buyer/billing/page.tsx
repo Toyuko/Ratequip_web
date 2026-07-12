@@ -12,9 +12,9 @@ export default function BuyerBillingPage() {
   return (
     <DashboardShell role="buyer" title="Billing & credits">
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-[var(--rq-border)] bg-white p-5">
-          <h2 className="font-semibold text-[var(--rq-navy)]">Subscription</h2>
-          <p className="mt-2 text-sm text-slate-600">
+        <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
+          <h2 className="font-semibold text-[var(--rq-ink)]">Subscription</h2>
+          <p className="mt-2 text-sm text-[var(--rq-slate)]">
             Current plan: <strong>{plan.name}</strong> (
             {formatCurrency(plan.priceMonthly)}/mo)
           </p>
@@ -24,12 +24,12 @@ export default function BuyerBillingPage() {
             </Link>
           </Button>
         </div>
-        <div className="rounded-lg border border-[var(--rq-border)] bg-white p-5">
-          <h2 className="font-semibold text-[var(--rq-navy)]">Credit wallet</h2>
+        <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
+          <h2 className="font-semibold text-[var(--rq-ink)]">Credit wallet</h2>
           <p className="mt-2 text-3xl font-bold text-orange-600">
             {demoWallet.balance}
           </p>
-          <ul className="mt-4 space-y-2 text-sm text-slate-600">
+          <ul className="mt-4 space-y-2 text-sm text-[var(--rq-slate)]">
             {demoWallet.entries.map((e) => (
               <li key={e.id} className="flex justify-between">
                 <span>{e.reason}</span>

@@ -15,12 +15,12 @@ export default function SupplierBillingPage() {
           .map((plan) => (
             <div
               key={plan.code}
-              className="rounded-lg border border-[var(--rq-border)] bg-white p-5"
+              className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5"
             >
-              <h2 className="font-semibold text-[var(--rq-navy)]">{plan.name}</h2>
+              <h2 className="font-semibold text-[var(--rq-ink)]">{plan.name}</h2>
               <p className="mt-2 text-2xl font-bold">
                 {formatCurrency(plan.priceMonthly)}
-                <span className="text-sm font-medium text-slate-500">/mo</span>
+                <span className="text-sm font-medium text-[var(--rq-muted)]">/mo</span>
               </p>
               <Button asChild className="mt-4 w-full">
                 <Link href={`/api/checkout?plan=${plan.code}`}>Upgrade</Link>

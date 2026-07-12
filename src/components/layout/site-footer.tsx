@@ -7,7 +7,7 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-[var(--rq-border)] bg-[var(--rq-navy)] text-slate-300">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-4">
         <div className="md:col-span-2">
-          <Logo size="md" className="mb-4" />
+          <Logo size="md" variant="onDark" className="mb-4" />
           <p className="max-w-md text-sm leading-relaxed text-slate-400">
             Independent B2B trust, procurement and equipment-lifecycle platform.
             Rate suppliers. Compare quotes. Connect with verified partners.

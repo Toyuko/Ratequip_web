@@ -16,14 +16,14 @@ export default async function CompareQuotesPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-navy)]">Compare quotes</h1>
-      <p className="mt-2 text-slate-600">
+      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">Compare quotes</h1>
+      <p className="mt-2 text-[var(--rq-slate)]">
         {request ? request.title : `RFQ ${requestId}`}
       </p>
 
-      <div className="mt-8 overflow-x-auto rounded-lg border border-[var(--rq-border)] bg-white">
+      <div className="mt-8 overflow-x-auto rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)]">
         <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-[var(--rq-border)] bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="border-b border-[var(--rq-border)] bg-[var(--rq-surface)] text-xs uppercase tracking-wide text-[var(--rq-muted)]">
             <tr>
               <th className="px-4 py-3">Supplier</th>
               <th className="px-4 py-3">Amount</th>
@@ -38,7 +38,7 @@ export default async function CompareQuotesPage({
                 <td className="px-4 py-3 font-medium">
                   <Link
                     href={`/suppliers/${q.companySlug}`}
-                    className="text-[var(--rq-navy)] hover:text-orange-600"
+                    className="text-[var(--rq-ink)] hover:text-orange-600"
                   >
                     {q.companyName}
                   </Link>
@@ -50,7 +50,7 @@ export default async function CompareQuotesPage({
                 <td className="px-4 py-3">
                   <Badge variant="muted">{q.status}</Badge>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{q.notes}</td>
+                <td className="px-4 py-3 text-[var(--rq-slate)]">{q.notes}</td>
               </tr>
             ))}
           </tbody>

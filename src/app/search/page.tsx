@@ -15,8 +15,8 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-navy)]">Search</h1>
-      <p className="mt-2 text-slate-600">
+      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">Search</h1>
+      <p className="mt-2 text-[var(--rq-slate)]">
         {q ? (
           <>
             Results for <span className="font-semibold">{q}</span>
@@ -27,7 +27,7 @@ export default async function SearchPage({
       </p>
 
       <section className="mt-10">
-        <h2 className="text-xl font-bold text-[var(--rq-navy)]">
+        <h2 className="text-xl font-bold text-[var(--rq-ink)]">
           Suppliers ({companies.length})
         </h2>
         <div className="mt-4 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -38,7 +38,7 @@ export default async function SearchPage({
       </section>
 
       <section className="mt-12">
-        <h2 className="text-xl font-bold text-[var(--rq-navy)]">
+        <h2 className="text-xl font-bold text-[var(--rq-ink)]">
           RFQs ({requests.length})
         </h2>
         <div className="mt-4 space-y-3">
@@ -46,18 +46,18 @@ export default async function SearchPage({
             <Link
               key={r.id}
               href={`/requests/${r.id}`}
-              className="block rounded-lg border border-[var(--rq-border)] bg-white p-4 hover:border-orange-300"
+              className="block rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4 hover:border-orange-300"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-semibold text-[var(--rq-navy)]">
+                <h3 className="font-semibold text-[var(--rq-ink)]">
                   {r.title}
                 </h3>
-                <span className="text-sm text-slate-500">
+                <span className="text-sm text-[var(--rq-muted)]">
                   {formatCurrency(r.budgetMin, r.currency)} –{" "}
                   {formatCurrency(r.budgetMax, r.currency)}
                 </span>
               </div>
-              <p className="mt-1 line-clamp-2 text-sm text-slate-600">
+              <p className="mt-1 line-clamp-2 text-sm text-[var(--rq-slate)]">
                 {r.description}
               </p>
             </Link>

@@ -11,14 +11,14 @@ export default function PricingPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-navy)]">Pricing</h1>
-      <p className="mt-2 max-w-2xl text-slate-600">
+      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">Pricing</h1>
+      <p className="mt-2 max-w-2xl text-[var(--rq-slate)]">
         Subscriptions plus RateQuip Credits for RFQ leads and premium actions.
         Paid placement never alters Trust Score.
       </p>
 
       <section className="mt-12">
-        <h2 className="text-xl font-bold text-[var(--rq-navy)]">Buyers</h2>
+        <h2 className="text-xl font-bold text-[var(--rq-ink)]">Buyers</h2>
         <div className="mt-6 grid gap-5 md:grid-cols-2">
           {buyerPlans.map((plan) => (
             <PlanCard key={plan.code} plan={plan} />
@@ -27,7 +27,7 @@ export default function PricingPage() {
       </section>
 
       <section className="mt-14">
-        <h2 className="text-xl font-bold text-[var(--rq-navy)]">Suppliers</h2>
+        <h2 className="text-xl font-bold text-[var(--rq-ink)]">Suppliers</h2>
         <div className="mt-6 grid gap-5 md:grid-cols-3">
           {supplierPlans.map((plan) => (
             <PlanCard key={plan.code} plan={plan} />
@@ -45,7 +45,7 @@ function PlanCard({
 }) {
   return (
     <div
-      className={`rounded-lg border bg-white p-6 ${
+      className={`rounded-lg border bg-[var(--rq-card)] p-6 ${
         plan.highlighted
           ? "border-orange-400 shadow-md"
           : "border-[var(--rq-border)]"
@@ -56,16 +56,16 @@ function PlanCard({
           Popular
         </div>
       ) : null}
-      <h3 className="text-lg font-bold text-[var(--rq-navy)]">{plan.name}</h3>
-      <p className="mt-2 text-3xl font-extrabold text-[var(--rq-navy)]">
+      <h3 className="text-lg font-bold text-[var(--rq-ink)]">{plan.name}</h3>
+      <p className="mt-2 text-3xl font-extrabold text-[var(--rq-ink)]">
         {plan.priceMonthly === 0
           ? "Free"
           : formatCurrency(plan.priceMonthly)}
         {plan.priceMonthly > 0 ? (
-          <span className="text-sm font-medium text-slate-500">/mo</span>
+          <span className="text-sm font-medium text-[var(--rq-muted)]">/mo</span>
         ) : null}
       </p>
-      <ul className="mt-4 space-y-2 text-sm text-slate-600">
+      <ul className="mt-4 space-y-2 text-sm text-[var(--rq-slate)]">
         {plan.features.map((f) => (
           <li key={f}>• {f}</li>
         ))}

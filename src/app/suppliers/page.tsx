@@ -20,19 +20,19 @@ export default async function SuppliersPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-navy)]">
+      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">
         Supplier directory
       </h1>
-      <p className="mt-2 text-slate-600">
+      <p className="mt-2 text-[var(--rq-slate)]">
         Compare verified manufacturers, contractors and service providers.
       </p>
 
-      <form className="mt-8 grid gap-3 rounded-lg border border-[var(--rq-border)] bg-white p-4 md:grid-cols-4">
+      <form className="mt-8 grid gap-3 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4 md:grid-cols-4">
         <Input name="q" placeholder="Search…" defaultValue={params.q} />
         <select
           name="category"
           defaultValue={params.category ?? ""}
-          className="h-11 rounded-md border border-[var(--rq-border)] bg-white px-3 text-sm"
+          className="h-11 rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 text-sm"
         >
           <option value="">All categories</option>
           {categories.map((c) => (
@@ -55,7 +55,7 @@ export default async function SuppliersPage({
         ))}
       </div>
       {companies.length === 0 ? (
-        <p className="mt-10 text-center text-slate-500">No suppliers matched.</p>
+        <p className="mt-10 text-center text-[var(--rq-muted)]">No suppliers matched.</p>
       ) : null}
     </div>
   );

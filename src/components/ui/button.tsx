@@ -11,10 +11,10 @@ const buttonVariants = cva(
         default:
           "bg-[var(--rq-orange)] text-white hover:bg-[var(--rq-orange-deep)]",
         secondary:
-          "bg-[var(--rq-navy)] text-white hover:bg-slate-800",
+          "bg-[var(--rq-navy)] text-white hover:bg-slate-800 dark:hover:bg-slate-700",
         outline:
-          "border border-[var(--rq-border)] bg-white text-[var(--rq-navy)] hover:bg-[var(--rq-surface)]",
-        ghost: "text-[var(--rq-navy)] hover:bg-[var(--rq-surface)]",
+          "border border-[var(--rq-border)] bg-[var(--rq-card)] text-[var(--rq-ink)] hover:bg-[var(--rq-hover)]",
+        ghost: "text-[var(--rq-ink)] hover:bg-[var(--rq-hover)]",
         link: "text-[var(--rq-orange)] underline-offset-4 hover:underline",
       },
       size: {

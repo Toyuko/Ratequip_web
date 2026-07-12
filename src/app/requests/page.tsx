@@ -13,10 +13,10 @@ export default function RequestsPage() {
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--rq-navy)]">
+          <h1 className="text-3xl font-bold text-[var(--rq-ink)]">
             RFQ marketplace
           </h1>
-          <p className="mt-2 text-slate-600">
+          <p className="mt-2 text-[var(--rq-slate)]">
             Open requests from buyers seeking equipment and industrial services.
           </p>
         </div>
@@ -30,20 +30,20 @@ export default function RequestsPage() {
           <Link
             key={r.id}
             href={`/requests/${r.id}`}
-            className="block rounded-lg border border-[var(--rq-border)] bg-white p-5 transition hover:border-orange-300"
+            className="block rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5 transition hover:border-orange-300"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-[var(--rq-navy)]">
+              <h2 className="text-lg font-semibold text-[var(--rq-ink)]">
                 {r.title}
               </h2>
               <Badge variant={r.status === "open" ? "success" : "muted"}>
                 {r.status}
               </Badge>
             </div>
-            <p className="mt-2 line-clamp-2 text-sm text-slate-600">
+            <p className="mt-2 line-clamp-2 text-sm text-[var(--rq-slate)]">
               {r.description}
             </p>
-            <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
+            <div className="mt-3 flex flex-wrap gap-4 text-xs text-[var(--rq-muted)]">
               <span>{r.deliveryCountry}</span>
               <span>
                 {formatCurrency(r.budgetMin, r.currency)} –{" "}

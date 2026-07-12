@@ -17,7 +17,7 @@ function QuoteForm() {
 
   return (
     <form
-      className="max-w-xl space-y-4 rounded-lg border border-[var(--rq-border)] bg-white p-5"
+      className="max-w-xl space-y-4 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5"
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
@@ -32,7 +32,7 @@ function QuoteForm() {
         });
       }}
     >
-      <p className="text-sm text-slate-500">RFQ: {requestId}</p>
+      <p className="text-sm text-[var(--rq-muted)]">RFQ: {requestId}</p>
       <div>
         <Label htmlFor="amount">Quote amount (USD)</Label>
         <Input id="amount" name="amount" type="number" required className="mt-1" />

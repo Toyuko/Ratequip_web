@@ -20,7 +20,7 @@ export default function BuyerDashboardPage() {
 
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-[var(--rq-navy)]">Quick actions</h2>
+          <h2 className="font-semibold text-[var(--rq-ink)]">Quick actions</h2>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button asChild>
@@ -39,16 +39,16 @@ export default function BuyerDashboardPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="font-semibold text-[var(--rq-navy)]">Saved suppliers</h2>
+        <h2 className="font-semibold text-[var(--rq-ink)]">Saved suppliers</h2>
         <ul className="mt-3 space-y-2">
           {saved.map((c) => (
             <li
               key={c.id}
-              className="flex items-center justify-between rounded-lg border border-[var(--rq-border)] bg-white px-4 py-3"
+              className="flex items-center justify-between rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] px-4 py-3"
             >
               <Link
                 href={`/suppliers/${c.slug}`}
-                className="font-medium text-[var(--rq-navy)] hover:text-orange-600"
+                className="font-medium text-[var(--rq-ink)] hover:text-orange-600"
               >
                 {c.name}
               </Link>
@@ -59,16 +59,16 @@ export default function BuyerDashboardPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="font-semibold text-[var(--rq-navy)]">Projects</h2>
+        <h2 className="font-semibold text-[var(--rq-ink)]">Projects</h2>
         <ul className="mt-3 space-y-2">
           {demoProjects.map((p) => (
             <li key={p.id}>
               <Link
                 href={`/workspaces/${p.id}`}
-                className="block rounded-lg border border-[var(--rq-border)] bg-white px-4 py-3 hover:border-orange-300"
+                className="block rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] px-4 py-3 hover:border-orange-300"
               >
-                <div className="font-medium text-[var(--rq-navy)]">{p.name}</div>
-                <div className="text-sm text-slate-500">{p.summary}</div>
+                <div className="font-medium text-[var(--rq-ink)]">{p.name}</div>
+                <div className="text-sm text-[var(--rq-muted)]">{p.summary}</div>
               </Link>
             </li>
           ))}
@@ -80,11 +80,11 @@ export default function BuyerDashboardPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-[var(--rq-border)] bg-white p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-400">
+    <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4">
+      <div className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
         {label}
       </div>
-      <div className="mt-1 text-2xl font-bold text-[var(--rq-navy)]">{value}</div>
+      <div className="mt-1 text-2xl font-bold text-[var(--rq-ink)]">{value}</div>
     </div>
   );
 }

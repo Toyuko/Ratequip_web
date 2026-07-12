@@ -15,12 +15,12 @@ export default function NewProjectPage() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-navy)]">New project</h1>
-      <p className="mt-2 text-slate-600">
+      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">New project</h1>
+      <p className="mt-2 text-[var(--rq-slate)]">
         Create a lightweight workspace to group RFQs, quotes and documents.
       </p>
       <form
-        className="mt-8 space-y-4 rounded-lg border border-[var(--rq-border)] bg-white p-6"
+        className="mt-8 space-y-4 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-6"
         onSubmit={(e) => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);

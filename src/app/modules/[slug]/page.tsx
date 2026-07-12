@@ -27,11 +27,11 @@ export default async function ModuleComingSoonPage({
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">
         Coming soon
       </p>
-      <h1 className="mt-3 text-3xl font-bold text-[var(--rq-navy)]">
+      <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         {mod.name}
       </h1>
-      <p className="mt-3 text-slate-600">{mod.summary}</p>
-      <p className="mt-6 text-sm text-slate-500">
+      <p className="mt-3 text-[var(--rq-slate)]">{mod.summary}</p>
+      <p className="mt-6 text-sm text-[var(--rq-muted)]">
         Schema hooks and shared identity/billing primitives are ready so this
         module can land without a platform rewrite.
       </p>
@@ -51,11 +51,11 @@ export default async function ModuleComingSoonPage({
               className={`block rounded-lg border p-4 text-sm ${
                 m.slug === slug
                   ? "border-orange-400 bg-orange-50"
-                  : "border-[var(--rq-border)] bg-white"
+                  : "border-[var(--rq-border)] bg-[var(--rq-card)]"
               }`}
             >
-              <div className="font-semibold text-[var(--rq-navy)]">{m.name}</div>
-              <div className="mt-1 text-slate-500">{m.summary}</div>
+              <div className="font-semibold text-[var(--rq-ink)]">{m.name}</div>
+              <div className="mt-1 text-[var(--rq-muted)]">{m.summary}</div>
             </Link>
           </li>
         ))}

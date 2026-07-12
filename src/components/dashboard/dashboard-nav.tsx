@@ -10,9 +10,9 @@ const links = [
 
 export function DashboardNav({ active }: { active: string }) {
   return (
-    <aside className="w-full shrink-0 border-b border-[var(--rq-border)] bg-white md:w-56 md:border-b-0 md:border-r">
+    <aside className="w-full shrink-0 border-b border-[var(--rq-border)] bg-[var(--rq-card)] md:w-56 md:border-b-0 md:border-r">
       <div className="p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--rq-muted)]">
           Dashboards
         </p>
         <nav className="mt-3 flex gap-2 overflow-x-auto md:flex-col">
@@ -24,7 +24,7 @@ export function DashboardNav({ active }: { active: string }) {
                 "rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap",
                 active === l.label.toLowerCase()
                   ? "bg-[var(--rq-navy)] text-white"
-                  : "text-slate-600 hover:bg-slate-100",
+                  : "text-[var(--rq-slate)] hover:bg-[var(--rq-hover)]",
               )}
             >
               {l.label}
@@ -32,7 +32,7 @@ export function DashboardNav({ active }: { active: string }) {
           ))}
         </nav>
         <div className="mt-6 hidden md:block">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--rq-muted)]">
             Coming soon
           </p>
           <nav className="mt-2 space-y-1 text-sm">
@@ -45,7 +45,7 @@ export function DashboardNav({ active }: { active: string }) {
               <Link
                 key={slug}
                 href={`/modules/${slug}`}
-                className="block rounded-md px-3 py-1.5 text-slate-500 hover:bg-slate-50"
+                className="block rounded-md px-3 py-1.5 text-[var(--rq-muted)] hover:bg-[var(--rq-hover)]"
               >
                 {label}
               </Link>

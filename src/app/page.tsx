@@ -16,7 +16,7 @@ export default function HomePage() {
       <section className="rq-hero-grid relative overflow-hidden text-white">
         <div className="mx-auto flex min-h-[88vh] max-w-6xl flex-col justify-center px-4 py-20 sm:px-6">
           <div className="rq-fade-up max-w-3xl">
-            <Logo size="hero" priority className="mb-8 brightness-0 invert" />
+            <Logo size="hero" variant="onDark" priority className="mb-8" />
             <h1 className="max-w-2xl text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
               Trust the suppliers who build your plant.
             </h1>
@@ -46,11 +46,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-b border-[var(--rq-border)] bg-white">
+      <section className="border-b border-[var(--rq-border)] bg-[var(--rq-card)]">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
           <form action="/search" className="rq-fade-in flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--rq-muted)]" />
               <Input
                 name="q"
                 placeholder="Search suppliers, categories, or RFQs…"
@@ -65,10 +65,10 @@ export default function HomePage() {
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="mb-8 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-[var(--rq-navy)]">
+            <h2 className="text-2xl font-bold text-[var(--rq-ink)]">
               Top trusted suppliers
             </h2>
-            <p className="mt-1 text-slate-600">
+            <p className="mt-1 text-[var(--rq-slate)]">
               Ranked by RateQuip Trust Score from verified reviews and evidence.
             </p>
           </div>
@@ -119,7 +119,7 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <h2 className="text-2xl font-bold text-[var(--rq-navy)]">
+        <h2 className="text-2xl font-bold text-[var(--rq-ink)]">
           Browse categories
         </h2>
         <div className="rq-stagger mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -127,10 +127,10 @@ export default function HomePage() {
             <Link
               key={cat.id}
               href={`/categories/${cat.slug}`}
-              className="rounded-lg border border-[var(--rq-border)] bg-white p-5 transition hover:border-orange-300"
+              className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5 transition hover:border-orange-300"
             >
-              <h3 className="font-semibold text-[var(--rq-navy)]">{cat.name}</h3>
-              <p className="mt-1 text-sm text-slate-600">{cat.description}</p>
+              <h3 className="font-semibold text-[var(--rq-ink)]">{cat.name}</h3>
+              <p className="mt-1 text-sm text-[var(--rq-slate)]">{cat.description}</p>
             </Link>
           ))}
         </div>

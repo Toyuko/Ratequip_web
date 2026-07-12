@@ -1,20 +1,44 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --rq-navy: #0f172a;
   --rq-orange: #f97316;
   --rq-orange-deep: #ea580c;
+  --rq-ink: #0f172a;
   --rq-slate: #334155;
   --rq-muted: #64748b;
   --rq-surface: #f8fafc;
+  --rq-card: #ffffff;
   --rq-border: #e2e8f0;
+  --rq-hover: #f1f5f9;
   --background: #f8fafc;
   --foreground: #0f172a;
+}
+
+.dark {
+  --rq-ink: #f1f5f9;
+  --rq-slate: #cbd5e1;
+  --rq-muted: #94a3b8;
+  --rq-surface: #0b1220;
+  --rq-card: #111827;
+  --rq-border: #1e293b;
+  --rq-hover: #1e293b;
+  --background: #0b1220;
+  --foreground: #f1f5f9;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--rq-card);
+  --color-ink: var(--rq-ink);
+  --color-muted: var(--rq-muted);
+  --color-border: var(--rq-border);
+  --color-surface: var(--rq-surface);
+  --color-brand: var(--rq-navy);
+  --color-orange: var(--rq-orange);
   --font-sans: var(--font-montserrat);
   --font-display: var(--font-montserrat);
 }

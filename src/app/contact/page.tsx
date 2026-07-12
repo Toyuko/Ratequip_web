@@ -8,13 +8,13 @@ export const metadata = { title: "Contact" };
 export default function ContactPage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-navy)]">Contact</h1>
-      <p className="mt-2 text-slate-600">
+      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">Contact</h1>
+      <p className="mt-2 text-[var(--rq-slate)]">
         Enterprise demos, partnerships and support — we typically respond within
         one business day.
       </p>
       <form
-        className="mt-8 space-y-4 rounded-lg border border-[var(--rq-border)] bg-white p-6"
+        className="mt-8 space-y-4 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-6"
         action="mailto:hello@ratequip.com"
         method="get"
       >

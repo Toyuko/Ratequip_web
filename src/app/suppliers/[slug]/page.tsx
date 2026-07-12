@@ -48,7 +48,7 @@ export default async function SupplierProfilePage({
               </div>
               <h1 className="text-3xl font-bold sm:text-4xl">{company.name}</h1>
               <p className="mt-2 max-w-2xl text-slate-300">{company.headline}</p>
-              <p className="mt-3 text-sm text-slate-400">
+              <p className="mt-3 text-sm text-[var(--rq-muted)]">
                 {company.city}, {company.country} · Founded {company.yearFounded}{" "}
                 · {company.employeeRange} employees
               </p>
@@ -98,50 +98,50 @@ export default async function SupplierProfilePage({
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-10">
           <section>
-            <h2 className="text-xl font-bold text-[var(--rq-navy)]">About</h2>
-            <p className="mt-3 leading-relaxed text-slate-600">
+            <h2 className="text-xl font-bold text-[var(--rq-ink)]">About</h2>
+            <p className="mt-3 leading-relaxed text-[var(--rq-slate)]">
               {company.description}
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-[var(--rq-navy)]">Products</h2>
+            <h2 className="text-xl font-bold text-[var(--rq-ink)]">Products</h2>
             <div className="mt-4 space-y-3">
               {products.map((p) => (
                 <div
                   key={p.id}
-                  className="rounded-lg border border-[var(--rq-border)] bg-white p-4"
+                  className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4"
                 >
-                  <h3 className="font-semibold text-[var(--rq-navy)]">
+                  <h3 className="font-semibold text-[var(--rq-ink)]">
                     {p.name}
                   </h3>
-                  <p className="mt-1 text-sm text-slate-600">{p.summary}</p>
+                  <p className="mt-1 text-sm text-[var(--rq-slate)]">{p.summary}</p>
                 </div>
               ))}
               {products.length === 0 ? (
-                <p className="text-sm text-slate-500">No products listed yet.</p>
+                <p className="text-sm text-[var(--rq-muted)]">No products listed yet.</p>
               ) : null}
             </div>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-[var(--rq-navy)]">Reviews</h2>
+            <h2 className="text-xl font-bold text-[var(--rq-ink)]">Reviews</h2>
             <div className="mt-4 space-y-4">
               {reviews.map((r) => (
                 <article
                   key={r.id}
-                  className="rounded-lg border border-[var(--rq-border)] bg-white p-4"
+                  className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-semibold text-[var(--rq-navy)]">
+                    <h3 className="font-semibold text-[var(--rq-ink)]">
                       {r.title}
                     </h3>
                     <span className="text-sm font-bold text-orange-600">
                       {r.rating}/5
                     </span>
                   </div>
-                  <p className="mt-2 text-sm text-slate-600">{r.body}</p>
-                  <p className="mt-3 text-xs text-slate-400">
+                  <p className="mt-2 text-sm text-[var(--rq-slate)]">{r.body}</p>
+                  <p className="mt-3 text-xs text-[var(--rq-muted)]">
                     {r.author}
                     {r.verifiedPurchase ? " · Invoice verified" : ""}
                   </p>
@@ -152,8 +152,8 @@ export default async function SupplierProfilePage({
         </div>
 
         <aside className="space-y-4">
-          <div className="rounded-lg border border-[var(--rq-border)] bg-white p-5">
-            <h3 className="font-semibold text-[var(--rq-navy)]">Categories</h3>
+          <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
+            <h3 className="font-semibold text-[var(--rq-ink)]">Categories</h3>
             <ul className="mt-3 space-y-2 text-sm">
               {company.categories.map((c) => (
                 <li key={c}>
@@ -167,8 +167,8 @@ export default async function SupplierProfilePage({
               ))}
             </ul>
           </div>
-          <div className="rounded-lg border border-[var(--rq-border)] bg-white p-5">
-            <h3 className="font-semibold text-[var(--rq-navy)]">Website</h3>
+          <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
+            <h3 className="font-semibold text-[var(--rq-ink)]">Website</h3>
             <a
               href={company.website}
               className="mt-2 block text-sm text-orange-600 hover:underline"

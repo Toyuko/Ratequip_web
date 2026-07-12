@@ -7,7 +7,7 @@ export const metadata = { title: "Contractor dashboard" };
 export default function ContractorDashboardPage() {
   return (
     <DashboardShell role="contractor" title="Service provider dashboard">
-      <p className="text-slate-600">
+      <p className="text-[var(--rq-slate)]">
         Manage installation, inspection and logistics opportunities. Full
         provider directories expand in Phase 3.
       </p>

@@ -12,10 +12,10 @@ export default function SupplierProductsPage() {
         {products.map((p) => (
           <div
             key={p.id}
-            className="rounded-lg border border-[var(--rq-border)] bg-white p-4"
+            className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4"
           >
-            <h2 className="font-semibold text-[var(--rq-navy)]">{p.name}</h2>
-            <p className="mt-1 text-sm text-slate-600">{p.summary}</p>
+            <h2 className="font-semibold text-[var(--rq-ink)]">{p.name}</h2>
+            <p className="mt-1 text-sm text-[var(--rq-slate)]">{p.summary}</p>
           </div>
         ))}
       </div>

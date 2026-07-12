@@ -36,21 +36,21 @@ export default function SupplierDashboardPage() {
       </div>
 
       <section className="mt-10">
-        <h2 className="font-semibold text-[var(--rq-navy)]">Lead inbox</h2>
+        <h2 className="font-semibold text-[var(--rq-ink)]">Lead inbox</h2>
         <ul className="mt-3 space-y-2">
           {leads.map((r) => (
             <li
               key={r.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--rq-border)] bg-white px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] px-4 py-3"
             >
               <div>
                 <Link
                   href={`/requests/${r.id}`}
-                  className="font-medium text-[var(--rq-navy)] hover:text-orange-600"
+                  className="font-medium text-[var(--rq-ink)] hover:text-orange-600"
                 >
                   {r.title}
                 </Link>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-[var(--rq-muted)]">
                   {r.deliveryCountry} · {r.quoteCount} quotes
                 </p>
               </div>
@@ -65,11 +65,11 @@ export default function SupplierDashboardPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-[var(--rq-border)] bg-white p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-400">
+    <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4">
+      <div className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
         {label}
       </div>
-      <div className="mt-1 text-2xl font-bold text-[var(--rq-navy)]">{value}</div>
+      <div className="mt-1 text-2xl font-bold text-[var(--rq-ink)]">{value}</div>
     </div>
   );
 }
