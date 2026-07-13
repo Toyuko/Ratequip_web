@@ -37,11 +37,7 @@ export default function OnboardingPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   const canContinue =
-    orgName.trim() &&
-    phone.trim() &&
-    email.trim() &&
-    address.trim() &&
-    contactName.trim();
+    orgName.trim() && contactName.trim() && email.trim();
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
@@ -72,18 +68,24 @@ export default function OnboardingPage() {
 
       <div className="mt-6 grid gap-4">
         <div>
-          <Label htmlFor="org">Organisation name</Label>
+          <Label htmlFor="org">
+            Organisation name <span className="text-orange-600">*</span>
+          </Label>
           <Input
             id="org"
             className="mt-1"
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
             placeholder="Acme Procurement Ltd"
+            required
+            aria-required="true"
           />
         </div>
 
         <div>
-          <Label htmlFor="contact-name">Contact name</Label>
+          <Label htmlFor="contact-name">
+            Contact name <span className="text-orange-600">*</span>
+          </Label>
           <Input
             id="contact-name"
             className="mt-1"
@@ -91,11 +93,15 @@ export default function OnboardingPage() {
             onChange={(e) => setContactName(e.target.value)}
             placeholder="Jane Smith"
             autoComplete="name"
+            required
+            aria-required="true"
           />
         </div>
 
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">
+            Email <span className="text-orange-600">*</span>
+          </Label>
           <Input
             id="email"
             type="email"
@@ -104,6 +110,8 @@ export default function OnboardingPage() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="jane@acme.com"
             autoComplete="email"
+            required
+            aria-required="true"
           />
         </div>
 
@@ -141,14 +149,15 @@ export default function OnboardingPage() {
         className="mt-6"
         disabled={pending || !canContinue}
         onClick={() => {
+          if (!canContinue) return;
           startTransition(async () => {
             const result = await completeOnboarding({
               role,
-              orgName,
-              phone,
-              email,
-              address,
-              contactName,
+              orgName: orgName.trim(),
+              phone: phone.trim(),
+              email: email.trim(),
+              address: address.trim(),
+              contactName: contactName.trim(),
             });
             setMessage(result.message);
             router.push(result.redirectTo);

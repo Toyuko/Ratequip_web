@@ -11,21 +11,32 @@ export async function completeOnboarding(input: {
   address: string;
   contactName: string;
 }) {
+  const orgName = input.orgName.trim();
+  const email = input.email.trim();
+  const contactName = input.contactName.trim();
+
+  if (!orgName || !email || !contactName) {
+    return {
+      message: "Organisation name, contact name, and email are required.",
+      redirectTo: "/onboarding",
+    };
+  }
+
   const jar = await cookies();
   jar.set("rq_role", input.role, { path: "/", httpOnly: false });
-  jar.set("rq_org", input.orgName, { path: "/", httpOnly: false });
-  jar.set("rq_org_slug", slugify(input.orgName), {
+  jar.set("rq_org", orgName, { path: "/", httpOnly: false });
+  jar.set("rq_org_slug", slugify(orgName), {
     path: "/",
     httpOnly: false,
   });
-  jar.set("rq_phone", input.phone, { path: "/", httpOnly: false });
-  jar.set("rq_email", input.email, { path: "/", httpOnly: false });
-  jar.set("rq_address", input.address, { path: "/", httpOnly: false });
-  jar.set("rq_contact_name", input.contactName, { path: "/", httpOnly: false });
+  jar.set("rq_phone", input.phone.trim(), { path: "/", httpOnly: false });
+  jar.set("rq_email", email, { path: "/", httpOnly: false });
+  jar.set("rq_address", input.address.trim(), { path: "/", httpOnly: false });
+  jar.set("rq_contact_name", contactName, { path: "/", httpOnly: false });
   jar.set("rq_onboarded", "1", { path: "/", httpOnly: false });
 
   return {
-    message: `Organisation “${input.orgName}” ready in demo mode.`,
+    message: `Organisation “${orgName}” ready in demo mode.`,
     redirectTo: `/dashboard/${input.role === "contractor" ? "contractor" : input.role}`,
   };
 }
