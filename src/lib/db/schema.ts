@@ -395,6 +395,131 @@ export const savedSuppliers = pgTable("saved_suppliers", {
 });
 
 /**
+ * Organic Growth Engine — v10.1 Phase 1 tables.
+ * Full SQL: drizzle/0001_organic_growth_v10_1.sql
+ * Authoritative source: RateQuip_Enterprise_Master_Repository_v10.1/07_Organic_Growth_Engine/
+ */
+
+export const listingStatusEnum = pgEnum("listing_status", [
+  "draft",
+  "duplicate_check",
+  "details_complete",
+  "contacts_complete",
+  "contacts_skipped",
+  "review_ready",
+  "review_skipped",
+  "confirmation_required",
+  "publishing",
+  "published",
+  "abandoned",
+  "blocked",
+  "merged_into_existing",
+  "failed",
+]);
+
+export const companyListingSubmissions = pgTable("company_listing_submissions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  submittedByUserId: uuid("submitted_by_user_id").references(() => users.id),
+  status: listingStatusEnum("status").notNull().default("draft"),
+  version: integer("version").notNull().default(1),
+  companyName: varchar("company_name", { length: 255 }),
+  normalizedName: varchar("normalized_name", { length: 255 }),
+  websiteUrl: text("website_url"),
+  registrableDomain: varchar("registrable_domain", { length: 255 }),
+  companyTypes: jsonb("company_types").$type<string[]>().default([]),
+  countryCode: varchar("country_code", { length: 2 }),
+  addressLine: text("address_line"),
+  locality: varchar("locality", { length: 120 }),
+  region: varchar("region", { length: 120 }),
+  postalCode: varchar("postal_code", { length: 32 }),
+  phoneDisplay: varchar("phone_display", { length: 64 }),
+  publicSourceUrl: text("public_source_url"),
+  privateNotes: text("private_notes"),
+  relationship: varchar("relationship", { length: 64 }),
+  intendedPurpose: varchar("intended_purpose", { length: 64 }),
+  conflictDeclared: boolean("conflict_declared").default(false),
+  disclosurePreference: varchar("disclosure_preference", { length: 64 })
+    .notNull()
+    .default("anonymous_ratequip_user"),
+  declarationVersion: varchar("declaration_version", { length: 32 }),
+  declarationsAcceptedAt: timestamp("declarations_accepted_at", {
+    withTimezone: true,
+  }),
+  publishedCompanyId: uuid("published_company_id").references(() => companies.id),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  idempotencyKey: varchar("idempotency_key", { length: 128 }),
+  ...timestamps,
+});
+
+export const companyContactCandidates = pgTable("company_contact_candidates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  submissionId: uuid("submission_id")
+    .notNull()
+    .references(() => companyListingSubmissions.id),
+  companyId: uuid("company_id").references(() => companies.id),
+  addedByUserId: uuid("added_by_user_id").references(() => users.id),
+  /** Application/KMS encrypted email — never public. */
+  emailCiphertext: text("email_ciphertext").notNull(),
+  emailNormalizedHash: text("email_normalized_hash").notNull(),
+  emailDomain: varchar("email_domain", { length: 255 }).notNull(),
+  emailMasked: varchar("email_masked", { length: 255 }).notNull(),
+  contactNameCiphertext: text("contact_name_ciphertext"),
+  role: varchar("role", { length: 64 }),
+  sourceType: varchar("source_type", { length: 64 }).notNull(),
+  sourceUrl: text("source_url"),
+  personalNoteCiphertext: text("personal_note_ciphertext"),
+  sendAfterPublish: boolean("send_after_publish").notNull().default(true),
+  domainMatchCategory: varchar("domain_match_category", { length: 64 }),
+  sendEligibility: varchar("send_eligibility", { length: 32 })
+    .notNull()
+    .default("pending"),
+  ...timestamps,
+});
+
+export const growthInvitations = pgTable("growth_invitations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  purpose: varchar("purpose", { length: 64 }).notNull().default("company_claim"),
+  invitedByUserId: uuid("invited_by_user_id").references(() => users.id),
+  sourceSubmissionId: uuid("source_submission_id").references(
+    () => companyListingSubmissions.id,
+  ),
+  companyId: uuid("company_id").references(() => companies.id),
+  disclosurePreference: varchar("disclosure_preference", { length: 64 })
+    .notNull()
+    .default("anonymous_ratequip_user"),
+  templateFamily: varchar("template_family", { length: 64 }).notNull(),
+  templateVersion: varchar("template_version", { length: 32 }).notNull(),
+  locale: varchar("locale", { length: 16 }).notNull().default("en"),
+  status: varchar("status", { length: 32 }).notNull().default("active"),
+  creditCost: integer("credit_cost").notNull().default(0),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  ...timestamps,
+});
+
+export const growthInvitationRecipients = pgTable(
+  "growth_invitation_recipients",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    invitationId: uuid("invitation_id")
+      .notNull()
+      .references(() => growthInvitations.id),
+    contactCandidateId: uuid("contact_candidate_id").references(
+      () => companyContactCandidates.id,
+    ),
+    emailCiphertext: text("email_ciphertext").notNull(),
+    emailNormalizedHash: text("email_normalized_hash").notNull(),
+    emailDomain: varchar("email_domain", { length: 255 }).notNull(),
+    emailMasked: varchar("email_masked", { length: 255 }).notNull(),
+    tokenHash: text("token_hash").notNull(),
+    tokenPrefix: varchar("token_prefix", { length: 16 }).notNull(),
+    state: varchar("state", { length: 32 }).notNull().default("queued"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    manualResendCount: integer("manual_resend_count").notNull().default(0),
+    ...timestamps,
+  },
+);
+
+/**
  * Future v10 extension tables (see master repo v10_extension_schema.sql):
  * rq_asset, rq_digital_passport, rq_asset_event, rq_supplier_scorecard,
  * rq_risk_signal, rq_compliance_*, rq_api_*, rq_course, rq_event_exhibitor

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SupplierCard } from "@/components/suppliers/supplier-card";
+import { Button } from "@/components/ui/button";
 import { searchAll } from "@/lib/db/queries";
 import { formatCurrency } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ export default async function SearchPage({
 }) {
   const { q = "" } = await searchParams;
   const { companies, requests } = searchAll(q);
+  const nearZero = Boolean(q) && companies.length <= 2;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
@@ -25,6 +27,20 @@ export default async function SearchPage({
           "Browse suppliers and open RFQs."
         )}
       </p>
+
+      {nearZero ? (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-[var(--rq-border)] bg-[var(--rq-card)] p-4">
+          <p className="text-sm text-[var(--rq-slate)]">
+            Can&apos;t find the company? Add a legitimate industrial company and
+            invite them to claim the profile.
+          </p>
+          <Button asChild>
+            <Link href={`/companies/search?q=${encodeURIComponent(q)}`}>
+              Add a company
+            </Link>
+          </Button>
+        </div>
+      ) : null}
 
       <section className="mt-10">
         <h2 className="text-xl font-bold text-[var(--rq-ink)]">

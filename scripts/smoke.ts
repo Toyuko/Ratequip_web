@@ -3,6 +3,8 @@ const base = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
 const paths = [
   "/",
   "/suppliers",
+  "/companies/search",
+  "/companies/nordicfill-systems",
   "/suppliers/nordicfill-systems",
   "/requests",
   "/pricing",

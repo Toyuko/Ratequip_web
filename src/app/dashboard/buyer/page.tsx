@@ -27,6 +27,9 @@ export default function BuyerDashboardPage() {
             <Link href="/requests/new">New RFQ</Link>
           </Button>
           <Button asChild variant="outline">
+            <Link href="/companies/search">Add a company</Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/projects/new">New project</Link>
           </Button>
           <Button asChild variant="outline">

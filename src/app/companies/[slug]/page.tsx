@@ -8,10 +8,10 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const company = getCompanyBySlug(slug);
-  return { title: company?.name ?? "Supplier" };
+  return { title: company?.name ?? "Company" };
 }
 
-export default async function SupplierProfilePage({
+export default async function CompanyPage({
   params,
 }: {
   params: Promise<{ slug: string }>;

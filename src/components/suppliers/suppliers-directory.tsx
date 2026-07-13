@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useT } from "@/components/i18n/locale-provider";
 import { SupplierCard } from "@/components/suppliers/supplier-card";
 import { Button } from "@/components/ui/button";
@@ -27,10 +28,17 @@ export function SuppliersDirectory({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">
-        {t.suppliers.title}
-      </h1>
-      <p className="mt-2 text-[var(--rq-slate)]">{t.suppliers.body}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-[var(--rq-ink)]">
+            {t.suppliers.title}
+          </h1>
+          <p className="mt-2 text-[var(--rq-slate)]">{t.suppliers.body}</p>
+        </div>
+        <Button asChild variant="outline">
+          <Link href="/companies/search">Add a company</Link>
+        </Button>
+      </div>
 
       <form className="mt-8 grid gap-3 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4 md:grid-cols-4">
         <Input
@@ -79,9 +87,16 @@ export function SuppliersDirectory({
         ))}
       </div>
       {companies.length === 0 ? (
-        <p className="mt-10 text-center text-[var(--rq-muted)]">
-          No suppliers matched.
-        </p>
+        <div className="mt-10 space-y-4 text-center">
+          <p className="text-[var(--rq-muted)]">No suppliers matched.</p>
+          <Button asChild>
+            <Link
+              href={`/companies/search${params.q ? `?q=${encodeURIComponent(params.q)}` : ""}`}
+            >
+              Add a company
+            </Link>
+          </Button>
+        </div>
       ) : null}
     </div>
   );

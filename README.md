@@ -1,6 +1,6 @@
 # RateQuip.com Web Platform
 
-B2B trust, procurement, and RFQ marketplace — Phase 1–2 MVP.
+B2B trust, procurement, and RFQ marketplace — Phase 1–2 MVP with **Organic Growth Engine Phase 1** (v10.1).
 
 **Stack:** Next.js 16 (App Router) · TypeScript · Tailwind · Clerk · Neon (Drizzle) · Stripe · Vercel Blob · Resend · Vercel
 
@@ -35,11 +35,22 @@ Required env vars are listed in `.env.example`.
 
 | Area | Paths |
 |------|--------|
-| Public | `/`, `/suppliers`, `/suppliers/[slug]`, `/search`, `/categories/[slug]`, `/requests`, `/pricing` |
+| Public | `/`, `/suppliers`, `/companies/[slug]`, `/search`, `/categories/[slug]`, `/requests`, `/pricing` |
+| Organic Growth (v10.1 Phase 1) | `/companies/search` → `/companies/add/*`, `/companies/add/success/[id]`, `/claim/[token]`, `/email/preferences/[token]` |
 | Auth | `/sign-in`, `/sign-up`, `/onboarding` |
 | App | `/dashboard/buyer`, `/dashboard/supplier`, `/dashboard/contractor`, `/dashboard/admin` |
 | Workflows | `/requests/new`, `/reviews/new`, `/companies/claim`, `/quotes/compare`, `/workspaces/[id]` |
 | Shells | `/modules/[slug]` (v10 modules — coming soon) |
+
+## Organic Growth Engine (v10.1)
+
+Authoritative module: `RateQuip_Enterprise_Master_Repository_v10.1/07_Organic_Growth_Engine/`.
+
+**Current milestone:** Phase 1 vertical slice — search/dedupe, Add Company wizard (OG-001–OG-007), private contact masking, atomic publish + claim-invite enqueue, unclaimed public profile (OG-009), claim landing (OG-010).
+
+SQL migration: `drizzle/0001_organic_growth_v10_1.sql` (apply via migration framework when leaving demo mode).
+
+Phases 2–5 (delivery webhooks, full claim verification, attribution/rewards, review loops) are specified but not marked complete.
 
 ## Scripts
 
@@ -57,4 +68,4 @@ Tagline: Rate. Compare. Connect. Grow.
 
 ## Spec source
 
-Built from RateQuip Enterprise Master Repository v10.0 (ClickUp Phase 1–2 / MVP Definition).
+Built from RateQuip Enterprise Master Repository **v10.1** (Organic Growth Engine supersedes v9/v10.0 for Add Company, claim invitations and related privacy rules). Platform Phase 1–2 MVP remains the delivery frame for this slice.

@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 export function SupplierCard({ company }: { company: DemoCompany }) {
   return (
     <Card interactive className="h-full">
-      <Link href={`/suppliers/${company.slug}`} className="block h-full">
+      <Link href={`/companies/${company.slug}`} className="block h-full">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-lg font-bold text-[var(--rq-ink)]">
@@ -30,7 +30,11 @@ export function SupplierCard({ company }: { company: DemoCompany }) {
         </p>
         <div className="flex flex-wrap gap-2">
           {company.verified ? <Badge variant="success">Verified</Badge> : null}
-          {company.claimed ? <Badge variant="orange">Claimed</Badge> : null}
+          {company.claimed ? (
+            <Badge variant="orange">Claimed</Badge>
+          ) : (
+            <Badge variant="warning">Unclaimed</Badge>
+          )}
           <Badge variant="muted">{company.reviewCount} reviews</Badge>
         </div>
       </Link>

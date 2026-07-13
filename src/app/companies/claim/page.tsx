@@ -64,8 +64,9 @@ export default function ClaimCompanyPage() {
         Claim a company profile
       </h1>
       <p className="mt-2 text-[var(--rq-slate)]">
-        Upload registration evidence. Admins verify before granting company
-        admin access.
+        Upload registration evidence. Invitation possession alone does not prove
+        authority — admins verify before granting company access. Tokenized claim
+        links use <code className="text-xs">/claim/:token</code> (v10.1 OG-010+).
       </p>
       <Suspense>
         <ClaimForm />
