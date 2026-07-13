@@ -10,6 +10,12 @@ export const localeLabels: Record<Locale, string> = {
   zh: "中文",
 };
 
+export const localeNames: Record<Locale, string> = {
+  en: "English",
+  th: "ไทย",
+  zh: "中文",
+};
+
 export const localeHtmlLang: Record<Locale, string> = {
   en: "en",
   th: "th",
