@@ -29,8 +29,19 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [role, setRole] = useState<(typeof roles)[number]["id"]>("buyer");
   const [orgName, setOrgName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [contactName, setContactName] = useState("");
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+
+  const canContinue =
+    orgName.trim() &&
+    phone.trim() &&
+    email.trim() &&
+    address.trim() &&
+    contactName.trim();
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
@@ -59,15 +70,67 @@ export default function OnboardingPage() {
         ))}
       </div>
 
-      <div className="mt-6">
-        <Label htmlFor="org">Organisation name</Label>
-        <Input
-          id="org"
-          className="mt-1"
-          value={orgName}
-          onChange={(e) => setOrgName(e.target.value)}
-          placeholder="Acme Procurement Ltd"
-        />
+      <div className="mt-6 grid gap-4">
+        <div>
+          <Label htmlFor="org">Organisation name</Label>
+          <Input
+            id="org"
+            className="mt-1"
+            value={orgName}
+            onChange={(e) => setOrgName(e.target.value)}
+            placeholder="Acme Procurement Ltd"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="contact-name">Contact name</Label>
+          <Input
+            id="contact-name"
+            className="mt-1"
+            value={contactName}
+            onChange={(e) => setContactName(e.target.value)}
+            placeholder="Jane Smith"
+            autoComplete="name"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            className="mt-1"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="jane@acme.com"
+            autoComplete="email"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="phone">Phone</Label>
+          <Input
+            id="phone"
+            type="tel"
+            className="mt-1"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+66 2 123 4567"
+            autoComplete="tel"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="address">Address</Label>
+          <Input
+            id="address"
+            className="mt-1"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="123 Industrial Road, Bangkok"
+            autoComplete="street-address"
+          />
+        </div>
       </div>
 
       {message ? (
@@ -76,10 +139,17 @@ export default function OnboardingPage() {
 
       <Button
         className="mt-6"
-        disabled={pending || !orgName.trim()}
+        disabled={pending || !canContinue}
         onClick={() => {
           startTransition(async () => {
-            const result = await completeOnboarding({ role, orgName });
+            const result = await completeOnboarding({
+              role,
+              orgName,
+              phone,
+              email,
+              address,
+              contactName,
+            });
             setMessage(result.message);
             router.push(result.redirectTo);
           });
