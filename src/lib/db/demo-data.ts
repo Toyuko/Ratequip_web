@@ -23,7 +23,34 @@ export type DemoCategory = {
   name: string;
   slug: string;
   description: string;
+  /** Parent category id when this is a leaf / subcategory */
+  parentId?: string | null;
 };
+
+function slugify(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function leafCategories(
+  parentId: string,
+  names: string[],
+  descriptionFor: (name: string) => string,
+): DemoCategory[] {
+  return names.map((name) => {
+    const slug = slugify(name);
+    return {
+      id: `${parentId}-${slug}`,
+      name,
+      slug,
+      description: descriptionFor(name),
+      parentId,
+    };
+  });
+}
 
 export type DemoReview = {
   id: string;
@@ -93,36 +120,56 @@ export type DemoPlan = {
   highlighted?: boolean;
 };
 
+/**
+ * Category taxonomy from RateQuip Enterprise Master Repository
+ * (`26_Categories_Taxonomy/category_taxonomy_v3.json`), plus platform
+ * service verticals already used in demo seed data.
+ *
+ * Parent slugs for packaging / processing / automation keep the original
+ * demo URLs so existing company + RFQ links stay valid.
+ */
 export const demoCategories: DemoCategory[] = [
   {
     id: "cat-packaging",
-    name: "Packaging Machinery",
+    name: "Packaging Equipment",
     slug: "packaging-machinery",
-    description: "Fillers, sealers, cartoners and end-of-line systems.",
+    description: "Fillers, sealers, cartoners, coding and end-of-line systems.",
   },
   {
     id: "cat-processing",
-    name: "Food Processing",
+    name: "Processing Equipment",
     slug: "food-processing",
-    description: "Industrial food processing and hygienic production lines.",
+    description: "Mixers, hygienic process lines, CIP and food production systems.",
+  },
+  {
+    id: "cat-industrial",
+    name: "Industrial Equipment",
+    slug: "industrial-equipment",
+    description: "Plant utilities, material handling and environmental systems.",
   },
   {
     id: "cat-automation",
-    name: "Factory Automation",
+    name: "Automation and Controls",
     slug: "factory-automation",
-    description: "Robotics, conveyors, PLCs and plant automation.",
+    description: "Robotics, PLCs, vision, drives and machine safety.",
   },
   {
-    id: "cat-hvac",
-    name: "Industrial HVAC",
-    slug: "industrial-hvac",
-    description: "Climate control for plants, warehouses and cleanrooms.",
+    id: "cat-services",
+    name: "Service Categories",
+    slug: "service-categories",
+    description: "Installation, maintenance, fabrication and technical trades.",
+  },
+  {
+    id: "cat-general",
+    name: "General Business",
+    slug: "general-business",
+    description: "Commercial facilities, trades and professional services.",
   },
   {
     id: "cat-inspection",
     name: "Inspection & QC",
     slug: "inspection-qc",
-    description: "Third-party inspection, FAT and quality assurance.",
+    description: "Third-party inspection, FAT witnessing and quality assurance.",
   },
   {
     id: "cat-logistics",
@@ -130,6 +177,136 @@ export const demoCategories: DemoCategory[] = [
     slug: "heavy-logistics",
     description: "Freight, customs and oversized equipment transport.",
   },
+  // Retained for existing CleanAir demo tagging; also mirrored under Services as HVAC.
+  {
+    id: "cat-hvac",
+    name: "Industrial HVAC",
+    slug: "industrial-hvac",
+    description: "Climate control for plants, warehouses and cleanrooms.",
+    parentId: "cat-industrial",
+  },
+  ...leafCategories(
+    "cat-packaging",
+    [
+      "Cartoning Machines",
+      "Pouch Fillers",
+      "Bottle Fillers",
+      "Cappers",
+      "Labellers",
+      "Inkjet Printers",
+      "Thermal Inkjet Printers",
+      "CIJ Printers",
+      "Case Packers",
+      "Palletisers",
+      "Shrink Wrappers",
+      "Flow Wrappers",
+      "Vertical Form Fill Seal",
+      "Horizontal Form Fill Seal",
+      "Checkweighers",
+      "Metal Detectors",
+      "Conveyors",
+      "Carton Feeders",
+      "Tray Sealers",
+      "Vacuum Packaging",
+      "Bagging Machines",
+      "Coding and Marking",
+    ],
+    (name) => `${name} for packaging and end-of-line production.`,
+  ),
+  ...leafCategories(
+    "cat-processing",
+    [
+      "Mixers",
+      "High Shear Mixers",
+      "Emulsifiers",
+      "Homogenisers",
+      "Mills",
+      "Grinders",
+      "Blenders",
+      "Reactors",
+      "Tanks",
+      "Kettles",
+      "Pasteurisers",
+      "Heat Exchangers",
+      "CIP Systems",
+      "Pumps",
+      "Powder Induction Systems",
+      "Sieves",
+      "Separators",
+      "Dryers",
+      "Evaporators",
+      "Cooking Systems",
+      "Fermentation Equipment",
+      "Food Processing Lines",
+    ],
+    (name) => `${name} for industrial and hygienic processing.`,
+  ),
+  ...leafCategories(
+    "cat-industrial",
+    [
+      "Compressors",
+      "Boilers",
+      "Chillers",
+      "Generators",
+      "Forklifts",
+      "Cranes",
+      "Dust Collectors",
+      "Air Handling",
+      "Water Treatment",
+      "Waste Treatment",
+    ],
+    (name) => `${name} for plants, warehouses and utilities.`,
+  ),
+  ...leafCategories(
+    "cat-automation",
+    [
+      "PLC",
+      "HMI",
+      "SCADA",
+      "Robotics",
+      "Vision Systems",
+      "Sensors",
+      "VSDs",
+      "Servo Systems",
+      "Control Panels",
+      "Machine Safety",
+    ],
+    (name) => `${name} for factory automation and controls.`,
+  ),
+  ...leafCategories(
+    "cat-services",
+    [
+      "Electrical",
+      "Mechanical",
+      "Automation",
+      "PLC Programming",
+      "Commissioning",
+      "Installation",
+      "Maintenance",
+      "Fabrication",
+      "Welding",
+      "Refrigeration",
+      "HVAC",
+      "Plumbing",
+    ],
+    (name) => `${name} contractors and field service providers.`,
+  ),
+  ...leafCategories(
+    "cat-general",
+    [
+      "Hotels",
+      "Restaurants",
+      "Commercial Kitchens",
+      "Medical Clinics",
+      "Builders",
+      "Trades",
+      "Professional Services",
+      "Cleaning",
+      "Security",
+      "IT Infrastructure",
+    ],
+    (name) => `${name} suppliers and service partners.`,
+  ),
 ];
 
 export const demoCompanies: DemoCompany[] = [
@@ -149,7 +326,7 @@ export const demoCompanies: DemoCompany[] = [
     reviewCount: 28,
     employeeRange: "51-200",
     yearFounded: 2004,
-    categories: ["packaging-machinery", "food-processing"],
+    categories: ["packaging-machinery", "food-processing", "bottle-fillers", "cip-systems"],
   },
   {
     id: "co-apex-robotics",
@@ -167,7 +344,7 @@ export const demoCompanies: DemoCompany[] = [
     reviewCount: 19,
     employeeRange: "11-50",
     yearFounded: 2012,
-    categories: ["factory-automation"],
+    categories: ["factory-automation", "robotics", "palletisers", "commissioning"],
   },
   {
     id: "co-harbor-freight",
@@ -203,7 +380,7 @@ export const demoCompanies: DemoCompany[] = [
     reviewCount: 12,
     employeeRange: "11-50",
     yearFounded: 2009,
-    categories: ["industrial-hvac"],
+    categories: ["industrial-hvac", "air-handling", "hvac"],
   },
   {
     id: "co-inspectpro",
@@ -221,7 +398,7 @@ export const demoCompanies: DemoCompany[] = [
     reviewCount: 33,
     employeeRange: "11-50",
     yearFounded: 2015,
-    categories: ["inspection-qc"],
+    categories: ["inspection-qc", "commissioning"],
   },
   {
     id: "co-mekong-parts",
@@ -239,7 +416,7 @@ export const demoCompanies: DemoCompany[] = [
     reviewCount: 22,
     employeeRange: "11-50",
     yearFounded: 2011,
-    categories: ["packaging-machinery"],
+    categories: ["packaging-machinery", "maintenance", "sensors"],
   },
 ];
 

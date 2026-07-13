@@ -39,6 +39,7 @@ async function main() {
         name: cat.name,
         slug: cat.slug,
         description: cat.description,
+        parentId: cat.parentId ?? null,
       })
       .onConflictDoNothing();
   }

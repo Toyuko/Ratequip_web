@@ -14,8 +14,24 @@ export function listCategories() {
   return demoCategories;
 }
 
+export function listTopCategories() {
+  return demoCategories.filter((c) => !c.parentId);
+}
+
+export function listChildCategories(parentId: string) {
+  return demoCategories.filter((c) => c.parentId === parentId);
+}
+
 export function getCategoryBySlug(slug: string) {
   return demoCategories.find((c) => c.slug === slug) ?? null;
+}
+
+/** Slugs that match a category filter: the slug itself plus all descendants. */
+export function categoryMatchSlugs(slug: string): string[] {
+  const category = getCategoryBySlug(slug);
+  if (!category) return [slug];
+  const children = listChildCategories(category.id).map((c) => c.slug);
+  return [category.slug, ...children];
 }
 
 export function listCompanies(opts?: {
@@ -34,7 +50,8 @@ export function listCompanies(opts?: {
     );
   }
   if (opts?.category) {
-    items = items.filter((c) => c.categories.includes(opts.category!));
+    const match = new Set(categoryMatchSlugs(opts.category));
+    items = items.filter((c) => c.categories.some((slug) => match.has(slug)));
   }
   if (opts?.country) {
     items = items.filter(

@@ -16,6 +16,14 @@ export function SuppliersDirectory({
   params: { q?: string; category?: string; country?: string };
 }) {
   const t = useT();
+  const parents = categories.filter((c) => !c.parentId);
+  const childrenByParent = new Map<string, DemoCategory[]>();
+  for (const cat of categories) {
+    if (!cat.parentId) continue;
+    const list = childrenByParent.get(cat.parentId) ?? [];
+    list.push(cat);
+    childrenByParent.set(cat.parentId, list);
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
@@ -36,11 +44,26 @@ export function SuppliersDirectory({
           className="h-11 rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 text-sm"
         >
           <option value="">{t.nav.categories}</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.slug}>
-              {c.name}
-            </option>
-          ))}
+          {parents.map((parent) => {
+            const children = childrenByParent.get(parent.id) ?? [];
+            if (children.length === 0) {
+              return (
+                <option key={parent.id} value={parent.slug}>
+                  {parent.name}
+                </option>
+              );
+            }
+            return (
+              <optgroup key={parent.id} label={parent.name}>
+                <option value={parent.slug}>All {parent.name}</option>
+                {children.map((c) => (
+                  <option key={c.id} value={c.slug}>
+                    {c.name}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
         </select>
         <Input
           name="country"

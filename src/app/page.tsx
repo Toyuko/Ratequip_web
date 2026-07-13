@@ -8,12 +8,12 @@ import { SupplierCard } from "@/components/suppliers/supplier-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { brand } from "@/lib/config";
-import { listCategories, listCompanies } from "@/lib/db/queries";
+import { listTopCategories, listCompanies } from "@/lib/db/queries";
 
 export default function HomePage() {
   const t = useT();
   const featured = listCompanies().slice(0, 3);
-  const categories = listCategories().slice(0, 6);
+  const categories = listTopCategories();
 
   const steps = [
     {
@@ -137,6 +137,14 @@ export default function HomePage() {
               </p>
             </Link>
           ))}
+        </div>
+        <div className="mt-6">
+          <Link
+            href="/categories"
+            className="text-sm font-medium text-orange-600 hover:underline"
+          >
+            {t.home.browseCategories} →
+          </Link>
         </div>
       </section>
     </div>

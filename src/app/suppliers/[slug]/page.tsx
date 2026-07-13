@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  getCategoryBySlug,
   getCompanyBySlug,
   getCompanyProducts,
   getCompanyReviews,
@@ -155,16 +156,19 @@ export default async function SupplierProfilePage({
           <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
             <h3 className="font-semibold text-[var(--rq-ink)]">Categories</h3>
             <ul className="mt-3 space-y-2 text-sm">
-              {company.categories.map((c) => (
-                <li key={c}>
-                  <Link
-                    href={`/categories/${c}`}
-                    className="text-orange-600 hover:underline"
-                  >
-                    {c}
-                  </Link>
-                </li>
-              ))}
+              {company.categories.map((c) => {
+                const cat = getCategoryBySlug(c);
+                return (
+                  <li key={c}>
+                    <Link
+                      href={`/categories/${c}`}
+                      className="text-orange-600 hover:underline"
+                    >
+                      {cat?.name ?? c}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
           <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
