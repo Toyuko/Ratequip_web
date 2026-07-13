@@ -39,8 +39,8 @@
   --color-surface: var(--rq-surface);
   --color-brand: var(--rq-navy);
   --color-orange: var(--rq-orange);
-  --font-sans: var(--font-montserrat);
-  --font-display: var(--font-montserrat);
+  --font-sans: var(--font-montserrat), var(--font-thai), var(--font-chinese);
+  --font-display: var(--font-montserrat), var(--font-thai), var(--font-chinese);
 }
 
 * {
@@ -54,7 +54,31 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  font-family:
+    var(--font-montserrat),
+    var(--font-thai),
+    var(--font-chinese),
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+html[data-locale="th"] body {
+  font-family:
+    var(--font-thai),
+    var(--font-montserrat),
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+html[data-locale="zh"] body {
+  font-family:
+    var(--font-chinese),
+    var(--font-montserrat),
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
 }
 
 @keyframes rq-fade-up {

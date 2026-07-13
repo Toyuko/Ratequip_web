@@ -1,24 +1,25 @@
+"use client";
+
 import Link from "next/link";
+import { useT } from "@/components/i18n/locale-provider";
 import { Button } from "@/components/ui/button";
 import { demoPlans } from "@/lib/db/demo-data";
 import { formatCurrency } from "@/lib/utils";
 
-export const metadata = { title: "Pricing" };
-
 export default function PricingPage() {
+  const t = useT();
   const buyerPlans = demoPlans.filter((p) => p.audience === "buyer");
   const supplierPlans = demoPlans.filter((p) => p.audience === "supplier");
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">Pricing</h1>
-      <p className="mt-2 max-w-2xl text-[var(--rq-slate)]">
-        Subscriptions plus RateQuip Credits for RFQ leads and premium actions.
-        Paid placement never alters Trust Score.
-      </p>
+      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">{t.pricing.title}</h1>
+      <p className="mt-2 max-w-2xl text-[var(--rq-slate)]">{t.pricing.body}</p>
 
       <section className="mt-12">
-        <h2 className="text-xl font-bold text-[var(--rq-ink)]">Buyers</h2>
+        <h2 className="text-xl font-bold text-[var(--rq-ink)]">
+          {t.pricing.buyers}
+        </h2>
         <div className="mt-6 grid gap-5 md:grid-cols-2">
           {buyerPlans.map((plan) => (
             <PlanCard key={plan.code} plan={plan} />
@@ -27,7 +28,9 @@ export default function PricingPage() {
       </section>
 
       <section className="mt-14">
-        <h2 className="text-xl font-bold text-[var(--rq-ink)]">Suppliers</h2>
+        <h2 className="text-xl font-bold text-[var(--rq-ink)]">
+          {t.pricing.suppliers}
+        </h2>
         <div className="mt-6 grid gap-5 md:grid-cols-3">
           {supplierPlans.map((plan) => (
             <PlanCard key={plan.code} plan={plan} />
@@ -43,6 +46,7 @@ function PlanCard({
 }: {
   plan: (typeof demoPlans)[number];
 }) {
+  const t = useT();
   return (
     <div
       className={`rounded-lg border bg-[var(--rq-card)] p-6 ${
@@ -58,9 +62,7 @@ function PlanCard({
       ) : null}
       <h3 className="text-lg font-bold text-[var(--rq-ink)]">{plan.name}</h3>
       <p className="mt-2 text-3xl font-extrabold text-[var(--rq-ink)]">
-        {plan.priceMonthly === 0
-          ? "Free"
-          : formatCurrency(plan.priceMonthly)}
+        {plan.priceMonthly === 0 ? "Free" : formatCurrency(plan.priceMonthly)}
         {plan.priceMonthly > 0 ? (
           <span className="text-sm font-medium text-[var(--rq-muted)]">/mo</span>
         ) : null}
@@ -71,9 +73,7 @@ function PlanCard({
         ))}
       </ul>
       <Button asChild className="mt-6 w-full">
-        <Link href={`/sign-up?plan=${plan.code}`}>
-          {plan.priceMonthly === 0 ? "Get started" : "Start checkout"}
-        </Link>
+        <Link href={`/sign-up?plan=${plan.code}`}>{t.auth.getStarted}</Link>
       </Button>
     </div>
   );

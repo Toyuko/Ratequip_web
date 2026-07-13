@@ -5,18 +5,14 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Logo } from "@/components/brand/logo";
+import { LanguageToggle } from "@/components/i18n/language-toggle";
+import { useT } from "@/components/i18n/locale-provider";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { AuthButtons } from "@/components/auth/auth-buttons";
 
-const nav = [
-  { href: "/suppliers", label: "Suppliers" },
-  { href: "/requests", label: "RFQs" },
-  { href: "/categories/packaging-machinery", label: "Categories" },
-  { href: "/pricing", label: "Pricing" },
-];
-
 export function SiteHeader() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -27,6 +23,13 @@ export function SiteHeader() {
 
   const logoVariant =
     mounted && resolvedTheme === "dark" ? "onDark" : "default";
+
+  const nav = [
+    { href: "/suppliers", label: t.nav.suppliers },
+    { href: "/requests", label: t.nav.rfqs },
+    { href: "/categories/packaging-machinery", label: t.nav.categories },
+    { href: "/pricing", label: t.nav.pricing },
+  ];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 text-ink backdrop-blur">
@@ -44,16 +47,18 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="hidden items-center gap-3 md:flex">
+          <LanguageToggle />
           <ThemeToggle />
           <AuthButtons />
         </div>
         <div className="flex items-center gap-2 md:hidden">
+          <LanguageToggle />
           <ThemeToggle />
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setOpen((v) => !v)}
-            aria-label="Toggle menu"
+            aria-label={t.common.menu}
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>

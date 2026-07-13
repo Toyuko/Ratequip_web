@@ -3,21 +3,23 @@
 import { useEffect, useState } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useT } from "@/components/i18n/locale-provider";
 import { cn } from "@/lib/utils";
 
-const options = [
-  { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
-  { value: "system", label: "Auto", icon: Monitor },
-] as const;
-
 export function ThemeToggle({ className }: { className?: string }) {
+  const t = useT();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const options = [
+    { value: "light", label: t.theme.light, icon: Sun },
+    { value: "dark", label: t.theme.dark, icon: Moon },
+    { value: "system", label: t.theme.auto, icon: Monitor },
+  ] as const;
 
   return (
     <div
@@ -26,7 +28,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         className,
       )}
       role="group"
-      aria-label="Color theme"
+      aria-label={t.theme.label}
     >
       {options.map(({ value, label, icon: Icon }) => {
         const active = mounted && theme === value;

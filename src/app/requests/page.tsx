@@ -1,12 +1,14 @@
+"use client";
+
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useT } from "@/components/i18n/locale-provider";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { listRequests } from "@/lib/db/queries";
 import { formatCurrency } from "@/lib/utils";
 
-export const metadata = { title: "RFQ marketplace" };
-
 export default function RequestsPage() {
+  const t = useT();
   const requests = listRequests();
 
   return (
@@ -14,14 +16,12 @@ export default function RequestsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[var(--rq-ink)]">
-            RFQ marketplace
+            {t.requests.title}
           </h1>
-          <p className="mt-2 text-[var(--rq-slate)]">
-            Open requests from buyers seeking equipment and industrial services.
-          </p>
+          <p className="mt-2 text-[var(--rq-slate)]">{t.requests.body}</p>
         </div>
         <Button asChild>
-          <Link href="/requests/new">Post RFQ</Link>
+          <Link href="/requests/new">{t.requests.newRfq}</Link>
         </Button>
       </div>
 
