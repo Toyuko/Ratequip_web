@@ -66,6 +66,26 @@ Logo: `public/brand/ratequip-logo.png`
 Colors: navy `#0F172A`, orange `#F97316`  
 Tagline: Rate. Compare. Connect. Grow.
 
+## Mobile API (`/api/v1`)
+
+JSON API for the RateQuip companion app (Expo). Envelope: `{ data, error }`. CORS enabled for Expo / localhost. In demo mode, send `X-Demo-Role: buyer|supplier|contractor|admin`.
+
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/api/v1/health` | public |
+| GET | `/api/v1/me` | optional |
+| POST | `/api/v1/onboarding` | required |
+| GET | `/api/v1/categories` | public |
+| GET | `/api/v1/companies` | public |
+| GET | `/api/v1/companies/[slug]` | public |
+| GET/POST | `/api/v1/requests` | GET public / POST auth |
+| GET | `/api/v1/requests/[id]` | public |
+| POST | `/api/v1/reviews` | required |
+| GET | `/api/v1/dashboard` | required |
+| GET | `/api/v1/billing/plans` | public |
+| GET | `/api/v1/admin/queue` | admin |
+| POST | `/api/v1/admin/moderate` | admin |
+
 ## Spec source
 
 Built from RateQuip Enterprise Master Repository **v10.1** (Organic Growth Engine supersedes v9/v10.0 for Add Company, claim invitations and related privacy rules). Platform Phase 1–2 MVP remains the delivery frame for this slice.
