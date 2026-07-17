@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { RequestStatusActions } from "@/components/marketplace/request-status-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getQuotesForRequest, getRequestById } from "@/lib/db/queries";
 import { formatCurrency } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -27,7 +30,10 @@ export default async function RequestDetailPage({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <Badge variant="success">{request.status}</Badge>
+      <div className="flex flex-wrap items-center gap-3">
+        <Badge variant="success">{request.status}</Badge>
+        <RequestStatusActions requestId={request.id} status={request.status} />
+      </div>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         {request.title}
       </h1>

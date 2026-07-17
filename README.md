@@ -18,6 +18,24 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Phase 2 persistence (working MVP)
+
+Mutations are no longer toast-only:
+
+| Workflow | Behaviour |
+|----------|-----------|
+| Onboarding | Creates org + user + wallet (Neon when `DATABASE_URL` set; else runtime store + cookies) |
+| Company claim | Queues claim; admin approve sets `claimed` + `verified` |
+| Reviews | Queues for moderation; approve recalculates Trust Score |
+| RFQ create | Debits **25 credits**, adds open RFQ |
+| Quotes | Persists against RFQ; increments quote count |
+| RFQ close/award | Status transitions on request detail |
+| Stripe checkout | Real session when configured; demo mode activates subscription + **+100 credits** |
+| Clerk webhook | Upserts `users` on create/update |
+| Stripe webhook | Upserts subscription + credit bonus |
+
+Runtime store: `src/lib/db/runtime-store.ts` · Dual-path writes: `src/lib/db/phase2.ts`
+
 ## Production bootstrap (Vercel)
 
 1. Authenticate: `npx vercel login`

@@ -7,8 +7,13 @@ export async function GET(req: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   if (!stripe) {
+    const { persistSubscription } = await import("@/lib/db/phase2");
+    await persistSubscription({
+      planCode: plan,
+      status: "active",
+    });
     return NextResponse.redirect(
-      new URL(`/pricing?checkout=demo&plan=${plan}`, appUrl),
+      new URL(`/dashboard/buyer/billing?checkout=demo&plan=${plan}`, appUrl),
       303,
     );
   }
@@ -26,6 +31,9 @@ export async function GET(req: NextRequest) {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}/dashboard/buyer/billing?success=1`,
     cancel_url: `${appUrl}/pricing?canceled=1`,
+    metadata: {
+      plan,
+    },
   });
 
   if (!session.url) {

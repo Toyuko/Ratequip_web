@@ -39,17 +39,22 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await createRequest(parsed.data);
-  if (!result.ok) {
-    return apiResponse(req, err(result.message));
+  if (!result.ok || !("id" in result) || !result.id) {
+    return apiResponse(
+      req,
+      err("message" in result ? result.message : "Unable to create RFQ"),
+    );
   }
+
+  const requestId = result.id;
 
   return apiResponse(
     req,
     ok({
-      id: result.id,
+      id: requestId,
       message: result.message,
       request: {
-        id: result.id,
+        id: requestId,
         title: parsed.data.title,
         description: parsed.data.description,
         budgetMin: parsed.data.budgetMin,

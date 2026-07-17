@@ -1,0 +1,11 @@
+-- RateQuip Phase 2 MVP schema (apply via: npm run db:push)
+-- Prefer Drizzle Kit push against Neon. This file documents the core tables.
+
+-- See src/lib/db/schema.ts for the authoritative TypeScript definitions.
+-- Phase 2 persistence:
+--   - Demo mode: src/lib/db/runtime-store.ts (process memory)
+--   - Neon mode: getDb() dual-path in src/lib/db/phase2.ts
+--
+-- After linking Neon:
+--   npm run db:push
+--   npm run db:seed

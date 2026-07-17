@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "svix";
+import { upsertClerkUser } from "@/lib/db/phase2";
 
 type ClerkWebhookEvent = {
   type: string;
@@ -9,6 +10,7 @@ type ClerkWebhookEvent = {
     first_name?: string | null;
     last_name?: string | null;
     image_url?: string;
+    deleted?: boolean;
   };
 };
 
@@ -43,10 +45,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  // Sync user to Neon when DATABASE_URL is configured.
   if (event.type === "user.created" || event.type === "user.updated") {
-    console.info("[clerk-webhook]", event.type, event.data.id);
+    const email =
+      event.data.email_addresses?.[0]?.email_address ??
+      `${event.data.id}@users.clerk`;
+    const fullName = [event.data.first_name, event.data.last_name]
+      .filter(Boolean)
+      .join(" ");
+    await upsertClerkUser({
+      clerkUserId: event.data.id,
+      email,
+      fullName: fullName || undefined,
+      avatarUrl: event.data.image_url,
+    });
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({ received: true, type: event.type });
 }

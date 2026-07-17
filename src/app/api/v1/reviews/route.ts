@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     ok({
       message: result.message,
       review: {
-        id: `rev-demo-${Date.now()}`,
+        id: "id" in result && result.id ? result.id : `rev-${Date.now()}`,
         ...parsed.data,
         status: "pending",
         author: authResult.user.fullName,

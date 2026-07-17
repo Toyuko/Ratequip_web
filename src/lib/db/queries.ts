@@ -1,14 +1,17 @@
 import {
   demoCategories,
-  demoClaims,
-  demoCompanies,
-  demoProducts,
-  demoProjects,
-  demoQuotes,
-  demoRequests,
-  demoReviews,
   type DemoCompany,
 } from "./demo-data";
+import {
+  getRuntimeProjects,
+  getRuntimeQuotes,
+  getRuntimeRequests,
+  getRuntimeReviews,
+  listCompaniesAsync,
+  listPendingClaimsAsync,
+  listPendingReviewsAsync,
+} from "./phase2";
+import { getStore } from "./runtime-store";
 
 export function listCategories() {
   return demoCategories;
@@ -39,7 +42,7 @@ export function listCompanies(opts?: {
   category?: string;
   country?: string;
 }) {
-  let items = [...demoCompanies];
+  let items = [...getStore().companies];
   if (opts?.q) {
     const q = opts.q.toLowerCase();
     items = items.filter(
@@ -62,45 +65,43 @@ export function listCompanies(opts?: {
 }
 
 export function getCompanyBySlug(slug: string): DemoCompany | null {
-  return demoCompanies.find((c) => c.slug === slug) ?? null;
+  return getStore().companies.find((c) => c.slug === slug) ?? null;
 }
 
 export function getCompanyProducts(slug: string) {
-  return demoProducts.filter((p) => p.companySlug === slug);
+  return getStore().products.filter((p) => p.companySlug === slug);
 }
 
 export function getCompanyReviews(slug: string) {
-  return demoReviews.filter(
-    (r) => r.companySlug === slug && r.status === "approved",
-  );
+  return getRuntimeReviews(slug).filter((r) => r.status === "approved");
 }
 
 export function listRequests() {
-  return demoRequests;
+  return getRuntimeRequests();
 }
 
 export function getRequestById(id: string) {
-  return demoRequests.find((r) => r.id === id || r.slug === id) ?? null;
+  return getRuntimeRequests().find((r) => r.id === id || r.slug === id) ?? null;
 }
 
 export function getQuotesForRequest(requestId: string) {
-  return demoQuotes.filter((q) => q.requestId === requestId);
+  return getRuntimeQuotes().filter((q) => q.requestId === requestId);
 }
 
 export function listProjects() {
-  return demoProjects;
+  return getRuntimeProjects();
 }
 
 export function getProjectById(id: string) {
-  return demoProjects.find((p) => p.id === id || p.slug === id) ?? null;
+  return getRuntimeProjects().find((p) => p.id === id || p.slug === id) ?? null;
 }
 
 export function listPendingReviews() {
-  return demoReviews.filter((r) => r.status === "pending");
+  return getStore().reviews.filter((r) => r.status === "pending");
 }
 
 export function listPendingClaims() {
-  return demoClaims.filter((c) => c.status === "pending");
+  return getStore().claims.filter((c) => c.status === "pending");
 }
 
 export function searchAll(q: string) {
@@ -117,3 +118,10 @@ export function searchAll(q: string) {
     ),
   };
 }
+
+// Async Neon-aware variants for server routes that prefer DB when available
+export {
+  listCompaniesAsync,
+  listPendingClaimsAsync,
+  listPendingReviewsAsync,
+};

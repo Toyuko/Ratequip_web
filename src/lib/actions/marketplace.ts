@@ -1,7 +1,26 @@
 "use server";
 
-import { calculateTrustScore } from "@/lib/trust-score";
+import { cookies } from "next/headers";
+import { auth } from "@clerk/nextjs/server";
+import { hasClerk } from "@/lib/config";
+import {
+  persistClaim,
+  persistProject,
+  persistQuote,
+  persistRequest,
+  persistReview,
+  updateRequestStatus,
+} from "@/lib/db/phase2";
 import { sendTransactionalEmail } from "@/lib/email";
+
+async function actorFromCookies() {
+  const jar = await cookies();
+  return (
+    jar.get("rq_email")?.value ??
+    jar.get("rq_contact_name")?.value ??
+    "demo-user"
+  );
+}
 
 export async function submitQuote(input: {
   requestId: string;
@@ -10,19 +29,24 @@ export async function submitQuote(input: {
   notes: string;
 }) {
   if (!input.amount || input.amount <= 0) {
-    return { ok: false, message: "Enter a valid quote amount." };
+    return { ok: false as const, message: "Enter a valid quote amount." };
   }
 
-  await sendTransactionalEmail({
-    to: "buyer@example.com",
-    subject: `New quote on RFQ ${input.requestId}`,
-    html: `<p>A supplier submitted a quote of ${input.amount} USD (${input.leadTimeDays} days).</p><p>${input.notes}</p>`,
+  const actor = await actorFromCookies();
+  const result = await persistQuote({
+    ...input,
+    actor,
   });
 
-  return {
-    ok: true,
-    message: `Quote of $${input.amount} submitted for ${input.requestId} (demo ledger + email logged).`,
-  };
+  if (result.ok) {
+    await sendTransactionalEmail({
+      to: "buyer@example.com",
+      subject: `New quote on RFQ ${input.requestId}`,
+      html: `<p>A supplier submitted a quote of ${input.amount} USD (${input.leadTimeDays} days).</p><p>${input.notes}</p>`,
+    });
+  }
+
+  return result;
 }
 
 export async function createRequest(input: {
@@ -33,14 +57,11 @@ export async function createRequest(input: {
   deliveryCountry: string;
 }) {
   if (!input.title.trim() || !input.description.trim()) {
-    return { ok: false, message: "Title and description are required." };
+    return { ok: false as const, message: "Title and description are required." };
   }
 
-  return {
-    ok: true,
-    message: `RFQ “${input.title}” created. 25 credits reserved for lead distribution (demo).`,
-    id: `req-demo-${Date.now()}`,
-  };
+  const actor = await actorFromCookies();
+  return persistRequest({ ...input, actor });
 }
 
 export async function submitReview(input: {
@@ -51,22 +72,14 @@ export async function submitReview(input: {
   evidenceName?: string;
 }) {
   if (input.rating < 1 || input.rating > 5) {
-    return { ok: false, message: "Rating must be 1–5." };
+    return { ok: false as const, message: "Rating must be 1–5." };
   }
 
-  const score = calculateTrustScore({
-    avgRating: input.rating,
-    reviewCount: 1,
-    verifiedReviewShare: input.evidenceName ? 1 : 0,
-    verifiedCompany: true,
-    claimedCompany: true,
-    responseRate: 0.8,
+  const actor = await actorFromCookies();
+  return persistReview({
+    ...input,
+    author: actor,
   });
-
-  return {
-    ok: true,
-    message: `Review submitted for moderation. Provisional Trust Score impact: ${score.score}.`,
-  };
 }
 
 export async function submitClaim(input: {
@@ -74,12 +87,15 @@ export async function submitClaim(input: {
   notes: string;
   evidenceName?: string;
 }) {
-  return {
-    ok: true,
-    message: `Claim for ${input.companySlug} queued for admin review${
-      input.evidenceName ? ` with evidence ${input.evidenceName}` : ""
-    }.`,
-  };
+  const actor = await actorFromCookies();
+  return persistClaim({
+    companySlug: input.companySlug,
+    notes: input.notes,
+    claimant: actor,
+    evidenceUrl: input.evidenceName
+      ? `demo://evidence/${input.evidenceName}`
+      : undefined,
+  });
 }
 
 export async function createProject(input: {
@@ -87,11 +103,30 @@ export async function createProject(input: {
   summary: string;
 }) {
   if (!input.name.trim()) {
-    return { ok: false, message: "Project name is required." };
+    return { ok: false as const, message: "Project name is required." };
   }
-  return {
-    ok: true,
-    message: `Project “${input.name}” created.`,
-    id: `proj-demo-${Date.now()}`,
-  };
+  const actor = await actorFromCookies();
+  return persistProject({ ...input, actor });
+}
+
+export async function closeOrAwardRequest(input: {
+  requestId: string;
+  status: "closed" | "awarded";
+}) {
+  const actor = await actorFromCookies();
+  return updateRequestStatus({
+    requestId: input.requestId,
+    status: input.status,
+    actor,
+  });
+}
+
+export async function getSessionClerkId() {
+  if (!hasClerk()) return null;
+  try {
+    const session = await auth();
+    return session.userId;
+  } catch {
+    return null;
+  }
 }

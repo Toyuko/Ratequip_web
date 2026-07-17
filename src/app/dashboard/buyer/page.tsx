@@ -2,20 +2,31 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { demoProjects, demoRequests, demoWallet } from "@/lib/db/demo-data";
+import {
+  getRuntimeProjects,
+  getRuntimeRequests,
+  getRuntimeWallet,
+} from "@/lib/db/phase2";
 import { listCompanies } from "@/lib/db/queries";
 
 export const metadata = { title: "Buyer dashboard" };
+export const dynamic = "force-dynamic";
 
 export default function BuyerDashboardPage() {
   const saved = listCompanies().slice(0, 3);
+  const requests = getRuntimeRequests();
+  const projects = getRuntimeProjects();
+  const wallet = getRuntimeWallet();
 
   return (
     <DashboardShell role="buyer" title="Buyer dashboard">
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Open RFQs" value={String(demoRequests.length)} />
-        <Stat label="Active projects" value={String(demoProjects.length)} />
-        <Stat label="Credits" value={String(demoWallet.balance)} />
+        <Stat
+          label="Open RFQs"
+          value={String(requests.filter((r) => r.status === "open").length)}
+        />
+        <Stat label="Active projects" value={String(projects.length)} />
+        <Stat label="Credits" value={String(wallet.balance)} />
       </div>
 
       <section className="mt-8">
@@ -64,7 +75,7 @@ export default function BuyerDashboardPage() {
       <section className="mt-10">
         <h2 className="font-semibold text-[var(--rq-ink)]">Projects</h2>
         <ul className="mt-3 space-y-2">
-          {demoProjects.map((p) => (
+          {projects.map((p) => (
             <li key={p.id}>
               <Link
                 href={`/workspaces/${p.id}`}
