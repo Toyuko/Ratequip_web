@@ -26,6 +26,7 @@ function ClaimForm() {
             companySlug: String(fd.get("companySlug")),
             notes: String(fd.get("notes")),
             evidenceName: file?.name,
+            evidenceFile: file && file.size > 0 ? file : null,
           });
           setMessage(result.message);
         });

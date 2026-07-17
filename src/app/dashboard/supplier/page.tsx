@@ -2,22 +2,32 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { demoQuotes, demoRequests, demoReviews } from "@/lib/db/demo-data";
+import {
+  getQuotesForRequestAsync,
+  listPendingReviewsAsync,
+  listRequestsAsync,
+} from "@/lib/db/phase2";
 
 export const metadata = { title: "Supplier dashboard" };
+export const dynamic = "force-dynamic";
 
-export default function SupplierDashboardPage() {
-  const leads = demoRequests.filter((r) => r.status === "open");
+export default async function SupplierDashboardPage() {
+  const [requests, pendingReviews] = await Promise.all([
+    listRequestsAsync(),
+    listPendingReviewsAsync(),
+  ]);
+  const leads = requests.filter((r) => r.status === "open");
+  const quoteLists = await Promise.all(
+    leads.slice(0, 20).map((r) => getQuotesForRequestAsync(r.id)),
+  );
+  const quotesSent = quoteLists.reduce((sum, q) => sum + q.length, 0);
 
   return (
     <DashboardShell role="supplier" title="Supplier dashboard">
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="Open leads" value={String(leads.length)} />
-        <Stat label="Quotes sent" value={String(demoQuotes.length)} />
-        <Stat
-          label="Pending reviews"
-          value={String(demoReviews.filter((r) => r.status === "pending").length)}
-        />
+        <Stat label="Quotes sent" value={String(quotesSent)} />
+        <Stat label="Pending reviews" value={String(pendingReviews.length)} />
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3">
@@ -57,6 +67,9 @@ export default function SupplierDashboardPage() {
               <Badge variant="success">Open</Badge>
             </li>
           ))}
+          {leads.length === 0 ? (
+            <li className="text-sm text-[var(--rq-muted)]">No open leads yet.</li>
+          ) : null}
         </ul>
       </section>
     </DashboardShell>

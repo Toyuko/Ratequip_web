@@ -9,7 +9,7 @@ export function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const companies = listCompanies({
+  const companies = await listCompanies({
     q: searchParams.get("q") ?? undefined,
     category: searchParams.get("category") ?? undefined,
     country: searchParams.get("country") ?? undefined,

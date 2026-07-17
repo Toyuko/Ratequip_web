@@ -4,19 +4,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   getRuntimeProjects,
-  getRuntimeRequests,
-  getRuntimeWallet,
+  getWalletAsync,
+  listRequestsAsync,
 } from "@/lib/db/phase2";
 import { listCompanies } from "@/lib/db/queries";
 
 export const metadata = { title: "Buyer dashboard" };
 export const dynamic = "force-dynamic";
 
-export default function BuyerDashboardPage() {
-  const saved = listCompanies().slice(0, 3);
-  const requests = getRuntimeRequests();
+export default async function BuyerDashboardPage() {
+  const [savedAll, requests, wallet] = await Promise.all([
+    listCompanies(),
+    listRequestsAsync(),
+    getWalletAsync(),
+  ]);
+  const saved = savedAll.slice(0, 3);
   const projects = getRuntimeProjects();
-  const wallet = getRuntimeWallet();
 
   return (
     <DashboardShell role="buyer" title="Buyer dashboard">

@@ -14,7 +14,12 @@ export async function GET(req: NextRequest) {
     return apiResponse(req, err(authResult.error!, authResult.status));
   }
 
-  const reviews = listPendingReviews().map((r) => ({
+  const [pendingReviews, pendingClaims] = await Promise.all([
+    listPendingReviews(),
+    listPendingClaims(),
+  ]);
+
+  const reviews = pendingReviews.map((r) => ({
     entityType: "review" as const,
     entityId: r.id,
     title: r.title,
@@ -24,7 +29,7 @@ export async function GET(req: NextRequest) {
     createdAt: r.createdAt,
   }));
 
-  const claims = listPendingClaims().map((c) => ({
+  const claims = pendingClaims.map((c) => ({
     entityType: "claim" as const,
     entityId: c.id,
     title: `Claim: ${c.companySlug}`,

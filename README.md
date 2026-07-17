@@ -98,6 +98,9 @@ JSON API for the RateQuip companion app (Expo). Envelope: `{ data, error }`. COR
 | GET | `/api/v1/companies/[slug]` | public |
 | GET/POST | `/api/v1/requests` | GET public / POST auth |
 | GET | `/api/v1/requests/[id]` | public |
+| POST | `/api/v1/requests/[id]/status` | required |
+| POST | `/api/v1/quotes` | required |
+| POST | `/api/v1/claims` | required |
 | POST | `/api/v1/reviews` | required |
 | GET | `/api/v1/dashboard` | required |
 | GET | `/api/v1/billing/plans` | public |

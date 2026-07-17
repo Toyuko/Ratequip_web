@@ -72,7 +72,7 @@ export async function searchCompaniesForAdd(input: {
     return { ok: false as const, message: "Enter at least 2 characters to search." };
   }
 
-  const candidates = findDuplicateCandidates({
+  const candidates = await findDuplicateCandidates({
     query: q,
     websiteUrl: input.websiteUrl,
     country: input.country,

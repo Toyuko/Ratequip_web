@@ -16,16 +16,20 @@ export async function GET(
   ctx: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await ctx.params;
-  const company = getCompanyBySlug(slug);
+  const company = await getCompanyBySlug(slug);
   if (!company) {
     return apiResponse(req, err("Company not found", 404));
   }
+  const [products, reviews] = await Promise.all([
+    getCompanyProducts(slug),
+    getCompanyReviews(slug),
+  ]);
   return apiResponse(
     req,
     ok({
       company,
-      products: getCompanyProducts(slug),
-      reviews: getCompanyReviews(slug),
+      products,
+      reviews,
     }),
   );
 }

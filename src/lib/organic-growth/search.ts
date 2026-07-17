@@ -35,19 +35,19 @@ function matchLevelFromScore(score: number, exactDomain: boolean): MatchLevel | 
   return null;
 }
 
-export function findDuplicateCandidates(input: {
+export async function findDuplicateCandidates(input: {
   query?: string;
   companyName?: string;
   websiteUrl?: string;
   country?: string;
-}): DuplicateCandidate[] {
+}): Promise<DuplicateCandidate[]> {
   const query = (input.query ?? input.companyName ?? "").trim();
   const domain = registrableDomainFromUrl(input.websiteUrl);
   if (!query && !domain) return [];
 
   const results: DuplicateCandidate[] = [];
 
-  for (const company of listCompanies()) {
+  for (const company of await listCompanies()) {
     const companyDomain = registrableDomainFromUrl(company.website);
     const exactDomain = Boolean(domain && companyDomain && domain === companyDomain);
     const nameScore = scoreNameSimilarity(query || company.name, company.name);

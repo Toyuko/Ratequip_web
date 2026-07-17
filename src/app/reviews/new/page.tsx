@@ -28,6 +28,7 @@ function ReviewForm() {
             title: String(fd.get("title")),
             body: String(fd.get("body")),
             evidenceName: file?.name,
+            evidenceFile: file && file.size > 0 ? file : null,
           });
           setMessage(result.message);
         });

@@ -9,12 +9,12 @@ export default async function SuppliersPage({
   searchParams: Promise<{ q?: string; category?: string; country?: string }>;
 }) {
   const params = await searchParams;
-  const companies = listCompanies({
+  const companies = await listCompanies({
     q: params.q,
     category: params.category,
     country: params.country,
   });
-  const categories = listCategories();
+  const categories = await listCategories();
 
   return (
     <SuppliersDirectory

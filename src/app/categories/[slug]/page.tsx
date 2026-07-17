@@ -14,7 +14,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const category = await getCategoryBySlug(slug);
   return { title: category?.name ?? "Category" };
 }
 
@@ -24,13 +24,16 @@ export default async function CategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const category = await getCategoryBySlug(slug);
   if (!category) notFound();
 
-  const companies = listCompanies({ category: slug });
-  const children = listChildCategories(category.id);
+  const [companies, children, allCategories] = await Promise.all([
+    listCompanies({ category: slug }),
+    listChildCategories(category.id),
+    listCategories(),
+  ]);
   const parentCategory = category.parentId
-    ? (listCategories().find((c) => c.id === category.parentId) ?? null)
+    ? (allCategories.find((c) => c.id === category.parentId) ?? null)
     : null;
 
   return (

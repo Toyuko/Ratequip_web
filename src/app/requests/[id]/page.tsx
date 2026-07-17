@@ -14,7 +14,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const request = getRequestById(id);
+  const request = await getRequestById(id);
   return { title: request?.title ?? "RFQ" };
 }
 
@@ -24,9 +24,9 @@ export default async function RequestDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const request = getRequestById(id);
+  const request = await getRequestById(id);
   if (!request) notFound();
-  const quotes = getQuotesForRequest(request.id);
+  const quotes = await getQuotesForRequest(request.id);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">

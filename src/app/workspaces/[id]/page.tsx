@@ -9,7 +9,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const project = getProjectById(id);
+  const project = await getProjectById(id);
   return { title: project?.name ?? "Workspace" };
 }
 
@@ -19,7 +19,7 @@ export default async function WorkspacePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const existing = getProjectById(id);
+  const existing = await getProjectById(id);
   if (!existing && !id.startsWith("proj-") && !id.startsWith("proj-demo-")) {
     notFound();
   }
@@ -33,7 +33,7 @@ export default async function WorkspacePage({
     memberCount: 1,
   };
 
-  const linkedRequests = listRequests().slice(0, 2);
+  const linkedRequests = (await listRequests()).slice(0, 2);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">

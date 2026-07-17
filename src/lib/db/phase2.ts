@@ -20,18 +20,134 @@ import {
 } from "./runtime-store";
 import {
   auditEvents,
+  categories,
   companies,
+  companyCategories,
   companyClaims,
+  creditLedgerEntries,
   creditWallets,
   organisationMembers,
   organisations,
+  products,
+  projects,
+  quotes,
+  requests,
   reviewDocuments,
   reviews,
+  subscriptionPlans,
+  subscriptions,
   trustScores,
   users,
 } from "./schema";
 
 const RFQ_CREDIT_COST = 25;
+const DEMO_BUYER_ORG_SLUG = "demo-buyer-org";
+
+type DbClient = NonNullable<ReturnType<typeof getDb>>;
+
+async function ensureDemoBuyerOrg(db: DbClient) {
+  const [existing] = await db
+    .select()
+    .from(organisations)
+    .where(eq(organisations.slug, DEMO_BUYER_ORG_SLUG))
+    .limit(1);
+  if (existing) {
+    const [wallet] = await db
+      .select()
+      .from(creditWallets)
+      .where(eq(creditWallets.organisationId, existing.id))
+      .limit(1);
+    if (!wallet) {
+      await db.insert(creditWallets).values({
+        organisationId: existing.id,
+        balance: 250,
+      });
+    }
+    return existing;
+  }
+
+  const [created] = await db
+    .insert(organisations)
+    .values({
+      name: "Demo Buyer Org",
+      slug: DEMO_BUYER_ORG_SLUG,
+      type: "buyer",
+    })
+    .returning();
+  await db.insert(creditWallets).values({
+    organisationId: created.id,
+    balance: 250,
+  });
+  return created;
+}
+
+async function neonDebitCredits(
+  db: DbClient,
+  organisationId: string,
+  amount: number,
+  reason: string,
+  referenceType?: string,
+  referenceId?: string,
+) {
+  const [wallet] = await db
+    .select()
+    .from(creditWallets)
+    .where(eq(creditWallets.organisationId, organisationId))
+    .limit(1);
+  if (!wallet || wallet.balance < amount) {
+    return {
+      ok: false as const,
+      message: `Insufficient credits. Need ${amount}, have ${wallet?.balance ?? 0}.`,
+    };
+  }
+  const balance = wallet.balance - amount;
+  await db
+    .update(creditWallets)
+    .set({ balance, updatedAt: new Date() })
+    .where(eq(creditWallets.id, wallet.id));
+  await db.insert(creditLedgerEntries).values({
+    walletId: wallet.id,
+    delta: -amount,
+    reason,
+    referenceType,
+    referenceId,
+  });
+  return { ok: true as const, balance, walletId: wallet.id };
+}
+
+async function neonCreditCredits(
+  db: DbClient,
+  organisationId: string,
+  amount: number,
+  reason: string,
+  referenceType?: string,
+  referenceId?: string,
+) {
+  let [wallet] = await db
+    .select()
+    .from(creditWallets)
+    .where(eq(creditWallets.organisationId, organisationId))
+    .limit(1);
+  if (!wallet) {
+    [wallet] = await db
+      .insert(creditWallets)
+      .values({ organisationId, balance: 0 })
+      .returning();
+  }
+  const balance = wallet.balance + amount;
+  await db
+    .update(creditWallets)
+    .set({ balance, updatedAt: new Date() })
+    .where(eq(creditWallets.id, wallet.id));
+  await db.insert(creditLedgerEntries).values({
+    walletId: wallet.id,
+    delta: amount,
+    reason,
+    referenceType,
+    referenceId,
+  });
+  return { ok: true as const, balance, walletId: wallet.id };
+}
 
 function mapCompanyRow(row: typeof companies.$inferSelect, cats: string[] = []): DemoCompany {
   return {
@@ -54,6 +170,23 @@ function mapCompanyRow(row: typeof companies.$inferSelect, cats: string[] = []):
 }
 
 export async function listCategoriesAsync() {
+  const db = getDb();
+  if (db) {
+    try {
+      const rows = await db.select().from(categories);
+      if (rows.length > 0) {
+        return rows.map((r) => ({
+          id: r.id,
+          name: r.name,
+          slug: r.slug,
+          description: r.description ?? "",
+          parentId: r.parentId,
+        }));
+      }
+    } catch (error) {
+      console.warn("[phase2] Neon listCategories failed", error);
+    }
+  }
   return demoCategories;
 }
 
@@ -66,22 +199,44 @@ export async function listCompaniesAsync(opts?: {
   if (db) {
     try {
       const rows = await db.select().from(companies);
-      let items = rows.map((r) => mapCompanyRow(r));
-      if (opts?.q) {
-        const q = opts.q.toLowerCase();
-        items = items.filter(
-          (c) =>
-            c.name.toLowerCase().includes(q) ||
-            c.headline.toLowerCase().includes(q) ||
-            c.description.toLowerCase().includes(q),
+      if (rows.length > 0) {
+        const links = await db.select().from(companyCategories);
+        const cats = await db.select().from(categories);
+        const slugByCatId = new Map(cats.map((c) => [c.id, c.slug]));
+        const catsByCompany = new Map<string, string[]>();
+        for (const link of links) {
+          const slug = slugByCatId.get(link.categoryId);
+          if (!slug) continue;
+          const list = catsByCompany.get(link.companyId) ?? [];
+          list.push(slug);
+          catsByCompany.set(link.companyId, list);
+        }
+
+        let items = rows.map((r) =>
+          mapCompanyRow(r, catsByCompany.get(r.id) ?? []),
         );
+        if (opts?.q) {
+          const q = opts.q.toLowerCase();
+          items = items.filter(
+            (c) =>
+              c.name.toLowerCase().includes(q) ||
+              c.headline.toLowerCase().includes(q) ||
+              c.description.toLowerCase().includes(q),
+          );
+        }
+        if (opts?.category) {
+          const match = new Set(categoryMatchSlugsSync(opts.category));
+          items = items.filter((c) =>
+            c.categories.some((slug) => match.has(slug)),
+          );
+        }
+        if (opts?.country) {
+          items = items.filter(
+            (c) => c.country.toLowerCase() === opts.country!.toLowerCase(),
+          );
+        }
+        return items.sort((a, b) => b.trustScore - a.trustScore);
       }
-      if (opts?.country) {
-        items = items.filter(
-          (c) => c.country.toLowerCase() === opts.country!.toLowerCase(),
-        );
-      }
-      return items.sort((a, b) => b.trustScore - a.trustScore);
     } catch (error) {
       console.warn("[phase2] Neon listCompanies failed, using runtime store", error);
     }
@@ -130,7 +285,18 @@ export async function getCompanyBySlugAsync(
         .from(companies)
         .where(eq(companies.slug, slug))
         .limit(1);
-      if (row) return mapCompanyRow(row);
+      if (row) {
+        const links = await db
+          .select()
+          .from(companyCategories)
+          .where(eq(companyCategories.companyId, row.id));
+        const cats = await db.select().from(categories);
+        const slugByCatId = new Map(cats.map((c) => [c.id, c.slug]));
+        const catSlugs = links
+          .map((l) => slugByCatId.get(l.categoryId))
+          .filter((s): s is string => Boolean(s));
+        return mapCompanyRow(row, catSlugs);
+      }
     } catch (error) {
       console.warn("[phase2] Neon getCompany failed", error);
     }
@@ -138,27 +304,182 @@ export async function getCompanyBySlugAsync(
   return getStore().companies.find((c) => c.slug === slug) ?? null;
 }
 
-export async function listPendingReviewsAsync(): Promise<DemoReview[]> {
+export async function getCompanyProductsAsync(slug: string) {
+  const company = await getCompanyBySlugAsync(slug);
+  if (!company) return [];
+
+  const db = getDb();
+  if (db) {
+    try {
+      const rows = await db
+        .select()
+        .from(products)
+        .where(eq(products.companyId, company.id));
+      if (rows.length > 0) {
+        return rows.map((p) => ({
+          id: p.id,
+          companySlug: slug,
+          name: p.name,
+          summary: p.summary ?? "",
+        }));
+      }
+    } catch (error) {
+      console.warn("[phase2] Neon products failed", error);
+    }
+  }
+  return getStore().products.filter((p) => p.companySlug === slug);
+}
+
+export async function getCompanyReviewsAsync(slug: string): Promise<DemoReview[]> {
+  const company = await getCompanyBySlugAsync(slug);
+  if (!company) return [];
+
   const db = getDb();
   if (db) {
     try {
       const rows = await db
         .select()
         .from(reviews)
+        .where(eq(reviews.companyId, company.id))
+        .orderBy(desc(reviews.createdAt));
+      if (rows.length > 0) {
+        return rows
+          .filter((r) => r.status === "approved")
+          .map((r) => ({
+            id: r.id,
+            companyId: r.companyId,
+            companySlug: slug,
+            rating: r.rating,
+            title: r.title,
+            body: r.body,
+            author: "User",
+            verifiedPurchase: r.verifiedPurchase,
+            status: r.status,
+            createdAt: r.createdAt.toISOString().slice(0, 10),
+          }));
+      }
+    } catch (error) {
+      console.warn("[phase2] Neon reviews failed", error);
+    }
+  }
+  return getStore().reviews.filter(
+    (r) => r.companySlug === slug && r.status === "approved",
+  );
+}
+
+export async function listRequestsAsync(): Promise<DemoRequest[]> {
+  const db = getDb();
+  if (db) {
+    try {
+      const rows = await db
+        .select()
+        .from(requests)
+        .orderBy(desc(requests.createdAt));
+      if (rows.length > 0) {
+        const quoteRows = await db.select().from(quotes);
+        const countByRequest = new Map<string, number>();
+        for (const q of quoteRows) {
+          countByRequest.set(
+            q.requestId,
+            (countByRequest.get(q.requestId) ?? 0) + 1,
+          );
+        }
+        return rows.map((r) => ({
+          id: r.id,
+          title: r.title,
+          slug: r.slug,
+          description: r.description,
+          category: "",
+          budgetMin: r.budgetMin ?? 0,
+          budgetMax: r.budgetMax ?? 0,
+          currency: r.currency,
+          deliveryCountry: r.deliveryCountry ?? "",
+          status: r.status as DemoRequest["status"],
+          quoteCount: countByRequest.get(r.id) ?? 0,
+          createdAt: r.createdAt.toISOString().slice(0, 10),
+        }));
+      }
+    } catch (error) {
+      console.warn("[phase2] Neon listRequests failed", error);
+    }
+  }
+  return getStore().requests;
+}
+
+export async function getRequestByIdAsync(
+  id: string,
+): Promise<DemoRequest | null> {
+  const all = await listRequestsAsync();
+  return all.find((r) => r.id === id || r.slug === id) ?? null;
+}
+
+export async function getQuotesForRequestAsync(requestId: string) {
+  const request = await getRequestByIdAsync(requestId);
+  if (!request) return [];
+
+  const db = getDb();
+  if (db) {
+    try {
+      const rows = await db
+        .select()
+        .from(quotes)
+        .where(eq(quotes.requestId, request.id));
+      if (rows.length > 0) {
+        const companyRows = await db.select().from(companies);
+        const companyById = new Map(companyRows.map((c) => [c.id, c]));
+        return rows.map((q) => {
+          const company = companyById.get(q.companyId);
+          return {
+            id: q.id,
+            requestId: q.requestId,
+            companySlug: company?.slug ?? "",
+            companyName: company?.name ?? "Supplier",
+            amount: q.amount,
+            currency: q.currency,
+            leadTimeDays: q.leadTimeDays ?? 0,
+            notes: q.notes ?? "",
+            status: q.status,
+          };
+        });
+      }
+    } catch (error) {
+      console.warn("[phase2] Neon quotes failed", error);
+    }
+  }
+  return getStore().quotes.filter(
+    (q) => q.requestId === request.id || q.requestId === requestId,
+  );
+}
+
+export async function listPendingReviewsAsync(): Promise<DemoReview[]> {
+  const db = getDb();
+  if (db) {
+    try {
+      const rows = await db
+        .select({
+          review: reviews,
+          companySlug: companies.slug,
+          authorEmail: users.email,
+        })
+        .from(reviews)
+        .leftJoin(companies, eq(reviews.companyId, companies.id))
+        .leftJoin(users, eq(reviews.authorUserId, users.id))
         .where(eq(reviews.status, "pending"))
         .orderBy(desc(reviews.createdAt));
-      return rows.map((r) => ({
-        id: r.id,
-        companyId: r.companyId,
-        companySlug: r.companyId,
-        rating: r.rating,
-        title: r.title,
-        body: r.body,
-        author: "User",
-        verifiedPurchase: r.verifiedPurchase,
-        status: r.status,
-        createdAt: r.createdAt.toISOString().slice(0, 10),
-      }));
+      if (rows.length > 0) {
+        return rows.map((r) => ({
+          id: r.review.id,
+          companyId: r.review.companyId,
+          companySlug: r.companySlug ?? r.review.companyId,
+          rating: r.review.rating,
+          title: r.review.title,
+          body: r.review.body,
+          author: r.authorEmail ?? "User",
+          verifiedPurchase: r.review.verifiedPurchase,
+          status: r.review.status,
+          createdAt: r.review.createdAt.toISOString().slice(0, 10),
+        }));
+      }
     } catch (error) {
       console.warn("[phase2] Neon pending reviews failed", error);
     }
@@ -171,19 +492,28 @@ export async function listPendingClaimsAsync(): Promise<DemoClaim[]> {
   if (db) {
     try {
       const rows = await db
-        .select()
+        .select({
+          claim: companyClaims,
+          companyName: companies.name,
+          companySlug: companies.slug,
+          claimantEmail: users.email,
+        })
         .from(companyClaims)
+        .leftJoin(companies, eq(companyClaims.companyId, companies.id))
+        .leftJoin(users, eq(companyClaims.claimantUserId, users.id))
         .where(eq(companyClaims.status, "pending"))
         .orderBy(desc(companyClaims.createdAt));
-      return rows.map((r) => ({
-        id: r.id,
-        companyName: r.companyId,
-        companySlug: r.companyId,
-        claimant: "claimant",
-        status: r.status,
-        notes: r.notes ?? "",
-        createdAt: r.createdAt.toISOString().slice(0, 10),
-      }));
+      if (rows.length > 0) {
+        return rows.map((r) => ({
+          id: r.claim.id,
+          companyName: r.companyName ?? r.claim.companyId,
+          companySlug: r.companySlug ?? r.claim.companyId,
+          claimant: r.claimantEmail ?? "claimant",
+          status: r.claim.status,
+          notes: r.claim.notes ?? "",
+          createdAt: r.claim.createdAt.toISOString().slice(0, 10),
+        }));
+      }
     } catch (error) {
       console.warn("[phase2] Neon pending claims failed", error);
     }
@@ -264,10 +594,12 @@ export async function persistOnboarding(input: {
   const orgSlug = slugify(input.orgName);
   const db = getDb();
 
-  if (db && input.clerkUserId) {
+  if (db) {
     try {
+      const clerkUserId =
+        input.clerkUserId ?? `local-${slugify(input.email) || Date.now()}`;
       const { id: userId } = await upsertClerkUser({
-        clerkUserId: input.clerkUserId,
+        clerkUserId,
         email: input.email,
         fullName: input.contactName,
       });
@@ -347,6 +679,62 @@ export async function persistOnboarding(input: {
   return { ok: true, orgId, demo: true };
 }
 
+export async function persistCompanyProfile(input: {
+  companySlug: string;
+  name: string;
+  headline: string;
+  description: string;
+  city: string;
+  country: string;
+  actor?: string;
+}) {
+  const company = await getCompanyBySlugAsync(input.companySlug);
+  if (!company) {
+    return { ok: false as const, message: "Company not found." };
+  }
+
+  const db = getDb();
+  if (db) {
+    try {
+      await db
+        .update(companies)
+        .set({
+          name: input.name,
+          headline: input.headline,
+          description: input.description,
+          city: input.city,
+          country: input.country,
+          updatedAt: new Date(),
+        })
+        .where(eq(companies.id, company.id));
+      appendAudit("company.updated", "company", input.actor ?? "supplier");
+      return {
+        ok: true as const,
+        message: `Profile for ${input.name} saved.`,
+        demo: false,
+      };
+    } catch (error) {
+      console.warn("[phase2] Neon company profile failed", error);
+    }
+  }
+
+  const store = getStore();
+  const runtime = store.companies.find((c) => c.slug === input.companySlug);
+  if (runtime) {
+    runtime.name = input.name;
+    runtime.headline = input.headline;
+    runtime.description = input.description;
+    runtime.city = input.city;
+    runtime.country = input.country;
+  }
+  appendAudit("company.updated", "company", input.actor ?? "supplier");
+  return {
+    ok: true as const,
+    message: `Profile for ${input.name} saved.`,
+    demo: true,
+  };
+}
+
 export async function persistClaim(input: {
   companySlug: string;
   notes: string;
@@ -415,6 +803,7 @@ export async function persistReview(input: {
   body: string;
   author: string;
   evidenceName?: string;
+  evidenceUrl?: string;
 }) {
   const company = await getCompanyBySlugAsync(input.companySlug);
   if (!company) {
@@ -433,23 +822,32 @@ export async function persistReview(input: {
   const db = getDb();
   if (db && hasDatabase()) {
     try {
+      const author = await upsertClerkUser({
+        clerkUserId: `local-${slugify(input.author) || "author"}`,
+        email: input.author.includes("@")
+          ? input.author
+          : `${slugify(input.author) || "author"}@example.com`,
+        fullName: input.author,
+      });
       const [review] = await db
         .insert(reviews)
         .values({
           companyId: company.id,
+          authorUserId: author.id,
           rating: input.rating,
           title: input.title,
           body: input.body,
-          verifiedPurchase: Boolean(input.evidenceName),
+          verifiedPurchase: Boolean(input.evidenceName || input.evidenceUrl),
           status: "pending",
         })
         .returning();
 
-      if (input.evidenceName) {
+      if (input.evidenceName || input.evidenceUrl) {
         await db.insert(reviewDocuments).values({
           reviewId: review.id,
-          blobUrl: `demo://evidence/${input.evidenceName}`,
-          fileName: input.evidenceName,
+          blobUrl:
+            input.evidenceUrl ?? `demo://evidence/${input.evidenceName}`,
+          fileName: input.evidenceName ?? "evidence",
         });
       }
 
@@ -490,14 +888,50 @@ export async function persistReview(input: {
 
 async function recalculateCompanyTrust(companyId: string, companySlug: string) {
   const store = getStore();
-  const companyReviews = store.reviews.filter(
+  const db = getDb();
+
+  let company =
+    store.companies.find((c) => c.id === companyId || c.slug === companySlug) ??
+    null;
+  let companyReviews = store.reviews.filter(
     (r) =>
       (r.companyId === companyId || r.companySlug === companySlug) &&
       r.status === "approved",
   );
-  const company = store.companies.find(
-    (c) => c.id === companyId || c.slug === companySlug,
-  );
+
+  if (db) {
+    try {
+      const [row] = await db
+        .select()
+        .from(companies)
+        .where(or(eq(companies.id, companyId), eq(companies.slug, companySlug)))
+        .limit(1);
+      if (row) {
+        company = mapCompanyRow(row, company?.categories ?? []);
+        const neonReviews = await db
+          .select()
+          .from(reviews)
+          .where(eq(reviews.companyId, row.id));
+        companyReviews = neonReviews
+          .filter((r) => r.status === "approved")
+          .map((r) => ({
+            id: r.id,
+            companyId: r.companyId,
+            companySlug: row.slug,
+            rating: r.rating,
+            title: r.title,
+            body: r.body,
+            author: "User",
+            verifiedPurchase: r.verifiedPurchase,
+            status: r.status,
+            createdAt: r.createdAt.toISOString().slice(0, 10),
+          }));
+      }
+    } catch (error) {
+      console.warn("[phase2] Neon trust load failed", error);
+    }
+  }
+
   if (!company) return null;
 
   const avgRating =
@@ -520,10 +954,14 @@ async function recalculateCompanyTrust(companyId: string, companySlug: string) {
     responseRate: 0.85,
   });
 
-  company.trustScore = result.score;
-  company.reviewCount = companyReviews.length;
+  const runtimeCompany = store.companies.find(
+    (c) => c.id === company!.id || c.slug === company!.slug,
+  );
+  if (runtimeCompany) {
+    runtimeCompany.trustScore = result.score;
+    runtimeCompany.reviewCount = companyReviews.length;
+  }
 
-  const db = getDb();
   if (db) {
     try {
       await db
@@ -571,28 +1009,58 @@ export async function persistModeration(input: {
 }) {
   const store = getStore();
   const actor = input.actor ?? "admin";
+  const db = getDb();
 
   if (input.entityType === "review") {
-    const review = store.reviews.find((r) => r.id === input.entityId);
-    if (!review) {
-      return { ok: false as const, message: "Review not found." };
-    }
-    review.status = input.decision;
+    let review = store.reviews.find((r) => r.id === input.entityId) ?? null;
+    let companyId = review?.companyId;
+    let companySlug = review?.companySlug;
 
-    const db = getDb();
     if (db) {
       try {
-        await db
-          .update(reviews)
-          .set({ status: input.decision, updatedAt: new Date() })
-          .where(eq(reviews.id, input.entityId));
+        const [row] = await db
+          .select({
+            review: reviews,
+            companySlug: companies.slug,
+          })
+          .from(reviews)
+          .leftJoin(companies, eq(reviews.companyId, companies.id))
+          .where(eq(reviews.id, input.entityId))
+          .limit(1);
+        if (row) {
+          companyId = row.review.companyId;
+          companySlug = row.companySlug ?? row.review.companyId;
+          await db
+            .update(reviews)
+            .set({ status: input.decision, updatedAt: new Date() })
+            .where(eq(reviews.id, input.entityId));
+          if (!review) {
+            review = {
+              id: row.review.id,
+              companyId: row.review.companyId,
+              companySlug,
+              rating: row.review.rating,
+              title: row.review.title,
+              body: row.review.body,
+              author: "User",
+              verifiedPurchase: row.review.verifiedPurchase,
+              status: input.decision,
+              createdAt: row.review.createdAt.toISOString().slice(0, 10),
+            };
+          }
+        }
       } catch (error) {
         console.warn("[phase2] Neon review moderation failed", error);
       }
     }
 
+    if (!review || !companyId || !companySlug) {
+      return { ok: false as const, message: "Review not found." };
+    }
+    review.status = input.decision;
+
     if (input.decision === "approved") {
-      await recalculateCompanyTrust(review.companyId, review.companySlug);
+      await recalculateCompanyTrust(companyId, companySlug);
     }
 
     appendAudit(`review.${input.decision}`, "review", actor);
@@ -602,37 +1070,35 @@ export async function persistModeration(input: {
     };
   }
 
-  const claim = store.claims.find((c) => c.id === input.entityId);
-  if (!claim) {
-    return { ok: false as const, message: "Claim not found." };
-  }
-  claim.status = input.decision;
+  let claim = store.claims.find((c) => c.id === input.entityId) ?? null;
+  let companySlug = claim?.companySlug;
+  let companyId: string | undefined;
 
-  if (input.decision === "approved") {
-    const company = store.companies.find((c) => c.slug === claim.companySlug);
-    if (company) {
-      company.claimed = true;
-      company.verified = true;
-    }
-  }
-
-  const db = getDb();
   if (db) {
     try {
-      await db
-        .update(companyClaims)
-        .set({
-          status: input.decision,
-          reviewedAt: new Date(),
-          updatedAt: new Date(),
+      const [row] = await db
+        .select({
+          claim: companyClaims,
+          companySlug: companies.slug,
+          companyId: companies.id,
         })
-        .where(eq(companyClaims.id, input.entityId));
+        .from(companyClaims)
+        .leftJoin(companies, eq(companyClaims.companyId, companies.id))
+        .where(eq(companyClaims.id, input.entityId))
+        .limit(1);
+      if (row) {
+        companySlug = row.companySlug ?? undefined;
+        companyId = row.companyId ?? row.claim.companyId;
+        await db
+          .update(companyClaims)
+          .set({
+            status: input.decision,
+            reviewedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(companyClaims.id, input.entityId));
 
-      if (input.decision === "approved") {
-        const company = store.companies.find(
-          (c) => c.slug === claim.companySlug,
-        );
-        if (company) {
+        if (input.decision === "approved" && companyId) {
           await db
             .update(companies)
             .set({
@@ -640,13 +1106,36 @@ export async function persistModeration(input: {
               verified: true,
               updatedAt: new Date(),
             })
-            .where(
-              or(eq(companies.id, company.id), eq(companies.slug, company.slug)),
-            );
+            .where(eq(companies.id, companyId));
+        }
+
+        if (!claim) {
+          claim = {
+            id: row.claim.id,
+            companyName: companySlug ?? row.claim.companyId,
+            companySlug: companySlug ?? row.claim.companyId,
+            claimant: "claimant",
+            status: input.decision,
+            notes: row.claim.notes ?? "",
+            createdAt: row.claim.createdAt.toISOString().slice(0, 10),
+          };
         }
       }
     } catch (error) {
       console.warn("[phase2] Neon claim moderation failed", error);
+    }
+  }
+
+  if (!claim) {
+    return { ok: false as const, message: "Claim not found." };
+  }
+  claim.status = input.decision;
+
+  if (input.decision === "approved" && companySlug) {
+    const company = store.companies.find((c) => c.slug === companySlug);
+    if (company) {
+      company.claimed = true;
+      company.verified = true;
     }
   }
 
@@ -664,14 +1153,118 @@ export async function persistRequest(input: {
   budgetMax: number;
   deliveryCountry: string;
   actor?: string;
+  organisationId?: string;
 }) {
-  const debit = debitCredits(RFQ_CREDIT_COST, `RFQ lead distribution: ${input.title}`);
+  const slug = `${slugify(input.title)}-${Date.now().toString(36)}`;
+  const db = getDb();
+
+  if (db) {
+    try {
+      const org = input.organisationId
+        ? (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.id, input.organisationId))
+              .limit(1)
+          )[0]
+        : await ensureDemoBuyerOrg(db);
+      if (!org) {
+        return { ok: false as const, message: "Buyer organisation not found." };
+      }
+
+      const [wallet] = await db
+        .select()
+        .from(creditWallets)
+        .where(eq(creditWallets.organisationId, org.id))
+        .limit(1);
+      if (!wallet || wallet.balance < RFQ_CREDIT_COST) {
+        return {
+          ok: false as const,
+          message: `Insufficient credits. Need ${RFQ_CREDIT_COST}, have ${wallet?.balance ?? 0}.`,
+        };
+      }
+
+      const [created] = await db
+        .insert(requests)
+        .values({
+          organisationId: org.id,
+          title: input.title,
+          slug,
+          description: input.description,
+          budgetMin: input.budgetMin,
+          budgetMax: input.budgetMax,
+          currency: "USD",
+          deliveryCountry: input.deliveryCountry,
+          status: "open",
+        })
+        .returning();
+
+      const debit = await neonDebitCredits(
+        db,
+        org.id,
+        RFQ_CREDIT_COST,
+        `RFQ lead distribution: ${input.title}`,
+        "request",
+        created.id,
+      );
+      if (!debit.ok) {
+        await db.delete(requests).where(eq(requests.id, created.id));
+        return debit;
+      }
+
+      await db.insert(auditEvents).values({
+        action: "request.created",
+        entityType: "request",
+        entityId: created.id,
+        organisationId: org.id,
+        payload: { title: input.title, credits: RFQ_CREDIT_COST },
+      });
+
+      const store = getStore();
+      store.requests.unshift({
+        id: created.id,
+        title: created.title,
+        slug: created.slug,
+        description: created.description,
+        category: "packaging-machinery",
+        budgetMin: created.budgetMin ?? 0,
+        budgetMax: created.budgetMax ?? 0,
+        currency: created.currency,
+        deliveryCountry: created.deliveryCountry ?? "",
+        status: "open",
+        quoteCount: 0,
+        createdAt: created.createdAt.toISOString().slice(0, 10),
+      });
+      store.wallet.balance = debit.balance;
+      store.wallet.entries.unshift({
+        id: `neon-${Date.now()}`,
+        delta: -RFQ_CREDIT_COST,
+        reason: `RFQ lead distribution: ${input.title}`,
+        createdAt: new Date().toISOString(),
+      });
+
+      appendAudit("request.created", "request", input.actor ?? "buyer");
+      return {
+        ok: true as const,
+        id: created.id,
+        message: `RFQ “${input.title}” created. ${RFQ_CREDIT_COST} credits reserved (balance ${debit.balance}).`,
+        demo: false,
+      };
+    } catch (error) {
+      console.warn("[phase2] Neon request create failed", error);
+    }
+  }
+
+  const debit = debitCredits(
+    RFQ_CREDIT_COST,
+    `RFQ lead distribution: ${input.title}`,
+  );
   if (!debit.ok) {
     return { ok: false as const, message: debit.message };
   }
 
   const id = `req-${Date.now()}`;
-  const slug = slugify(input.title);
   const store = getStore();
   const request: DemoRequest = {
     id,
@@ -688,26 +1281,12 @@ export async function persistRequest(input: {
     createdAt: new Date().toISOString().slice(0, 10),
   };
   store.requests.unshift(request);
-
-  const db = getDb();
-  if (db) {
-    try {
-      // Ensure demo buyer org exists for FK when seeded
-      await db.insert(auditEvents).values({
-        action: "request.created",
-        entityType: "request",
-        payload: { id, title: input.title, credits: RFQ_CREDIT_COST },
-      });
-    } catch (error) {
-      console.warn("[phase2] Neon request audit failed", error);
-    }
-  }
-
   appendAudit("request.created", "request", input.actor ?? "buyer");
   return {
     ok: true as const,
     id,
     message: `RFQ “${input.title}” created. ${RFQ_CREDIT_COST} credits reserved (balance ${debit.balance}).`,
+    demo: true,
   };
 }
 
@@ -721,6 +1300,65 @@ export async function persistQuote(input: {
   actor?: string;
 }) {
   const store = getStore();
+  const companySlug = input.companySlug ?? "nordicfill-systems";
+  const db = getDb();
+
+  if (db) {
+    try {
+      const neonRequest = await getRequestByIdAsync(input.requestId);
+      if (!neonRequest) {
+        return { ok: false as const, message: "RFQ not found." };
+      }
+      if (neonRequest.status !== "open") {
+        return { ok: false as const, message: "RFQ is not open for quotes." };
+      }
+
+      const company = await getCompanyBySlugAsync(companySlug);
+      if (!company) {
+        return { ok: false as const, message: "Supplier company not found." };
+      }
+
+      const [created] = await db
+        .insert(quotes)
+        .values({
+          requestId: neonRequest.id,
+          companyId: company.id,
+          amount: input.amount,
+          currency: "USD",
+          leadTimeDays: input.leadTimeDays,
+          notes: input.notes,
+          status: "submitted",
+        })
+        .returning();
+
+      const runtimeRequest = store.requests.find(
+        (r) => r.id === neonRequest.id || r.slug === neonRequest.slug,
+      );
+      if (runtimeRequest) runtimeRequest.quoteCount += 1;
+      store.quotes.unshift({
+        id: created.id,
+        requestId: neonRequest.id,
+        companyName: input.companyName ?? company.name,
+        companySlug: company.slug,
+        amount: input.amount,
+        currency: "USD",
+        leadTimeDays: input.leadTimeDays,
+        notes: input.notes,
+        status: "submitted",
+      });
+
+      appendAudit("quote.submitted", "quote", input.actor ?? "supplier");
+      return {
+        ok: true as const,
+        id: created.id,
+        message: `Quote of $${input.amount} submitted for ${neonRequest.id}.`,
+        demo: false,
+      };
+    } catch (error) {
+      console.warn("[phase2] Neon quote failed", error);
+    }
+  }
+
   const request = store.requests.find(
     (r) => r.id === input.requestId || r.slug === input.requestId,
   );
@@ -736,7 +1374,7 @@ export async function persistQuote(input: {
     id,
     requestId: request.id,
     companyName: input.companyName ?? "Your company",
-    companySlug: input.companySlug ?? "nordicfill-systems",
+    companySlug,
     amount: input.amount,
     currency: "USD",
     leadTimeDays: input.leadTimeDays,
@@ -751,6 +1389,7 @@ export async function persistQuote(input: {
     ok: true as const,
     id,
     message: `Quote of $${input.amount} submitted for ${request.id}.`,
+    demo: true,
   };
 }
 
@@ -758,12 +1397,60 @@ export async function persistProject(input: {
   name: string;
   summary: string;
   actor?: string;
+  organisationId?: string;
 }) {
+  const slug = `${slugify(input.name)}-${Date.now().toString(36)}`;
+  const db = getDb();
+
+  if (db) {
+    try {
+      const org = input.organisationId
+        ? (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.id, input.organisationId))
+              .limit(1)
+          )[0]
+        : await ensureDemoBuyerOrg(db);
+      if (!org) {
+        return { ok: false as const, message: "Organisation not found." };
+      }
+      const [created] = await db
+        .insert(projects)
+        .values({
+          organisationId: org.id,
+          name: input.name,
+          slug,
+          summary: input.summary,
+          status: "active",
+        })
+        .returning();
+      getStore().projects.unshift({
+        id: created.id,
+        name: created.name,
+        slug: created.slug,
+        summary: created.summary ?? "",
+        status: created.status,
+        memberCount: 1,
+      });
+      appendAudit("project.created", "project", input.actor ?? "buyer");
+      return {
+        ok: true as const,
+        id: created.id,
+        message: `Project “${input.name}” created.`,
+        demo: false,
+      };
+    } catch (error) {
+      console.warn("[phase2] Neon project failed", error);
+    }
+  }
+
   const id = `proj-${Date.now()}`;
   const project: DemoProject = {
     id,
     name: input.name,
-    slug: slugify(input.name),
+    slug,
     summary: input.summary,
     status: "active",
     memberCount: 1,
@@ -774,6 +1461,7 @@ export async function persistProject(input: {
     ok: true as const,
     id,
     message: `Project “${input.name}” created.`,
+    demo: true,
   };
 }
 
@@ -783,6 +1471,45 @@ export async function updateRequestStatus(input: {
   actor?: string;
 }) {
   const store = getStore();
+  const db = getDb();
+
+  if (db) {
+    try {
+      const neonRequest = await getRequestByIdAsync(input.requestId);
+      if (neonRequest) {
+        await db
+          .update(requests)
+          .set({ status: input.status, updatedAt: new Date() })
+          .where(eq(requests.id, neonRequest.id));
+
+        if (input.status === "awarded") {
+          await db
+            .update(quotes)
+            .set({ status: "accepted", updatedAt: new Date() })
+            .where(eq(quotes.requestId, neonRequest.id));
+        }
+
+        const runtime = store.requests.find(
+          (r) => r.id === neonRequest.id || r.slug === neonRequest.slug,
+        );
+        if (runtime) runtime.status = input.status;
+
+        appendAudit(
+          `request.${input.status}`,
+          "request",
+          input.actor ?? "buyer",
+        );
+        return {
+          ok: true as const,
+          message: `RFQ ${neonRequest.id} marked ${input.status}.`,
+          demo: false,
+        };
+      }
+    } catch (error) {
+      console.warn("[phase2] Neon request status failed", error);
+    }
+  }
+
   const request = store.requests.find(
     (r) => r.id === input.requestId || r.slug === input.requestId,
   );
@@ -794,6 +1521,7 @@ export async function updateRequestStatus(input: {
   return {
     ok: true as const,
     message: `RFQ ${request.id} marked ${input.status}.`,
+    demo: true,
   };
 }
 
@@ -805,9 +1533,9 @@ export async function persistSubscription(input: {
   orgId?: string;
 }) {
   const store = getStore();
-  const id = `sub-${Date.now()}`;
+  const runtimeId = `sub-${Date.now()}`;
   store.subscriptions.push({
-    id,
+    id: runtimeId,
     orgId: input.orgId ?? "org-demo",
     planCode: input.planCode,
     status: input.status,
@@ -815,7 +1543,6 @@ export async function persistSubscription(input: {
     stripeSubscriptionId: input.stripeSubscriptionId,
   });
 
-  // Starter credit top-up on new active subscription only
   if (input.status === "active") {
     creditCredits(100, `Subscription bonus: ${input.planCode}`);
   }
@@ -823,22 +1550,129 @@ export async function persistSubscription(input: {
   const db = getDb();
   if (db) {
     try {
+      const org = input.orgId
+        ? (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.id, input.orgId))
+              .limit(1)
+          )[0]
+        : await ensureDemoBuyerOrg(db);
+
+      const [plan] = await db
+        .select()
+        .from(subscriptionPlans)
+        .where(eq(subscriptionPlans.code, input.planCode))
+        .limit(1);
+
+      let subscriptionId = runtimeId;
+      if (org && plan) {
+        const status =
+          input.status === "active" ||
+          input.status === "canceled" ||
+          input.status === "past_due" ||
+          input.status === "trialing" ||
+          input.status === "incomplete"
+            ? input.status
+            : "active";
+
+        const [created] = await db
+          .insert(subscriptions)
+          .values({
+            organisationId: org.id,
+            planId: plan.id,
+            stripeCustomerId: input.stripeCustomerId,
+            stripeSubscriptionId: input.stripeSubscriptionId,
+            status,
+          })
+          .returning();
+        subscriptionId = created.id;
+
+        if (status === "active") {
+          await neonCreditCredits(
+            db,
+            org.id,
+            100,
+            `Subscription bonus: ${input.planCode}`,
+            "subscription",
+            created.id,
+          );
+        }
+      }
+
       await db.insert(auditEvents).values({
         action: "subscription.updated",
         entityType: "subscription",
+        entityId: subscriptionId.match(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        )
+          ? subscriptionId
+          : undefined,
+        organisationId: org?.id,
         payload: input,
       });
+
+      appendAudit("subscription.updated", "subscription", "stripe");
+      return { ok: true as const, id: subscriptionId, demo: false };
     } catch (error) {
-      console.warn("[phase2] Neon subscription audit failed", error);
+      console.warn("[phase2] Neon subscription failed", error);
     }
   }
 
   appendAudit("subscription.updated", "subscription", "stripe");
-  return { ok: true as const, id };
+  return { ok: true as const, id: runtimeId, demo: true };
 }
 
 export function getRuntimeWallet() {
   return getStore().wallet;
+}
+
+export async function getWalletAsync(organisationId?: string) {
+  const db = getDb();
+  if (db) {
+    try {
+      const org = organisationId
+        ? (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.id, organisationId))
+              .limit(1)
+          )[0]
+        : await ensureDemoBuyerOrg(db);
+      if (org) {
+        const [wallet] = await db
+          .select()
+          .from(creditWallets)
+          .where(eq(creditWallets.organisationId, org.id))
+          .limit(1);
+        if (wallet) {
+          const entries = await db
+            .select()
+            .from(creditLedgerEntries)
+            .where(eq(creditLedgerEntries.walletId, wallet.id))
+            .orderBy(desc(creditLedgerEntries.createdAt))
+            .limit(20);
+          return {
+            balance: wallet.balance,
+            entries: entries.map((e) => ({
+              id: e.id,
+              delta: e.delta,
+              reason: e.reason,
+              createdAt: e.createdAt.toISOString(),
+            })),
+            organisationId: org.id,
+            demo: false as const,
+          };
+        }
+      }
+    } catch (error) {
+      console.warn("[phase2] Neon wallet read failed", error);
+    }
+  }
+  const wallet = getRuntimeWallet();
+  return { ...wallet, organisationId: organisationId ?? null, demo: true as const };
 }
 
 export function getRuntimeAudit() {

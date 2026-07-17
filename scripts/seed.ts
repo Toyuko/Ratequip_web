@@ -1,11 +1,13 @@
 import "dotenv/config";
 import { neon } from "@neondatabase/serverless";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
   categories,
   companies,
   companyCategories,
   creditWallets,
+  organisations,
   products,
   requests,
   reviews,
@@ -31,25 +33,49 @@ async function main() {
   const db = drizzle(sql);
 
   console.log("Seeding categories…");
-  for (const cat of demoCategories) {
+  const parents = demoCategories.filter((c) => !c.parentId);
+  const children = demoCategories.filter((c) => c.parentId);
+
+  for (const cat of parents) {
     await db
       .insert(categories)
       .values({
-        id: cat.id,
         name: cat.name,
         slug: cat.slug,
         description: cat.description,
-        parentId: cat.parentId ?? null,
       })
-      .onConflictDoNothing();
+      .onConflictDoNothing({ target: categories.slug });
   }
+
+  let categoryRows = await db.select().from(categories);
+  let categoryIdBySlug = new Map(categoryRows.map((c) => [c.slug, c.id]));
+  const parentIdByDemoId = new Map(
+    parents.map((p) => [p.id, categoryIdBySlug.get(p.slug)!] as const),
+  );
+
+  for (const cat of children) {
+    const parentUuid = cat.parentId
+      ? parentIdByDemoId.get(cat.parentId) ?? null
+      : null;
+    await db
+      .insert(categories)
+      .values({
+        name: cat.name,
+        slug: cat.slug,
+        description: cat.description,
+        parentId: parentUuid,
+      })
+      .onConflictDoNothing({ target: categories.slug });
+  }
+
+  categoryRows = await db.select().from(categories);
+  categoryIdBySlug = new Map(categoryRows.map((c) => [c.slug, c.id]));
 
   console.log("Seeding companies…");
   for (const co of demoCompanies) {
     await db
       .insert(companies)
       .values({
-        id: co.id,
         name: co.name,
         slug: co.slug,
         headline: co.headline,
@@ -64,40 +90,54 @@ async function main() {
         employeeRange: co.employeeRange,
         yearFounded: co.yearFounded,
       })
-      .onConflictDoNothing();
+      .onConflictDoNothing({ target: companies.slug });
+  }
+
+  const companyRows = await db.select().from(companies);
+  const companyIdBySlug = new Map(companyRows.map((c) => [c.slug, c.id]));
+
+  for (const co of demoCompanies) {
+    const companyId = companyIdBySlug.get(co.slug);
+    if (!companyId) continue;
 
     await db
       .insert(trustScores)
       .values({
-        companyId: co.id,
+        companyId,
         score: String(co.trustScore),
         reviewComponent: "50",
         verificationComponent: co.verified ? "25" : "0",
         activityComponent: "10",
       })
-      .onConflictDoNothing();
+      .onConflictDoNothing({ target: trustScores.companyId });
 
     for (const catSlug of co.categories) {
-      const cat = demoCategories.find((c) => c.slug === catSlug);
-      if (!cat) continue;
-      await db
-        .insert(companyCategories)
-        .values({ companyId: co.id, categoryId: cat.id })
-        .onConflictDoNothing();
+      const categoryId = categoryIdBySlug.get(catSlug);
+      if (!categoryId) continue;
+      const existing = await db
+        .select()
+        .from(companyCategories)
+        .where(eq(companyCategories.companyId, companyId))
+        .limit(50);
+      if (existing.some((row) => row.categoryId === categoryId)) continue;
+      await db.insert(companyCategories).values({ companyId, categoryId });
     }
   }
 
   console.log("Seeding products…");
   for (const p of demoProducts) {
-    const company = demoCompanies.find((c) => c.slug === p.companySlug);
-    if (!company) continue;
+    const companyId = companyIdBySlug.get(p.companySlug);
+    if (!companyId) continue;
+    const slug = p.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
     await db
       .insert(products)
       .values({
-        id: p.id,
-        companyId: company.id,
+        companyId,
         name: p.name,
-        slug: p.id,
+        slug: `${p.companySlug}-${slug}`,
         summary: p.summary,
       })
       .onConflictDoNothing();
@@ -105,11 +145,12 @@ async function main() {
 
   console.log("Seeding reviews…");
   for (const r of demoReviews) {
+    const companyId = companyIdBySlug.get(r.companySlug);
+    if (!companyId) continue;
     await db
       .insert(reviews)
       .values({
-        id: r.id,
-        companyId: r.companyId,
+        companyId,
         rating: r.rating,
         title: r.title,
         body: r.body,
@@ -120,35 +161,45 @@ async function main() {
   }
 
   console.log("Seeding requests…");
-  // Requests need organisation FK — create a demo org first via raw SQL if needed.
-  // For MVP seed without org graph, skip if FK would fail; demo mode covers UI.
   try {
-    await sql`INSERT INTO organisations (id, name, slug, type)
-      VALUES ('org-demo-buyer', 'Demo Buyer Org', 'demo-buyer-org', 'buyer')
-      ON CONFLICT DO NOTHING`;
+    await db
+      .insert(organisations)
+      .values({
+        name: "Demo Buyer Org",
+        slug: "demo-buyer-org",
+        type: "buyer",
+      })
+      .onConflictDoNothing({ target: organisations.slug });
 
-    for (const r of demoRequests) {
+    const [org] = await db
+      .select()
+      .from(organisations)
+      .where(eq(organisations.slug, "demo-buyer-org"))
+      .limit(1);
+
+    if (org) {
+      for (const r of demoRequests) {
+        await db
+          .insert(requests)
+          .values({
+            organisationId: org.id,
+            title: r.title,
+            slug: r.slug,
+            description: r.description,
+            budgetMin: r.budgetMin,
+            budgetMax: r.budgetMax,
+            currency: r.currency,
+            deliveryCountry: r.deliveryCountry,
+            status: r.status,
+          })
+          .onConflictDoNothing();
+      }
+
       await db
-        .insert(requests)
-        .values({
-          id: r.id,
-          organisationId: "org-demo-buyer",
-          title: r.title,
-          slug: r.slug,
-          description: r.description,
-          budgetMin: r.budgetMin,
-          budgetMax: r.budgetMax,
-          currency: r.currency,
-          deliveryCountry: r.deliveryCountry,
-          status: r.status,
-        })
+        .insert(creditWallets)
+        .values({ organisationId: org.id, balance: 250 })
         .onConflictDoNothing();
     }
-
-    await db
-      .insert(creditWallets)
-      .values({ organisationId: "org-demo-buyer", balance: 250 })
-      .onConflictDoNothing();
   } catch (e) {
     console.warn("Request/org seed skipped:", e);
   }
@@ -164,7 +215,7 @@ async function main() {
         priceMonthly: plan.priceMonthly,
         features: plan.features,
       })
-      .onConflictDoNothing();
+      .onConflictDoNothing({ target: subscriptionPlans.code });
   }
 
   console.log("Seed complete.");

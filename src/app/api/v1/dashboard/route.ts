@@ -23,10 +23,15 @@ export async function GET(req: NextRequest) {
   }
 
   const role = authResult.user.role;
-  const requests = listRequests();
-  const companies = listCompanies().slice(0, 5);
-  const pendingReviews = listPendingReviews();
-  const pendingClaims = listPendingClaims();
+  const [requests, companies, pendingReviews, pendingClaims, projects] =
+    await Promise.all([
+      listRequests(),
+      listCompanies(),
+      listPendingReviews(),
+      listPendingClaims(),
+      listProjects(),
+    ]);
+  const featured = companies.slice(0, 5);
 
   const base = {
     role,
@@ -42,16 +47,22 @@ export async function GET(req: NextRequest) {
         tiles: [
           { label: "Open RFQs", value: requests.filter((r) => r.status === "open").length },
           { label: "Quotes received", value: demoQuotes.length },
-          { label: "Projects", value: listProjects().length },
-          { label: "Saved suppliers", value: companies.length },
+          { label: "Projects", value: projects.length },
+          { label: "Saved suppliers", value: featured.length },
         ],
         recentRequests: requests.slice(0, 5),
-        featuredSuppliers: companies,
+        featuredSuppliers: featured,
       }),
     );
   }
 
   if (role === "supplier") {
+    const leadInbox = await Promise.all(
+      requests
+        .filter((r) => r.status === "open")
+        .slice(0, 5)
+        .map(async (r) => ({ ...r, quotes: await getQuotesForRequest(r.id) })),
+    );
     return apiResponse(
       req,
       ok({
@@ -62,10 +73,7 @@ export async function GET(req: NextRequest) {
           { label: "Pending reviews", value: pendingReviews.length },
           { label: "Profile views", value: 128 },
         ],
-        leadInbox: requests
-          .filter((r) => r.status === "open")
-          .slice(0, 5)
-          .map((r) => ({ ...r, quotes: getQuotesForRequest(r.id) })),
+        leadInbox,
       }),
     );
   }
@@ -77,7 +85,7 @@ export async function GET(req: NextRequest) {
         ...base,
         tiles: [
           { label: "Open RFQs", value: requests.filter((r) => r.status === "open").length },
-          { label: "Browse suppliers", value: listCompanies().length },
+          { label: "Browse suppliers", value: companies.length },
           { label: "Compliance", value: "Phase 3" },
         ],
         recentRequests: requests.slice(0, 5),
@@ -93,7 +101,7 @@ export async function GET(req: NextRequest) {
       tiles: [
         { label: "Pending reviews", value: pendingReviews.length },
         { label: "Pending claims", value: pendingClaims.length },
-        { label: "Companies", value: listCompanies().length },
+        { label: "Companies", value: companies.length },
         { label: "Open RFQs", value: requests.filter((r) => r.status === "open").length },
       ],
       pendingReviews,

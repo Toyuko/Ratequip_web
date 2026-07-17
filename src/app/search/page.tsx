@@ -12,7 +12,7 @@ export default async function SearchPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q = "" } = await searchParams;
-  const { companies, requests } = searchAll(q);
+  const { companies, requests } = await searchAll(q);
   const nearZero = Boolean(q) && companies.length <= 2;
 
   return (

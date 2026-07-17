@@ -9,10 +9,13 @@ export function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const topOnly = req.nextUrl.searchParams.get("top") === "1";
+  const categories = topOnly
+    ? await listTopCategories()
+    : await listCategories();
   return apiResponse(
     req,
     ok({
-      categories: topOnly ? listTopCategories() : listCategories(),
+      categories,
     }),
   );
 }

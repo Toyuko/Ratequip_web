@@ -11,8 +11,8 @@ export default async function CompareQuotesPage({
   searchParams: Promise<{ request?: string }>;
 }) {
   const { request: requestId = "req-1" } = await searchParams;
-  const request = getRequestById(requestId);
-  const quotes = getQuotesForRequest(requestId);
+  const request = await getRequestById(requestId);
+  const quotes = await getQuotesForRequest(requestId);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">

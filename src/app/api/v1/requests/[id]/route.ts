@@ -12,7 +12,7 @@ export async function GET(
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
-  const request = getRequestById(id);
+  const request = await getRequestById(id);
   if (!request) {
     return apiResponse(req, err("Request not found", 404));
   }
@@ -20,7 +20,7 @@ export async function GET(
     req,
     ok({
       request,
-      quotes: getQuotesForRequest(request.id),
+      quotes: await getQuotesForRequest(request.id),
     }),
   );
 }

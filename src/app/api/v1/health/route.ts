@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { ok } from "@/lib/api/envelope";
 import { apiResponse, handleOptions } from "@/lib/api/respond";
-import { isDemoMode } from "@/lib/config";
+import { hasDatabase, isDemoMode } from "@/lib/config";
 
 export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
       service: "ratequip-api",
       version: "v1",
       demoMode: isDemoMode(),
+      database: hasDatabase(),
       at: new Date().toISOString(),
     }),
   );

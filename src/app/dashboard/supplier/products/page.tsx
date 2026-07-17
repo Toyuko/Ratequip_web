@@ -3,8 +3,8 @@ import { getCompanyProducts } from "@/lib/db/queries";
 
 export const metadata = { title: "Product catalogue" };
 
-export default function SupplierProductsPage() {
-  const products = getCompanyProducts("nordicfill-systems");
+export default async function SupplierProductsPage() {
+  const products = await getCompanyProducts("nordicfill-systems");
 
   return (
     <DashboardShell role="supplier" title="Product catalogue">

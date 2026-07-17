@@ -10,12 +10,18 @@ import {
 } from "@/lib/db/queries";
 
 export async function CompanyProfile({ slug }: { slug: string }) {
-  const company = getCompanyBySlug(slug);
+  const company = await getCompanyBySlug(slug);
   if (!company) notFound();
 
-  const products = getCompanyProducts(slug);
-  const reviews = getCompanyReviews(slug);
+  const products = await getCompanyProducts(slug);
+  const reviews = await getCompanyReviews(slug);
   const unclaimed = !company.claimed;
+  const categoryLabels = await Promise.all(
+    company.categories.map(async (slugOrId) => ({
+      slug: slugOrId,
+      name: (await getCategoryBySlug(slugOrId))?.name ?? slugOrId,
+    })),
+  );
 
   return (
     <div>
@@ -176,19 +182,16 @@ export async function CompanyProfile({ slug }: { slug: string }) {
           <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
             <h3 className="font-semibold text-[var(--rq-ink)]">Categories</h3>
             <ul className="mt-3 space-y-2 text-sm">
-              {company.categories.map((c) => {
-                const cat = getCategoryBySlug(c);
-                return (
-                  <li key={c}>
+              {categoryLabels.map((cat) => (
+                  <li key={cat.slug}>
                     <Link
-                      href={`/categories/${c}`}
+                      href={`/categories/${cat.slug}`}
                       className="text-orange-600 hover:underline"
                     >
-                      {cat?.name ?? c}
+                      {cat.name}
                     </Link>
                   </li>
-                );
-              })}
+                ))}
             </ul>
           </div>
           <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">

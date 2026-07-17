@@ -11,10 +11,13 @@ export function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const requests = listRequests().map((r) => ({
-    ...r,
-    quotes: getQuotesForRequest(r.id),
-  }));
+  const all = await listRequests();
+  const requests = await Promise.all(
+    all.map(async (r) => ({
+      ...r,
+      quotes: await getQuotesForRequest(r.id),
+    })),
+  );
   return apiResponse(req, ok({ requests, count: requests.length }));
 }
 

@@ -2,16 +2,16 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { demoPlans } from "@/lib/db/demo-data";
-import { getRuntimeWallet } from "@/lib/db/phase2";
+import { getWalletAsync } from "@/lib/db/phase2";
 import { getStore } from "@/lib/db/runtime-store";
 import { formatCurrency } from "@/lib/utils";
 
 export const metadata = { title: "Buyer billing" };
 export const dynamic = "force-dynamic";
 
-export default function BuyerBillingPage() {
+export default async function BuyerBillingPage() {
   const plan = demoPlans.find((p) => p.code === "buyer-premium")!;
-  const wallet = getRuntimeWallet();
+  const wallet = await getWalletAsync();
   const subscription = getStore().subscriptions[0];
 
   return (
