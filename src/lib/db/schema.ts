@@ -74,6 +74,18 @@ export const users = pgTable("users", {
   ...timestamps,
 });
 
+export const enterpriseAccounts = pgTable("enterprise_accounts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  /** Shared RateQuip credits across member organisations. */
+  pooledBalance: integer("pooled_balance").notNull().default(0),
+  /** Marketplace commission in basis points (250 = 2.5%). */
+  commissionBps: integer("commission_bps").notNull().default(250),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 128 }),
+  ...timestamps,
+});
+
 export const organisations = pgTable("organisations", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -81,6 +93,23 @@ export const organisations = pgTable("organisations", {
   type: accountRoleEnum("type").notNull().default("buyer"),
   country: varchar("country", { length: 100 }),
   website: text("website"),
+  enterpriseAccountId: uuid("enterprise_account_id").references(
+    () => enterpriseAccounts.id,
+  ),
+  ...timestamps,
+});
+
+export const enterpriseLedgerEntries = pgTable("enterprise_ledger_entries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  enterpriseAccountId: uuid("enterprise_account_id")
+    .notNull()
+    .references(() => enterpriseAccounts.id),
+  organisationId: uuid("organisation_id").references(() => organisations.id),
+  delta: integer("delta").notNull(),
+  reason: varchar("reason", { length: 255 }).notNull(),
+  referenceType: varchar("reference_type", { length: 64 }),
+  referenceId: uuid("reference_id"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
   ...timestamps,
 });
 
@@ -275,6 +304,21 @@ export const quotes = pgTable("quotes", {
   ...timestamps,
 });
 
+export const commissionLedgerEntries = pgTable("commission_ledger_entries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  enterpriseAccountId: uuid("enterprise_account_id").references(
+    () => enterpriseAccounts.id,
+  ),
+  organisationId: uuid("organisation_id").references(() => organisations.id),
+  requestId: uuid("request_id").references(() => requests.id),
+  quoteId: uuid("quote_id").references(() => quotes.id),
+  amountCents: integer("amount_cents").notNull(),
+  commissionBps: integer("commission_bps").notNull(),
+  status: varchar("status", { length: 32 }).notNull().default("recorded"),
+  notes: text("notes"),
+  ...timestamps,
+});
+
 export const projects = pgTable("projects", {
   id: uuid("id").defaultRandom().primaryKey(),
   organisationId: uuid("organisation_id")
@@ -306,6 +350,7 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   audience: accountRoleEnum("audience").notNull(),
   priceMonthly: integer("price_monthly").notNull(),
   currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  monthlyCredits: integer("monthly_credits").notNull().default(0),
   stripePriceId: varchar("stripe_price_id", { length: 128 }),
   features: jsonb("features").$type<string[]>().default([]),
   ...timestamps,

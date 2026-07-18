@@ -11,6 +11,7 @@ import {
   getQuotesForRequest,
 } from "@/lib/db/queries";
 import { demoQuotes } from "@/lib/db/demo-data";
+import { getWalletAsync } from "@/lib/db/phase2";
 
 export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
@@ -23,13 +24,14 @@ export async function GET(req: NextRequest) {
   }
 
   const role = authResult.user.role;
-  const [requests, companies, pendingReviews, pendingClaims, projects] =
+  const [requests, companies, pendingReviews, pendingClaims, projects, wallet] =
     await Promise.all([
       listRequests(),
       listCompanies(),
       listPendingReviews(),
       listPendingClaims(),
       listProjects(),
+      getWalletAsync(),
     ]);
   const featured = companies.slice(0, 5);
 
@@ -47,11 +49,12 @@ export async function GET(req: NextRequest) {
         tiles: [
           { label: "Open RFQs", value: requests.filter((r) => r.status === "open").length },
           { label: "Quotes received", value: demoQuotes.length },
+          { label: "Credits", value: wallet.balance },
           { label: "Projects", value: projects.length },
-          { label: "Saved suppliers", value: featured.length },
         ],
         recentRequests: requests.slice(0, 5),
         featuredSuppliers: featured,
+        credits: wallet.balance,
       }),
     );
   }
@@ -70,10 +73,11 @@ export async function GET(req: NextRequest) {
         tiles: [
           { label: "Open leads", value: requests.filter((r) => r.status === "open").length },
           { label: "Quotes submitted", value: demoQuotes.length },
+          { label: "Credits", value: wallet.balance },
           { label: "Pending reviews", value: pendingReviews.length },
-          { label: "Profile views", value: 128 },
         ],
         leadInbox,
+        credits: wallet.balance,
       }),
     );
   }

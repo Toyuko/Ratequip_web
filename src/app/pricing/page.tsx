@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useT } from "@/components/i18n/locale-provider";
 import { Button } from "@/components/ui/button";
+import { listCreditPacks } from "@/lib/billing/catalog";
 import { demoPlans } from "@/lib/db/demo-data";
 import { formatCurrency } from "@/lib/utils";
 
@@ -10,6 +11,7 @@ export default function PricingPage() {
   const t = useT();
   const buyerPlans = demoPlans.filter((p) => p.audience === "buyer");
   const supplierPlans = demoPlans.filter((p) => p.audience === "supplier");
+  const packs = listCreditPacks();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
@@ -34,6 +36,40 @@ export default function PricingPage() {
         <div className="mt-6 grid gap-5 md:grid-cols-3">
           {supplierPlans.map((plan) => (
             <PlanCard key={plan.code} plan={plan} />
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-14">
+        <h2 className="text-xl font-bold text-[var(--rq-ink)]">
+          RateQuip credit packs
+        </h2>
+        <p className="mt-2 text-sm text-[var(--rq-muted)]">
+          One-time top-ups. Subscriptions renew monthly credits automatically.
+        </p>
+        <div className="mt-6 grid gap-5 md:grid-cols-3">
+          {packs.map((pack) => (
+            <div
+              key={pack.code}
+              className={`rounded-lg border bg-[var(--rq-card)] p-6 ${
+                pack.highlighted
+                  ? "border-orange-400 shadow-md"
+                  : "border-[var(--rq-border)]"
+              }`}
+            >
+              <h3 className="text-lg font-bold text-[var(--rq-ink)]">
+                {pack.name}
+              </h3>
+              <p className="mt-2 text-3xl font-extrabold text-[var(--rq-ink)]">
+                {formatCurrency(pack.priceUsd)}
+              </p>
+              <p className="mt-1 text-sm text-[var(--rq-muted)]">
+                {pack.credits} credits
+              </p>
+              <Button asChild className="mt-6 w-full">
+                <Link href={`/api/checkout?pack=${pack.code}`}>Buy pack</Link>
+              </Button>
+            </div>
           ))}
         </div>
       </section>
@@ -67,13 +103,26 @@ function PlanCard({
           <span className="text-sm font-medium text-[var(--rq-muted)]">/mo</span>
         ) : null}
       </p>
+      <p className="mt-1 text-sm text-[var(--rq-muted)]">
+        {plan.monthlyCredits > 0
+          ? `${plan.monthlyCredits} RateQuip credits on activate`
+          : "Starter credits after onboarding"}
+      </p>
       <ul className="mt-4 space-y-2 text-sm text-[var(--rq-slate)]">
         {plan.features.map((f) => (
           <li key={f}>• {f}</li>
         ))}
       </ul>
       <Button asChild className="mt-6 w-full">
-        <Link href={`/sign-up?plan=${plan.code}`}>{t.auth.getStarted}</Link>
+        <Link
+          href={
+            plan.priceMonthly === 0
+              ? `/sign-up?plan=${plan.code}`
+              : `/api/checkout?plan=${plan.code}`
+          }
+        >
+          {plan.priceMonthly === 0 ? t.auth.getStarted : "Checkout"}
+        </Link>
       </Button>
     </div>
   );

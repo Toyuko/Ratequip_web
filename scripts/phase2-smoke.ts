@@ -3,6 +3,10 @@
  */
 import "dotenv/config";
 import {
+  cancelSubscription,
+  purchaseCreditPack,
+} from "../src/lib/billing/operations";
+import {
   persistClaim,
   persistModeration,
   persistQuote,
@@ -118,16 +122,56 @@ async function main() {
   const afterSub = usingNeon
     ? await getWalletAsync()
     : { balance: getRuntimeWallet().balance };
-  if (afterSub.balance < beforeSub.balance + 100) {
-    throw new Error("Subscription bonus credits missing");
+  if (afterSub.balance !== beforeSub.balance + 100) {
+    throw new Error(
+      `Expected +100 premium credits, got delta ${afterSub.balance - beforeSub.balance}`,
+    );
+  }
+
+  await persistSubscription({
+    planCode: "buyer-premium",
+    status: "active",
+  });
+  const afterSecond = usingNeon
+    ? await getWalletAsync()
+    : { balance: getRuntimeWallet().balance };
+  if (afterSecond.balance !== afterSub.balance) {
+    throw new Error(
+      `Double-grant detected: balance moved from ${afterSub.balance} to ${afterSecond.balance}`,
+    );
+  }
+
+  const beforePack = afterSecond.balance;
+  const pack = await purchaseCreditPack({ packCode: "credits-100" });
+  if (!pack.ok) throw new Error(pack.message);
+  const afterPack = usingNeon
+    ? await getWalletAsync()
+    : { balance: getRuntimeWallet().balance };
+  if (afterPack.balance < beforePack + 100) {
+    throw new Error("Credit pack grant missing");
+  }
+
+  await cancelSubscription();
+  // After cancel, free-tier monthly cap applies again (1 RFQ already created above).
+  const blocked = await persistRequest({
+    title: `Free tier block ${Date.now()}`,
+    description: "Should be blocked",
+    budgetMin: 1,
+    budgetMax: 2,
+    deliveryCountry: "Thailand",
+    actor: "smoke@ratequip.com",
+  });
+  if (blocked.ok) {
+    throw new Error("Expected free-tier monthly RFQ limit to block second RFQ");
   }
 
   console.log("Phase 2 mutation smoke passed.", {
     neon: usingNeon,
     rfqId: rfq.id,
-    balance: afterSub.balance,
+    balance: afterPack.balance,
     trustScore: company.trustScore,
     claimed: claimed.slug,
+    freeTierBlocked: blocked.message,
   });
 }
 

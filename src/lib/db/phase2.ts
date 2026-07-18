@@ -1,7 +1,13 @@
-import { desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { hasDatabase } from "@/lib/config";
 import { calculateTrustScore } from "@/lib/trust-score";
 import { slugify } from "@/lib/utils";
+import { RFQ_CREDIT_COST, getPlanByCode } from "@/lib/billing/catalog";
+import {
+  assertCanCreateRfq,
+  debitCreditsPreferPool,
+  recordAwardCommission,
+} from "@/lib/billing/operations";
 import {
   demoCategories,
   type DemoClaim,
@@ -40,45 +46,91 @@ import {
   users,
 } from "./schema";
 
-const RFQ_CREDIT_COST = 25;
 const DEMO_BUYER_ORG_SLUG = "demo-buyer-org";
+
+type SubscriptionStatus =
+  | "active"
+  | "canceled"
+  | "past_due"
+  | "trialing"
+  | "incomplete";
+
+function normalizeSubscriptionStatus(status: string): SubscriptionStatus {
+  if (
+    status === "active" ||
+    status === "canceled" ||
+    status === "past_due" ||
+    status === "trialing" ||
+    status === "incomplete"
+  ) {
+    return status;
+  }
+  return "active";
+}
+
+function subscriptionBonusReason(planCode: string) {
+  return `Subscription bonus: ${planCode}`;
+}
 
 type DbClient = NonNullable<ReturnType<typeof getDb>>;
 
 async function ensureDemoBuyerOrg(db: DbClient) {
+  const ensureWallet = async (organisationId: string) => {
+    const [wallet] = await db
+      .select()
+      .from(creditWallets)
+      .where(eq(creditWallets.organisationId, organisationId))
+      .limit(1);
+    if (wallet) return;
+    try {
+      await db.insert(creditWallets).values({
+        organisationId,
+        balance: 250,
+      });
+    } catch (error) {
+      // Unique org wallet or transient Neon visibility — re-check.
+      const [again] = await db
+        .select()
+        .from(creditWallets)
+        .where(eq(creditWallets.organisationId, organisationId))
+        .limit(1);
+      if (!again) throw error;
+    }
+  };
+
   const [existing] = await db
     .select()
     .from(organisations)
     .where(eq(organisations.slug, DEMO_BUYER_ORG_SLUG))
     .limit(1);
   if (existing) {
-    const [wallet] = await db
-      .select()
-      .from(creditWallets)
-      .where(eq(creditWallets.organisationId, existing.id))
-      .limit(1);
-    if (!wallet) {
-      await db.insert(creditWallets).values({
-        organisationId: existing.id,
-        balance: 250,
-      });
-    }
+    await ensureWallet(existing.id);
     return existing;
   }
 
-  const [created] = await db
-    .insert(organisations)
-    .values({
-      name: "Demo Buyer Org",
-      slug: DEMO_BUYER_ORG_SLUG,
-      type: "buyer",
-    })
-    .returning();
-  await db.insert(creditWallets).values({
-    organisationId: created.id,
-    balance: 250,
-  });
-  return created;
+  try {
+    const [created] = await db
+      .insert(organisations)
+      .values({
+        name: "Demo Buyer Org",
+        slug: DEMO_BUYER_ORG_SLUG,
+        type: "buyer",
+      })
+      .returning();
+    await ensureWallet(created.id);
+    return created;
+  } catch (error) {
+    const [race] = await db
+      .select()
+      .from(organisations)
+      .where(eq(organisations.slug, DEMO_BUYER_ORG_SLUG))
+      .limit(1);
+    if (race) {
+      await ensureWallet(race.id);
+      return race;
+    }
+    throw error;
+  }
 }
 
 async function neonDebitCredits(
@@ -194,14 +246,69 @@ export async function listCompaniesAsync(opts?: {
   q?: string;
   category?: string;
   country?: string;
+  limit?: number;
 }): Promise<DemoCompany[]> {
+  const limit = opts?.limit ?? (opts?.q || opts?.category || opts?.country ? 200 : 48);
   const db = getDb();
   if (db) {
     try {
-      const rows = await db.select().from(companies);
+      const conditions = [];
+      if (opts?.q) {
+        const pattern = `%${opts.q}%`;
+        conditions.push(
+          or(
+            ilike(companies.name, pattern),
+            ilike(companies.headline, pattern),
+            ilike(companies.description, pattern),
+          ),
+        );
+      }
+      if (opts?.country) {
+        conditions.push(ilike(companies.country, opts.country));
+      }
+
+      if (opts?.category) {
+        const matchSlugs = categoryMatchSlugsSync(opts.category);
+        const catRows = await db
+          .select({ id: categories.id })
+          .from(categories)
+          .where(inArray(categories.slug, matchSlugs));
+        const catIds = catRows.map((c) => c.id);
+        if (catIds.length === 0) return [];
+        const links = await db
+          .select({ companyId: companyCategories.companyId })
+          .from(companyCategories)
+          .where(inArray(companyCategories.categoryId, catIds));
+        const companyIdsForCategory = [
+          ...new Set(links.map((l) => l.companyId)),
+        ];
+        if (companyIdsForCategory.length === 0) return [];
+        conditions.push(inArray(companies.id, companyIdsForCategory));
+      }
+
+      const where =
+        conditions.length === 0
+          ? undefined
+          : conditions.length === 1
+            ? conditions[0]
+            : and(...conditions);
+
+      const rows = await db
+        .select()
+        .from(companies)
+        .where(where)
+        .orderBy(desc(companies.trustScore), companies.name)
+        .limit(limit);
+
       if (rows.length > 0) {
-        const links = await db.select().from(companyCategories);
-        const cats = await db.select().from(categories);
+        const ids = rows.map((r) => r.id);
+        const [links, cats] = await Promise.all([
+          db
+            .select()
+            .from(companyCategories)
+            .where(inArray(companyCategories.companyId, ids)),
+          db.select().from(categories),
+        ]);
         const slugByCatId = new Map(cats.map((c) => [c.id, c.slug]));
         const catsByCompany = new Map<string, string[]>();
         for (const link of links) {
@@ -211,32 +318,16 @@ export async function listCompaniesAsync(opts?: {
           list.push(slug);
           catsByCompany.set(link.companyId, list);
         }
-
-        let items = rows.map((r) =>
+        return rows.map((r) =>
           mapCompanyRow(r, catsByCompany.get(r.id) ?? []),
         );
-        if (opts?.q) {
-          const q = opts.q.toLowerCase();
-          items = items.filter(
-            (c) =>
-              c.name.toLowerCase().includes(q) ||
-              c.headline.toLowerCase().includes(q) ||
-              c.description.toLowerCase().includes(q),
-          );
-        }
-        if (opts?.category) {
-          const match = new Set(categoryMatchSlugsSync(opts.category));
-          items = items.filter((c) =>
-            c.categories.some((slug) => match.has(slug)),
-          );
-        }
-        if (opts?.country) {
-          items = items.filter(
-            (c) => c.country.toLowerCase() === opts.country!.toLowerCase(),
-          );
-        }
-        return items.sort((a, b) => b.trustScore - a.trustScore);
       }
+
+      // Empty filtered result is valid; fall through only when table has no rows.
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(companies);
+      if (count > 0) return [];
     } catch (error) {
       console.warn("[phase2] Neon listCompanies failed, using runtime store", error);
     }
@@ -262,7 +353,9 @@ export async function listCompaniesAsync(opts?: {
       (c) => c.country.toLowerCase() === opts.country!.toLowerCase(),
     );
   }
-  return items.sort((a, b) => b.trustScore - a.trustScore);
+  return items
+    .sort((a, b) => b.trustScore - a.trustScore || a.name.localeCompare(b.name))
+    .slice(0, limit);
 }
 
 function categoryMatchSlugsSync(slug: string): string[] {
@@ -1173,16 +1266,9 @@ export async function persistRequest(input: {
         return { ok: false as const, message: "Buyer organisation not found." };
       }
 
-      const [wallet] = await db
-        .select()
-        .from(creditWallets)
-        .where(eq(creditWallets.organisationId, org.id))
-        .limit(1);
-      if (!wallet || wallet.balance < RFQ_CREDIT_COST) {
-        return {
-          ok: false as const,
-          message: `Insufficient credits. Need ${RFQ_CREDIT_COST}, have ${wallet?.balance ?? 0}.`,
-        };
+      const tier = await assertCanCreateRfq(org.id);
+      if (!tier.ok) {
+        return { ok: false as const, message: tier.message };
       }
 
       const [created] = await db
@@ -1200,7 +1286,7 @@ export async function persistRequest(input: {
         })
         .returning();
 
-      const debit = await neonDebitCredits(
+      const debit = await debitCreditsPreferPool(
         db,
         org.id,
         RFQ_CREDIT_COST,
@@ -1236,24 +1322,31 @@ export async function persistRequest(input: {
         quoteCount: 0,
         createdAt: created.createdAt.toISOString().slice(0, 10),
       });
-      store.wallet.balance = debit.balance;
-      store.wallet.entries.unshift({
-        id: `neon-${Date.now()}`,
-        delta: -RFQ_CREDIT_COST,
-        reason: `RFQ lead distribution: ${input.title}`,
-        createdAt: new Date().toISOString(),
-      });
+      if (debit.source === "org_wallet") {
+        store.wallet.balance = debit.balance;
+        store.wallet.entries.unshift({
+          id: `neon-${Date.now()}`,
+          delta: -RFQ_CREDIT_COST,
+          reason: `RFQ lead distribution: ${input.title}`,
+          createdAt: new Date().toISOString(),
+        });
+      }
 
       appendAudit("request.created", "request", input.actor ?? "buyer");
       return {
         ok: true as const,
         id: created.id,
-        message: `RFQ “${input.title}” created. ${RFQ_CREDIT_COST} credits reserved (balance ${debit.balance}).`,
+        message: `RFQ “${input.title}” created. ${RFQ_CREDIT_COST} credits reserved (${debit.source}, balance ${debit.balance}).`,
         demo: false,
       };
     } catch (error) {
       console.warn("[phase2] Neon request create failed", error);
     }
+  }
+
+  const tier = await assertCanCreateRfq(input.organisationId);
+  if (!tier.ok) {
+    return { ok: false as const, message: tier.message };
   }
 
   const debit = debitCredits(
@@ -1487,6 +1580,15 @@ export async function updateRequestStatus(input: {
             .update(quotes)
             .set({ status: "accepted", updatedAt: new Date() })
             .where(eq(quotes.requestId, neonRequest.id));
+          const [reqRow] = await db
+            .select({ organisationId: requests.organisationId })
+            .from(requests)
+            .where(eq(requests.id, neonRequest.id))
+            .limit(1);
+          await recordAwardCommission({
+            requestId: neonRequest.id,
+            organisationId: reqRow?.organisationId,
+          });
         }
 
         const runtime = store.requests.find(
@@ -1517,6 +1619,9 @@ export async function updateRequestStatus(input: {
     return { ok: false as const, message: "RFQ not found." };
   }
   request.status = input.status;
+  if (input.status === "awarded") {
+    await recordAwardCommission({ requestId: request.id });
+  }
   appendAudit(`request.${input.status}`, "request", input.actor ?? "buyer");
   return {
     ok: true as const,
@@ -1532,19 +1637,46 @@ export async function persistSubscription(input: {
   status: string;
   orgId?: string;
 }) {
+  const catalog = getPlanByCode(input.planCode);
+  const monthlyCredits = catalog?.monthlyCredits ?? 0;
+  const status = normalizeSubscriptionStatus(input.status);
+  const orgId = input.orgId ?? "org-demo";
+  const reason = subscriptionBonusReason(input.planCode);
+
   const store = getStore();
-  const runtimeId = `sub-${Date.now()}`;
-  store.subscriptions.push({
-    id: runtimeId,
-    orgId: input.orgId ?? "org-demo",
-    planCode: input.planCode,
-    status: input.status,
-    stripeCustomerId: input.stripeCustomerId,
-    stripeSubscriptionId: input.stripeSubscriptionId,
+  let runtime = store.subscriptions.find((s) => {
+    if (
+      input.stripeSubscriptionId &&
+      s.stripeSubscriptionId === input.stripeSubscriptionId
+    ) {
+      return true;
+    }
+    return s.orgId === orgId;
   });
 
-  if (input.status === "active") {
-    creditCredits(100, `Subscription bonus: ${input.planCode}`);
+  if (runtime) {
+    if (runtime.planCode !== input.planCode) {
+      runtime.creditsGranted = false;
+    }
+    runtime.planCode = input.planCode;
+    runtime.status = status;
+    runtime.monthlyCredits = monthlyCredits;
+    if (input.stripeCustomerId) runtime.stripeCustomerId = input.stripeCustomerId;
+    if (input.stripeSubscriptionId) {
+      runtime.stripeSubscriptionId = input.stripeSubscriptionId;
+    }
+  } else {
+    runtime = {
+      id: `sub-${Date.now()}`,
+      orgId,
+      planCode: input.planCode,
+      status,
+      monthlyCredits,
+      stripeCustomerId: input.stripeCustomerId,
+      stripeSubscriptionId: input.stripeSubscriptionId,
+      creditsGranted: false,
+    };
+    store.subscriptions.push(runtime);
   }
 
   const db = getDb();
@@ -1560,44 +1692,120 @@ export async function persistSubscription(input: {
           )[0]
         : await ensureDemoBuyerOrg(db);
 
-      const [plan] = await db
+      let [plan] = await db
         .select()
         .from(subscriptionPlans)
         .where(eq(subscriptionPlans.code, input.planCode))
         .limit(1);
 
-      let subscriptionId = runtimeId;
-      if (org && plan) {
-        const status =
-          input.status === "active" ||
-          input.status === "canceled" ||
-          input.status === "past_due" ||
-          input.status === "trialing" ||
-          input.status === "incomplete"
-            ? input.status
-            : "active";
-
-        const [created] = await db
-          .insert(subscriptions)
+      if (!plan && catalog) {
+        [plan] = await db
+          .insert(subscriptionPlans)
           .values({
-            organisationId: org.id,
-            planId: plan.id,
-            stripeCustomerId: input.stripeCustomerId,
-            stripeSubscriptionId: input.stripeSubscriptionId,
-            status,
+            code: catalog.code,
+            name: catalog.name,
+            audience: catalog.audience,
+            priceMonthly: catalog.priceMonthly,
+            monthlyCredits: catalog.monthlyCredits,
+            features: catalog.features,
           })
           .returning();
-        subscriptionId = created.id;
+      }
 
-        if (status === "active") {
-          await neonCreditCredits(
-            db,
-            org.id,
-            100,
-            `Subscription bonus: ${input.planCode}`,
-            "subscription",
-            created.id,
-          );
+      let subscriptionId = runtime.id;
+      let neonGranted = false;
+
+      if (org && plan) {
+        let existing = input.stripeSubscriptionId
+          ? (
+              await db
+                .select()
+                .from(subscriptions)
+                .where(
+                  eq(
+                    subscriptions.stripeSubscriptionId,
+                    input.stripeSubscriptionId,
+                  ),
+                )
+                .limit(1)
+            )[0]
+          : undefined;
+
+        if (!existing) {
+          [existing] = await db
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.organisationId, org.id))
+            .orderBy(desc(subscriptions.updatedAt))
+            .limit(1);
+        }
+
+        if (existing) {
+          const [updated] = await db
+            .update(subscriptions)
+            .set({
+              planId: plan.id,
+              status,
+              stripeCustomerId:
+                input.stripeCustomerId ?? existing.stripeCustomerId,
+              stripeSubscriptionId:
+                input.stripeSubscriptionId ?? existing.stripeSubscriptionId,
+              updatedAt: new Date(),
+            })
+            .where(eq(subscriptions.id, existing.id))
+            .returning();
+          subscriptionId = updated.id;
+        } else {
+          const [created] = await db
+            .insert(subscriptions)
+            .values({
+              organisationId: org.id,
+              planId: plan.id,
+              stripeCustomerId: input.stripeCustomerId,
+              stripeSubscriptionId: input.stripeSubscriptionId,
+              status,
+            })
+            .returning();
+          subscriptionId = created.id;
+        }
+
+        const grantAmount = plan.monthlyCredits ?? monthlyCredits;
+        if (status === "active" && grantAmount > 0) {
+          const [wallet] = await db
+            .select()
+            .from(creditWallets)
+            .where(eq(creditWallets.organisationId, org.id))
+            .limit(1);
+
+          const alreadyGranted = wallet
+            ? (
+                await db
+                  .select()
+                  .from(creditLedgerEntries)
+                  .where(
+                    and(
+                      eq(creditLedgerEntries.walletId, wallet.id),
+                      eq(creditLedgerEntries.referenceType, "subscription"),
+                      eq(creditLedgerEntries.referenceId, subscriptionId),
+                      eq(creditLedgerEntries.reason, reason),
+                    ),
+                  )
+                  .limit(1)
+              )[0]
+            : undefined;
+
+          if (!alreadyGranted) {
+            await neonCreditCredits(
+              db,
+              org.id,
+              grantAmount,
+              reason,
+              "subscription",
+              subscriptionId,
+            );
+            neonGranted = true;
+            runtime.creditsGranted = true;
+          }
         }
       }
 
@@ -1610,7 +1818,7 @@ export async function persistSubscription(input: {
           ? subscriptionId
           : undefined,
         organisationId: org?.id,
-        payload: input,
+        payload: { ...input, monthlyCredits, neonGranted },
       });
 
       appendAudit("subscription.updated", "subscription", "stripe");
@@ -1620,8 +1828,85 @@ export async function persistSubscription(input: {
     }
   }
 
+  if (status === "active" && monthlyCredits > 0 && !runtime.creditsGranted) {
+    creditCredits(monthlyCredits, reason);
+    runtime.creditsGranted = true;
+  }
+
   appendAudit("subscription.updated", "subscription", "stripe");
-  return { ok: true as const, id: runtimeId, demo: true };
+  return { ok: true as const, id: runtime.id, demo: true };
+}
+
+export async function getSubscriptionAsync(organisationId?: string) {
+  const db = getDb();
+  if (db) {
+    try {
+      const org = organisationId
+        ? (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.id, organisationId))
+              .limit(1)
+          )[0]
+        : await ensureDemoBuyerOrg(db);
+
+      if (org) {
+        const [row] = await db
+          .select({
+            id: subscriptions.id,
+            status: subscriptions.status,
+            planCode: subscriptionPlans.code,
+            planName: subscriptionPlans.name,
+            monthlyCredits: subscriptionPlans.monthlyCredits,
+            priceMonthly: subscriptionPlans.priceMonthly,
+            audience: subscriptionPlans.audience,
+            stripeSubscriptionId: subscriptions.stripeSubscriptionId,
+            stripeCustomerId: subscriptions.stripeCustomerId,
+          })
+          .from(subscriptions)
+          .innerJoin(
+            subscriptionPlans,
+            eq(subscriptions.planId, subscriptionPlans.id),
+          )
+          .where(eq(subscriptions.organisationId, org.id))
+          .orderBy(desc(subscriptions.updatedAt))
+          .limit(1);
+
+        if (row) {
+          return {
+            ...row,
+            organisationId: org.id,
+            demo: false as const,
+          };
+        }
+      }
+    } catch (error) {
+      console.warn("[phase2] Neon subscription read failed", error);
+    }
+  }
+
+  const store = getStore();
+  const orgKey = organisationId ?? "org-demo";
+  const sub =
+    store.subscriptions.find((s) => s.orgId === orgKey) ??
+    store.subscriptions[0];
+  if (!sub) return null;
+
+  const plan = getPlanByCode(sub.planCode);
+  return {
+    id: sub.id,
+    status: sub.status,
+    planCode: sub.planCode,
+    planName: plan?.name ?? sub.planCode,
+    monthlyCredits: sub.monthlyCredits ?? plan?.monthlyCredits ?? 0,
+    priceMonthly: plan?.priceMonthly ?? 0,
+    audience: plan?.audience ?? "buyer",
+    stripeSubscriptionId: sub.stripeSubscriptionId ?? null,
+    stripeCustomerId: sub.stripeCustomerId ?? null,
+    organisationId: sub.orgId,
+    demo: true as const,
+  };
 }
 
 export function getRuntimeWallet() {

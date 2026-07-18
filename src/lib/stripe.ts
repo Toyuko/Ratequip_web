@@ -12,3 +12,9 @@ export const planPriceEnvMap: Record<string, string | undefined> = {
   "supplier-gold": process.env.STRIPE_PRICE_SUPPLIER_GOLD,
   "supplier-platinum": process.env.STRIPE_PRICE_SUPPLIER_PLATINUM,
 };
+
+export const creditPackPriceEnvMap: Record<string, string | undefined> = {
+  "credits-100": process.env.STRIPE_PRICE_CREDITS_100,
+  "credits-500": process.env.STRIPE_PRICE_CREDITS_500,
+  "credits-2000": process.env.STRIPE_PRICE_CREDITS_2000,
+};

@@ -116,6 +116,8 @@ export type DemoPlan = {
   name: string;
   audience: DemoRole;
   priceMonthly: number;
+  /** Credits granted when a paid plan activates (0 for free). */
+  monthlyCredits: number;
   features: string[];
   highlighted?: boolean;
 };
@@ -1250,10 +1252,12 @@ export const demoPlans: DemoPlan[] = [
     name: "Buyer Free",
     audience: "buyer",
     priceMonthly: 0,
+    monthlyCredits: 0,
     features: [
       "Search suppliers",
       "Save shortlists",
-      "Post 1 RFQ / month",
+      "1 RFQ / month (free-tier cap)",
+      "Starter credits · RFQs cost 25 each",
       "Basic Trust Score view",
     ],
   },
@@ -1262,9 +1266,10 @@ export const demoPlans: DemoPlan[] = [
     name: "Buyer Premium",
     audience: "buyer",
     priceMonthly: 39,
+    monthlyCredits: 100,
     highlighted: true,
     features: [
-      "Unlimited RFQs",
+      "100 credits/mo · RFQs cost 25",
       "Quote comparison workspace",
       "Verified review uploads",
       "Project workspace lite",
@@ -1276,7 +1281,9 @@ export const demoPlans: DemoPlan[] = [
     name: "Supplier Silver",
     audience: "supplier",
     priceMonthly: 49,
+    monthlyCredits: 50,
     features: [
+      "50 credits/mo on activate",
       "Claimed company profile",
       "Product catalogue",
       "RFQ lead inbox",
@@ -1288,12 +1295,13 @@ export const demoPlans: DemoPlan[] = [
     name: "Supplier Gold",
     audience: "supplier",
     priceMonthly: 199,
+    monthlyCredits: 200,
     highlighted: true,
     features: [
+      "200 credits/mo on activate",
       "Everything in Silver",
       "Featured search placement label",
       "Advanced analytics",
-      "Credit pack bonus",
     ],
   },
   {
@@ -1301,7 +1309,9 @@ export const demoPlans: DemoPlan[] = [
     name: "Supplier Platinum",
     audience: "supplier",
     priceMonthly: 799,
+    monthlyCredits: 500,
     features: [
+      "500 credits/mo on activate",
       "Everything in Gold",
       "Dedicated success manager",
       "API access (coming soon)",

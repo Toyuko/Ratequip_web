@@ -47,7 +47,11 @@ export async function findDuplicateCandidates(input: {
 
   const results: DuplicateCandidate[] = [];
 
-  for (const company of await listCompanies()) {
+  for (const company of await listCompanies({
+    q: query || undefined,
+    country: input.country,
+    limit: 500,
+  })) {
     const companyDomain = registrableDomainFromUrl(company.website);
     const exactDomain = Boolean(domain && companyDomain && domain === companyDomain);
     const nameScore = scoreNameSimilarity(query || company.name, company.name);

@@ -61,8 +61,11 @@ export type RuntimeSubscription = {
   orgId: string;
   planCode: string;
   status: string;
+  monthlyCredits: number;
   stripeSubscriptionId?: string;
   stripeCustomerId?: string;
+  /** Prevents double-granting activation credits in demo mode. */
+  creditsGranted?: boolean;
 };
 
 type GlobalStore = {

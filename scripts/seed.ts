@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { neon } from "@neondatabase/serverless";
-import { eq } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
   categories,
@@ -71,6 +71,17 @@ async function main() {
   categoryRows = await db.select().from(categories);
   categoryIdBySlug = new Map(categoryRows.map((c) => [c.slug, c.id]));
 
+  const companyCountRows = await db
+    .select({ companyCount: count() })
+    .from(companies);
+  const companyCount = Number(companyCountRows[0]?.companyCount ?? 0);
+  const skipDemoCompanies = companyCount > 100;
+
+  if (skipDemoCompanies) {
+    console.log(
+      `Skipping demo companies/RFQs — ${companyCount} companies already present (lead import).`,
+    );
+  } else {
   console.log("Seeding companies…");
   for (const co of demoCompanies) {
     await db
@@ -203,9 +214,12 @@ async function main() {
   } catch (e) {
     console.warn("Request/org seed skipped:", e);
   }
+  }
 
   console.log("Seeding plans…");
+  const { planPriceEnvMap } = await import("../src/lib/stripe");
   for (const plan of demoPlans) {
+    const stripePriceId = planPriceEnvMap[plan.code] ?? null;
     await db
       .insert(subscriptionPlans)
       .values({
@@ -213,9 +227,23 @@ async function main() {
         name: plan.name,
         audience: plan.audience,
         priceMonthly: plan.priceMonthly,
+        monthlyCredits: plan.monthlyCredits,
+        stripePriceId,
         features: plan.features,
       })
       .onConflictDoNothing({ target: subscriptionPlans.code });
+
+    await db
+      .update(subscriptionPlans)
+      .set({
+        name: plan.name,
+        priceMonthly: plan.priceMonthly,
+        monthlyCredits: plan.monthlyCredits,
+        stripePriceId,
+        features: plan.features,
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptionPlans.code, plan.code));
   }
 
   console.log("Seed complete.");

@@ -51,6 +51,7 @@ export async function listCompanies(opts?: {
   q?: string;
   category?: string;
   country?: string;
+  limit?: number;
 }) {
   return listCompaniesAsync(opts);
 }

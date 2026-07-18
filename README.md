@@ -27,12 +27,27 @@ Mutations are no longer toast-only:
 | Onboarding | Creates org + user + wallet (Neon when `DATABASE_URL` set; else runtime store + cookies) |
 | Company claim | Queues claim; admin approve sets `claimed` + `verified` |
 | Reviews | Queues for moderation; approve recalculates Trust Score |
-| RFQ create | Debits **25 credits**, adds open RFQ |
+| RFQ create | Debits **25 credits** (org wallet or enterprise pool); free tier max **1 RFQ/month** |
 | Quotes | Persists against RFQ; increments quote count |
-| RFQ close/award | Status transitions on request detail |
-| Stripe checkout | Real session when configured; demo mode activates subscription + **+100 credits** |
+| RFQ close/award | Status transitions; records marketplace **commission** ledger |
+| Stripe checkout | Subscriptions + one-time **credit packs**; demo grants immediately |
+| Stripe portal / cancel | `/api/billing/portal`, `/api/billing/cancel` |
 | Clerk webhook | Upserts `users` on create/update |
-| Stripe webhook | Upserts subscription + credit bonus |
+| Stripe webhook | Subscription upsert, credit packs, **invoice.paid** renewal credits |
+
+### Subscriptions & RateQuip credits
+
+| Plan | Monthly price | Credits on activate / renewal |
+|------|--------------:|------------------------------:|
+| Buyer Free | $0 | 0 (starter wallet **250**; **1 RFQ/month** cap) |
+| Buyer Premium | $39 | **100** |
+| Supplier Silver | $49 | **50** |
+| Supplier Gold | $199 | **200** |
+| Supplier Platinum | $799 | **500** |
+
+**Credit packs (one-time):** 100 / 500 / 2000 credits (`credits-100`, `credits-500`, `credits-2000`).
+
+**Enterprise:** pooled credits + commission bps (`enterprise_accounts`). Member orgs debit the pool when funded; awards write `commission_ledger_entries` (default **2.5%**).
 
 Runtime store: `src/lib/db/runtime-store.ts` · Dual-path writes: `src/lib/db/phase2.ts`
 
@@ -104,6 +119,9 @@ JSON API for the RateQuip companion app (Expo). Envelope: `{ data, error }`. COR
 | POST | `/api/v1/reviews` | required |
 | GET | `/api/v1/dashboard` | required |
 | GET | `/api/v1/billing/plans` | public |
+| GET | `/api/v1/billing/packs` | public |
+| GET | `/api/v1/billing/wallet` | required |
+| GET/POST | `/api/v1/billing/enterprise` | required |
 | GET | `/api/v1/admin/queue` | admin |
 | POST | `/api/v1/admin/moderate` | admin |
 
