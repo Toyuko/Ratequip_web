@@ -7,11 +7,12 @@
  *   npx tsx scripts/rematch-categories.ts
  */
 import { config } from "dotenv";
-import { neon } from "@neondatabase/serverless";
+import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 
 config({ path: ".env.local", quiet: true });
 config({ quiet: true });
 
+type Sql = NeonQueryFunction<false, false>;
 type Col = { name: string; cast?: string };
 
 function chunk<T>(arr: T[], size: number) {
@@ -21,7 +22,7 @@ function chunk<T>(arr: T[], size: number) {
 }
 
 async function bulkInsert(
-  sql: ReturnType<typeof neon>,
+  sql: Sql,
   table: string,
   columns: Col[],
   rows: Record<string, unknown>[],
