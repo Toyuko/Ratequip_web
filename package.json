@@ -13,6 +13,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:import-leads": "tsx scripts/import-leads.ts",
     "db:rematch-categories": "tsx scripts/rematch-categories.ts",
+    "db:enrich-descriptions": "tsx scripts/enrich-descriptions.ts",
     "smoke": "tsx scripts/smoke.ts",
     "smoke:phase2": "tsx scripts/phase2-smoke.ts",
     "test:trust": "tsx scripts/trust-score-check.ts"
