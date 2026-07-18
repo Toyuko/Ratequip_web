@@ -201,23 +201,56 @@ function sectorToSlugs(sector: string): string[] {
     return ["food-processing", "packaging-machinery"];
   if (s.includes("packaging machinery") || s.includes("packaging & labell"))
     return ["packaging-machinery", "factory-automation"];
-  if (s.includes("food") || s.includes("beverage") || s.includes("agriculture"))
+  if (
+    s.includes("food") ||
+    s.includes("beverage") ||
+    s.includes("agriculture") ||
+    s.includes("agribusiness")
+  )
     return ["food-processing"];
-  if (s.includes("pharma") || s.includes("health") || s.includes("cosmetic"))
+  if (
+    s.includes("pharma") ||
+    s.includes("health") ||
+    s.includes("medical") ||
+    s.includes("cosmetic")
+  )
     return ["inspection-qc", "food-processing"];
-  if (s.includes("logistics") || s.includes("warehous"))
+  if (
+    s.includes("logistic") ||
+    s.includes("warehous") ||
+    s.includes("transport") ||
+    s.includes("marine") ||
+    s.includes("ship")
+  )
     return ["heavy-logistics"];
   if (s.includes("chemical") || s.includes("cleaning"))
     return ["industrial-equipment", "cleaning"];
+  if (s.includes("technology") || s.includes("software") || s.includes("data services"))
+    return ["factory-automation"];
+  if (s.includes("machiner") || s.includes("automation"))
+    return ["industrial-equipment", "factory-automation"];
   if (
+    s.includes("energy") ||
+    s.includes("oil") ||
+    s.includes("gas") ||
+    s.includes("utilit") ||
+    s.includes("automotive") ||
     s.includes("industrial") ||
     s.includes("mining") ||
+    s.includes("metal") ||
     s.includes("construction") ||
     s.includes("waste") ||
     s.includes("forest")
   )
     return ["industrial-equipment"];
-  if (s.includes("professional") || s.includes("education") || s.includes("government") || s.includes("financial"))
+  if (
+    s.includes("professional") ||
+    s.includes("education") ||
+    s.includes("government") ||
+    s.includes("financial") ||
+    s.includes("insurance") ||
+    s.includes("real estate")
+  )
     return ["general-business", "professional-services"];
   if (s.includes("retail") || s.includes("wholesale") || s.includes("distribution"))
     return ["general-business"];
@@ -261,7 +294,10 @@ function resolveCategories(input: {
   const [typePart = "", sectorPart = ""] = input.headline
     .split("·")
     .map((s) => s.trim());
-  const text = [input.name, input.headline, input.description].join(" ");
+  // Prefer name + headline for keywords; only use description product-focus lines
+  // so generated boilerplate ("industrial company profile") does not skew tags.
+  const detailMatch = input.description.match(/Products and focus:\s*([^.]+)/i);
+  const text = [input.name, input.headline, detailMatch?.[1] ?? ""].join(" ");
   const sectorSlugs = sectorToSlugs(sectorPart);
   const hasSector = sectorSlugs.length > 0;
 

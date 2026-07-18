@@ -23,7 +23,7 @@ export default async function BuyerDashboardPage() {
 
   return (
     <DashboardShell role="buyer" title="Buyer dashboard">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3" data-tour="buyer-stats">
         <Stat
           label="Open RFQs"
           value={String(requests.filter((r) => r.status === "open").length)}
@@ -32,7 +32,7 @@ export default async function BuyerDashboardPage() {
         <Stat label="Credits" value={String(wallet.balance)} />
       </div>
 
-      <section className="mt-8">
+      <section className="mt-8" data-tour="buyer-actions">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-semibold text-[var(--rq-ink)]">Quick actions</h2>
         </div>
@@ -55,7 +55,7 @@ export default async function BuyerDashboardPage() {
         </div>
       </section>
 
-      <section className="mt-10">
+      <section className="mt-10" data-tour="buyer-suppliers">
         <h2 className="font-semibold text-[var(--rq-ink)]">Saved suppliers</h2>
         <ul className="mt-3 space-y-2">
           {saved.map((c) => (

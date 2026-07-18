@@ -11,7 +11,7 @@ export default function ContractorDashboardPage() {
         Manage installation, inspection and logistics opportunities. Full
         provider directories expand in Phase 3.
       </p>
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="mt-6 flex flex-wrap gap-3" data-tour="contractor-actions">
         <Button asChild>
           <Link href="/requests">Browse RFQs</Link>
         </Button>

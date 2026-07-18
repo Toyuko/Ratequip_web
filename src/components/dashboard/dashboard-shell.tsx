@@ -1,4 +1,5 @@
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
+import { ProductTour } from "@/components/onboarding/product-tour";
 
 export function DashboardShell({
   role,
@@ -13,7 +14,10 @@ export function DashboardShell({
     <>
       <DashboardNav active={role} />
       <div className="flex-1 px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold text-[var(--rq-ink)]">{title}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold text-[var(--rq-ink)]">{title}</h1>
+          <ProductTour role={role} />
+        </div>
         <div className="mt-6">{children}</div>
       </div>
     </>

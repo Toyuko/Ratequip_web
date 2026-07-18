@@ -10,7 +10,10 @@ const links = [
 
 export function DashboardNav({ active }: { active: string }) {
   return (
-    <aside className="w-full shrink-0 border-b border-[var(--rq-border)] bg-[var(--rq-card)] md:w-56 md:border-b-0 md:border-r">
+    <aside
+      className="w-full shrink-0 border-b border-[var(--rq-border)] bg-[var(--rq-card)] md:w-56 md:border-b-0 md:border-r"
+      data-tour="dash-nav"
+    >
       <div className="p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--rq-muted)]">
           Dashboards

@@ -65,6 +65,6 @@ export async function completeOnboarding(input: {
     message: result.demo
       ? `Organisation “${orgName}” ready (runtime store + cookies).`
       : `Organisation “${orgName}” saved to database.`,
-    redirectTo: `/dashboard/${input.role === "contractor" ? "contractor" : input.role}`,
+    redirectTo: `/dashboard/${input.role === "contractor" ? "contractor" : input.role}?tour=1`,
   };
 }

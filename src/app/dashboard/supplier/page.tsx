@@ -24,13 +24,13 @@ export default async function SupplierDashboardPage() {
 
   return (
     <DashboardShell role="supplier" title="Supplier dashboard">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3" data-tour="supplier-stats">
         <Stat label="Open leads" value={String(leads.length)} />
         <Stat label="Quotes sent" value={String(quotesSent)} />
         <Stat label="Pending reviews" value={String(pendingReviews.length)} />
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-3">
+      <div className="mt-8 flex flex-wrap gap-3" data-tour="supplier-actions">
         <Button asChild>
           <Link href="/dashboard/supplier/profile">Edit profile</Link>
         </Button>
@@ -45,7 +45,7 @@ export default async function SupplierDashboardPage() {
         </Button>
       </div>
 
-      <section className="mt-10">
+      <section className="mt-10" data-tour="supplier-leads">
         <h2 className="font-semibold text-[var(--rq-ink)]">Lead inbox</h2>
         <ul className="mt-3 space-y-2">
           {leads.map((r) => (
