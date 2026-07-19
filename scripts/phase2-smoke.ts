@@ -33,7 +33,20 @@ async function main() {
     description: "Automated smoke RFQ",
     budgetMin: 10000,
     budgetMax: 20000,
+    currency: "USD",
+    taxTreatment: "inclusive",
+    quoteValidityDays: 30,
     deliveryCountry: "Thailand",
+    deliveryCity: "Bangkok",
+    dueDate: "2099-12-31",
+    items: [
+      {
+        productName: "Smoke filler unit",
+        productCode: "SMK-1",
+        quantity: 1,
+        oemOnly: true,
+      },
+    ],
     actor: "smoke@ratequip.com",
   });
   if (!rfq.ok) throw new Error(rfq.message);
@@ -51,6 +64,8 @@ async function main() {
     requestId: rfq.id!,
     amount: 15000,
     leadTimeDays: 60,
+    deliveryPeriodDays: 75,
+    stockAvailability: "in_stock",
     notes: "Smoke quote",
   });
   if (!quote.ok) throw new Error(quote.message);
@@ -158,6 +173,9 @@ async function main() {
     description: "Should be blocked",
     budgetMin: 1,
     budgetMax: 2,
+    currency: "USD",
+    taxTreatment: "inclusive",
+    quoteValidityDays: 30,
     deliveryCountry: "Thailand",
     actor: "smoke@ratequip.com",
   });

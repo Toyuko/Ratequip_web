@@ -26,7 +26,25 @@ const createSchema = z.object({
   description: z.string().min(1),
   budgetMin: z.number().nonnegative().default(0),
   budgetMax: z.number().nonnegative().default(0),
+  currency: z.string().length(3).default("USD"),
+  taxTreatment: z.enum(["inclusive", "exclusive"]).default("inclusive"),
+  quoteValidityDays: z.number().int().positive().default(30),
   deliveryCountry: z.string().default(""),
+  deliveryCity: z.string().optional(),
+  deliveryAddress: z.string().optional(),
+  dueDate: z.string().optional(),
+  items: z
+    .array(
+      z.object({
+        productName: z.string().min(1),
+        productCode: z.string().optional(),
+        quantity: z.number().positive().default(1),
+        unit: z.string().optional(),
+        oemOnly: z.boolean().optional(),
+        notes: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {

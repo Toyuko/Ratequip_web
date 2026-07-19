@@ -11,6 +11,7 @@ import {
   getRuntimeProjects,
   listCategoriesAsync,
   listCompaniesAsync,
+  listCompanyMediaAsync,
   listPendingClaimsAsync,
   listPendingReviewsAsync,
   listRequestsAsync,
@@ -68,6 +69,10 @@ export async function getCompanyProducts(slug: string) {
 
 export async function getCompanyReviews(slug: string) {
   return getCompanyReviewsAsync(slug);
+}
+
+export async function getCompanyMedia(slug: string) {
+  return listCompanyMediaAsync(slug);
 }
 
 export async function listRequests() {

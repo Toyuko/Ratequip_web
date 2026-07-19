@@ -1,5 +1,5 @@
 /**
- * V12 engines + commercial spine smoke (no HTTP server required).
+ * V12 engines + commercial spine + 2B assets + 3A workflow/vault smoke.
  */
 import { evaluateRule } from "../src/lib/v12/dqe/rule-engine";
 import { resolveQuestions } from "../src/lib/v12/dqe/resolver";
@@ -8,17 +8,23 @@ import { DEFAULT_MATCH_POLICY } from "../src/lib/v12/matching/types";
 import { rankCandidates } from "../src/lib/v12/recommendations/ranker";
 import { mayExecuteWithoutConfirmation } from "../src/lib/v12/ai/confirmation-policy";
 import {
-  createAIDraft,
-  confirmAIDraft,
-  createRequisition,
+  approveDocumentVersion,
   approveRequisition,
-  createRfqRevision,
   awardRfq,
-  runExplainableMatch,
+  claimWorkflowTask,
+  completeWorkflowTask,
+  confirmAIDraft,
+  createAIDraft,
+  createDocument,
+  createRequisition,
+  createRfqRevision,
+  issuePassport,
   resolveActivationPack,
+  runExplainableMatch,
 } from "../src/lib/v12/services";
-import { resetV12Store } from "../src/lib/v12/store";
+import { resetV12Store, getV12Store } from "../src/lib/v12/store";
 import { questionsForPack } from "../src/lib/v12/seeds";
+import { listWorkflowTemplates } from "../src/lib/v12/workflow/runtime";
 
 async function main() {
   resetV12Store();
@@ -108,14 +114,51 @@ async function main() {
     throw new Error("AI confirm failed");
   }
 
+  if (listWorkflowTemplates().length < 1) {
+    throw new Error("workflow templates missing");
+  }
+
   const reqn = createRequisition({
     title: "Smoke requisition",
     description: "desc",
     taxonomyKeys: ["tax:rq:industry.food_beverage"],
     budgetMax: 1,
+    startedBy: "buyer@demo.ratequip.com",
   });
-  const approved = approveRequisition(reqn.id);
-  if (!approved.ok) throw new Error("requisition approve failed");
+  if (!reqn.workflowInstanceId) throw new Error("requisition did not start workflow");
+
+  // Self-approval must fail
+  const self = claimWorkflowTask({
+    taskId: getV12Store().workflowTasks.find((t) => t.status === "open")!.id,
+    actor: "buyer@demo.ratequip.com",
+  });
+  if (self.ok) throw new Error("self-approval should be blocked");
+
+  // Manager + finance steps
+  let open = getV12Store().workflowTasks.find((t) => t.status === "open");
+  if (!open) throw new Error("expected manager task");
+  const mgr = completeWorkflowTask({
+    taskId: open.id,
+    actor: "manager@demo.ratequip.com",
+  });
+  if (!mgr.ok) throw new Error(`manager step failed: ${mgr.message}`);
+
+  open = getV12Store().workflowTasks.find((t) => t.status === "open");
+  if (!open) throw new Error("expected finance task");
+  const fin = completeWorkflowTask({
+    taskId: open.id,
+    actor: "finance@demo.ratequip.com",
+  });
+  if (!fin.ok) throw new Error(`finance step failed: ${fin.message}`);
+
+  const approved = getV12Store().requisitions.find((r) => r.id === reqn.id);
+  if (approved?.status !== "approved") {
+    throw new Error("requisition not approved after workflow");
+  }
+
+  // Legacy one-shot approve path still works on seeded item
+  const legacy = approveRequisition("reqn-1", "manager@demo.ratequip.com");
+  if (!legacy.ok) throw new Error("legacy approve failed");
 
   const rev = createRfqRevision({
     rfqId: "req-1",
@@ -132,13 +175,54 @@ async function main() {
     currency: "USD",
     reasonCodes: ["commercial_fit"],
     awardedBy: "u1",
+    assetName: "Smoke auger filler",
+    taxonomyKeys: ["tax:rq:industry.food_beverage"],
   });
-  if (!award.id) throw new Error("award failed");
+  if (!award.id || !award.assetId) throw new Error("award→asset failed");
+
+  const asset = getV12Store().assets.find((a) => a.id === award.assetId);
+  if (!asset?.passportId) throw new Error("passport missing");
+  const issued = issuePassport(asset.passportId);
+  if (!issued.ok || issued.asset?.status !== "in_service") {
+    throw new Error("passport issue failed");
+  }
+
+  const doc = createDocument({
+    title: "FAT certificate",
+    docType: "certificate",
+    body: "Factory acceptance test passed",
+    createdBy: "buyer@demo.ratequip.com",
+    linkedType: "asset",
+    linkedId: asset.id,
+  });
+  const badSelf = approveDocumentVersion({
+    documentId: doc.document.id,
+    version: 1,
+    approvedBy: "buyer@demo.ratequip.com",
+  });
+  if (badSelf.ok) throw new Error("document self-approval should fail");
+
+  const docOk = approveDocumentVersion({
+    documentId: doc.document.id,
+    version: 1,
+    approvedBy: "qa@demo.ratequip.com",
+  });
+  if (!docOk.ok) throw new Error(`document approve failed: ${docOk.message}`);
+
+  const again = approveDocumentVersion({
+    documentId: doc.document.id,
+    version: 1,
+    approvedBy: "qa@demo.ratequip.com",
+  });
+  if (again.ok) throw new Error("approved version must be immutable");
 
   console.log("V12 smoke passed.", {
     questions: pack.questions.length,
     matchCount: match.results.length,
     awardId: award.id,
+    assetId: award.assetId,
+    workflowTemplates: listWorkflowTemplates().length,
+    documentHash: doc.version.contentHash,
     policy: scored.policyVersion,
   });
 }

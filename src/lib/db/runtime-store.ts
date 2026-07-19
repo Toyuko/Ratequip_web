@@ -16,6 +16,7 @@ import {
   demoWallet,
   type DemoClaim,
   type DemoCompany,
+  type DemoCompanyMedia,
   type DemoProject,
   type DemoQuote,
   type DemoRequest,
@@ -70,6 +71,7 @@ export type RuntimeSubscription = {
 
 type GlobalStore = {
   companies: DemoCompany[];
+  companyMedia: DemoCompanyMedia[];
   reviews: DemoReview[];
   claims: DemoClaim[];
   requests: DemoRequest[];
@@ -91,6 +93,7 @@ declare global {
 function cloneStore(): GlobalStore {
   return {
     companies: structuredClone(demoCompanies),
+    companyMedia: [],
     reviews: structuredClone(demoReviews),
     claims: structuredClone(demoClaims),
     requests: structuredClone(demoRequests),

@@ -18,21 +18,23 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## V12 Enterprise Layer (Parts 1 & 2)
+## V12 Enterprise Layer (Parts 1–3)
 
-Imported from RateQuip Enterprise Master Repository **V12 Part 1 + Part 2** (19 Jul 2026).
+Imported from RateQuip Enterprise Master Repository **V12 Part 1 + Part 2 + Part 3** (19 Jul 2026).
 
 | Layer | What landed in this app |
 |-------|-------------------------|
-| Seeds | Taxonomy, question packs/definitions, capabilities, roles → `src/data/v12/` |
-| Migrations | Part 1 `0001–0005` + Part 2 commercial/asset + platform bridge → `drizzle/v12/` (`rq` / `rq_audit` / `rq_outbox` schemas on Neon) |
-| Engines | DQE resolver, explainable matcher, ranker, AI confirmation → `src/lib/v12/` |
-| UI | `/v12` hub + activation, taxonomy, builders, matching, intelligence, procurement, RFQ, SRM, CRM |
-| API | `/api/v1/v12`, `/api/v1/v12/procurement` |
-| Docs | `docs/v12/` charter, backlog, READMEs |
+| Seeds | Taxonomy, question packs, capabilities, roles, workflow templates → `src/data/v12/` |
+| Migrations | Part 1 `0001–0005`, Part 2 `0006–0013`, Part 3 `0014` (workflow/vault), platform bridge `0090` → `drizzle/v12/` |
+| Engines | DQE, matcher, ranker, AI confirmation, workflow runtime, document vault → `src/lib/v12/` |
+| UI | `/v12` hub + activation, taxonomy, builders, matching, intelligence, procurement, RFQ, SRM, CRM, assets, workflow, documents |
+| API | `/api/v1/v12`, `/procurement`, `/workflow`, `/documents` |
+| Docs | `docs/v12/` charter, Part 1–3 READMEs/backlogs |
 
 **Part 1 vertical slice:** activation (DQE) → builders → explainable match → AI draft/confirm.  
-**Part 2 Release 2A:** procurement requisitions → RFQ immutable revisions → award with reason codes → SRM/CRM spines.
+**Part 2 Release 2A:** procurement → RFQ revisions/award → SRM/CRM.  
+**Part 2 Release 2B (thin):** award → asset + digital passport.  
+**Part 3 Release 3A (thin):** workflow approvals (no self-approval) + document vault immutability.
 
 ```bash
 # Apply V12 SQL to Neon (uses DATABASE_URL / DATABASE_URL_UNPOOLED from .env.local)
@@ -41,9 +43,9 @@ npm run db:seed:v12
 npm run smoke:v12
 ```
 
-V12 tables live in the `rq` schema alongside the existing Phase 1–2 `public` tables. Runtime store still mirrors UI state; builders / match / procurement / awards also write through to Neon when `DATABASE_URL` is set.
+V12 tables live in `rq` / `workflow` / `documents` schemas alongside Phase 1–2 `public` tables. Runtime store mirrors UI state; builders / match / procurement / awards also write through to Neon when `DATABASE_URL` is set.
 
-Remaining Part 2 releases (2B–2F) and Part 3 domains stay as contracts under `drizzle/v12` + `docs/v12` until scheduled.
+Remaining Part 2 releases (2C–2F) and Part 3 releases (3B–3F / migrations `0015–0023`) stay as repository contracts until scheduled.
 
 ## Phase 2 persistence (working MVP)
 

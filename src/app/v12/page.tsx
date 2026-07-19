@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { listIndustries, questionPacks, taxonomyNodes } from "@/lib/v12/seeds";
 import { getV12Store } from "@/lib/v12/store";
+import { listWorkflowTemplates } from "@/lib/v12/workflow/runtime";
 
 export const metadata = {
   title: "V12 Platform",
-  description: "RateQuip Enterprise Master Repository V12 Part 1–2 activation layer",
+  description:
+    "RateQuip Enterprise Master Repository V12 Parts 1–3 activation layer",
 };
 
 const cards = [
@@ -43,7 +45,7 @@ const cards = [
   {
     href: "/v12/procurement",
     title: "Procurement (2A)",
-    body: "Requisitions, approvals and handoff into RFQ.",
+    body: "Requisitions start workflow approval, then hand off into RFQ.",
   },
   {
     href: "/v12/rfq",
@@ -60,25 +62,41 @@ const cards = [
     title: "CRM",
     body: "Industrial accounts, opportunities and pipeline stages.",
   },
+  {
+    href: "/v12/assets",
+    title: "Assets & passport (2B)",
+    body: "Award creates commissioning asset + draft digital passport.",
+  },
+  {
+    href: "/v12/workflow",
+    title: "Workflow (3A)",
+    body: "Configurable approvals, claim/complete tasks, no self-approval.",
+  },
+  {
+    href: "/v12/documents",
+    title: "Document vault (3A)",
+    body: "Hashed evidence versions; approve locks immutability.",
+  },
 ];
 
 export default function V12HubPage() {
   const industries = listIndustries().length;
   const packs = questionPacks.length;
   const nodes = taxonomyNodes.length;
+  const templates = listWorkflowTemplates().length;
   const store = getV12Store();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <Badge variant="orange">V12 Part 1 + Part 2 Release 2A</Badge>
+      <Badge variant="orange">V12 Parts 1–3 · Releases 2A / 2B / 3A</Badge>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         RateQuip V12 operating layer
       </h1>
       <p className="mt-3 max-w-3xl text-[var(--rq-slate)]">
-        Added from Enterprise Master Repository V12 Parts 1 & 2: activation
-        foundations (taxonomy, DQE, capability/opportunity/contractor builders,
-        explainable matching, recommendations, AI confirmation) and commercial
-        spine (procurement, RFQ revisions/award, SRM, CRM).
+        From Enterprise Master Repository V12 Parts 1–3: activation foundations,
+        commercial spine, award→asset continuity, plus workflow orchestration
+        and document evidence. Later Part 2/3 domains remain as schema contracts
+        until scheduled.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-4">
@@ -91,7 +109,11 @@ export default function V12HubPage() {
             store.opportunities.length +
               store.contractors.length +
               store.requisitions.length +
-              store.awards.length,
+              store.awards.length +
+              store.assets.length +
+              store.workflowInstances.length +
+              store.documents.length +
+              templates,
           )}
         />
       </div>
@@ -114,6 +136,9 @@ export default function V12HubPage() {
           <Link href="/v12/activation">Start activation</Link>
         </Button>
         <Button asChild variant="outline">
+          <Link href="/v12/workflow">Open workflow</Link>
+        </Button>
+        <Button asChild variant="outline">
           <Link href="/dashboard/buyer">Buyer dashboard</Link>
         </Button>
       </div>
@@ -124,10 +149,10 @@ export default function V12HubPage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4">
-      <div className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+      <div className="text-2xl font-bold text-[var(--rq-ink)]">{value}</div>
+      <div className="mt-1 text-xs uppercase tracking-wide text-[var(--rq-muted)]">
         {label}
       </div>
-      <div className="mt-1 text-2xl font-bold text-[var(--rq-ink)]">{value}</div>
     </div>
   );
 }

@@ -5,9 +5,14 @@ import { Button } from "@/components/ui/button";
 import {
   getCategoryBySlug,
   getCompanyBySlug,
+  getCompanyMedia,
   getCompanyProducts,
   getCompanyReviews,
 } from "@/lib/db/queries";
+
+function isPublicUrl(url: string) {
+  return url.startsWith("http://") || url.startsWith("https://");
+}
 
 export async function CompanyProfile({ slug }: { slug: string }) {
   const company = await getCompanyBySlug(slug);
@@ -15,6 +20,10 @@ export async function CompanyProfile({ slug }: { slug: string }) {
 
   const products = await getCompanyProducts(slug);
   const reviews = await getCompanyReviews(slug);
+  const media = await getCompanyMedia(slug);
+  const photos = media.filter((m) => m.kind === "photo" && isPublicUrl(m.blobUrl));
+  const videos = media.filter((m) => m.kind === "video" && isPublicUrl(m.blobUrl));
+  const documents = media.filter((m) => m.kind === "document");
   const unclaimed = !company.claimed;
   const categoryLabels = await Promise.all(
     company.categories.map(async (slugOrId) => ({
@@ -125,6 +134,69 @@ export async function CompanyProfile({ slug }: { slug: string }) {
               </p>
             ) : null}
           </section>
+
+          {photos.length > 0 || videos.length > 0 || documents.length > 0 ? (
+            <section>
+              <h2 className="text-xl font-bold text-[var(--rq-ink)]">
+                Photos, videos & documents
+              </h2>
+              {photos.length > 0 ? (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {photos.map((item) => (
+                    <figure key={item.id} className="overflow-hidden rounded-lg">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.blobUrl}
+                        alt={item.title}
+                        className="h-48 w-full object-cover"
+                      />
+                      <figcaption className="mt-2 text-sm text-[var(--rq-slate)]">
+                        {item.title}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              ) : null}
+              {videos.length > 0 ? (
+                <div className="mt-4 space-y-3">
+                  {videos.map((item) => (
+                    <div key={item.id}>
+                      <video
+                        src={item.blobUrl}
+                        controls
+                        className="w-full max-w-xl rounded-lg"
+                      />
+                      <p className="mt-2 text-sm text-[var(--rq-slate)]">
+                        {item.title}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {documents.length > 0 ? (
+                <ul className="mt-4 space-y-2">
+                  {documents.map((item) => (
+                    <li key={item.id}>
+                      {isPublicUrl(item.blobUrl) ? (
+                        <a
+                          href={item.blobUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-orange-600 hover:underline"
+                        >
+                          {item.title || item.fileName}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-[var(--rq-slate)]">
+                          {item.title || item.fileName}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ) : null}
 
           <section>
             <h2 className="text-xl font-bold text-[var(--rq-ink)]">Products</h2>

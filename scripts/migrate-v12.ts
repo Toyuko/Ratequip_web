@@ -87,7 +87,9 @@ async function main() {
     }>(
       `SELECT table_schema, table_name
        FROM information_schema.tables
-       WHERE table_schema IN ('rq','rq_audit','rq_outbox')
+       WHERE table_schema IN (
+         'rq','rq_audit','rq_outbox','workflow','documents'
+       )
        ORDER BY 1,2`,
     );
     console.log(

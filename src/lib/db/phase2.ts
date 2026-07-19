@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { hasDatabase } from "@/lib/config";
 import { calculateTrustScore } from "@/lib/trust-score";
 import { slugify } from "@/lib/utils";
@@ -12,10 +12,13 @@ import {
   demoCategories,
   type DemoClaim,
   type DemoCompany,
+  type DemoCompanyMedia,
   type DemoProject,
   type DemoQuote,
   type DemoRequest,
+  type DemoRequestItem,
   type DemoReview,
+  type StockAvailability,
 } from "./demo-data";
 import { getDb } from "./index";
 import {
@@ -30,6 +33,7 @@ import {
   companies,
   companyCategories,
   companyClaims,
+  companyMedia,
   creditLedgerEntries,
   creditWallets,
   organisationMembers,
@@ -37,6 +41,7 @@ import {
   products,
   projects,
   quotes,
+  requestItems,
   requests,
   reviewDocuments,
   reviews,
@@ -45,6 +50,46 @@ import {
   trustScores,
   users,
 } from "./schema";
+
+export type RequestItemInput = {
+  productName: string;
+  productCode?: string;
+  quantity: number;
+  unit?: string;
+  oemOnly?: boolean;
+  notes?: string;
+};
+
+function mapRequestItemRow(row: {
+  id: string;
+  productName: string;
+  productCode: string | null;
+  quantity: number;
+  unit: string | null;
+  oemOnly: boolean;
+  notes: string | null;
+}): DemoRequestItem {
+  return {
+    id: row.id,
+    productName: row.productName,
+    productCode: row.productCode ?? undefined,
+    quantity: row.quantity,
+    unit: row.unit ?? undefined,
+    oemOnly: row.oemOnly,
+    notes: row.notes ?? undefined,
+  };
+}
+
+function isRfqPastDue(dueDate?: string | null) {
+  if (!dueDate) return false;
+  const end = new Date(dueDate);
+  if (Number.isNaN(end.getTime())) return false;
+  // Treat date-only values as end of that calendar day UTC.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+    end.setUTCHours(23, 59, 59, 999);
+  }
+  return Date.now() > end.getTime();
+}
 
 const DEMO_BUYER_ORG_SLUG = "demo-buyer-org";
 
@@ -218,6 +263,26 @@ function mapCompanyRow(row: typeof companies.$inferSelect, cats: string[] = []):
     employeeRange: row.employeeRange ?? "",
     yearFounded: row.yearFounded ?? 0,
     categories: cats,
+    logoUrl: row.logoUrl ?? undefined,
+    coverUrl: row.coverUrl ?? undefined,
+  };
+}
+
+function mapCompanyMediaRow(
+  row: typeof companyMedia.$inferSelect,
+  companySlug: string,
+): DemoCompanyMedia {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    companySlug,
+    kind: row.kind as DemoCompanyMedia["kind"],
+    blobUrl: row.blobUrl,
+    fileName: row.fileName,
+    mimeType: row.mimeType ?? "",
+    byteSize: row.byteSize ?? 0,
+    title: row.title ?? row.fileName,
+    createdAt: row.createdAt.toISOString(),
   };
 }
 
@@ -477,6 +542,16 @@ export async function listRequestsAsync(): Promise<DemoRequest[]> {
             (countByRequest.get(q.requestId) ?? 0) + 1,
           );
         }
+        const itemRows = await db
+          .select()
+          .from(requestItems)
+          .orderBy(asc(requestItems.sortOrder));
+        const itemsByRequest = new Map<string, DemoRequestItem[]>();
+        for (const item of itemRows) {
+          const list = itemsByRequest.get(item.requestId) ?? [];
+          list.push(mapRequestItemRow(item));
+          itemsByRequest.set(item.requestId, list);
+        }
         return rows.map((r) => ({
           id: r.id,
           title: r.title,
@@ -486,10 +561,21 @@ export async function listRequestsAsync(): Promise<DemoRequest[]> {
           budgetMin: r.budgetMin ?? 0,
           budgetMax: r.budgetMax ?? 0,
           currency: r.currency,
+          taxTreatment: (r.taxTreatment ?? "inclusive") as DemoRequest["taxTreatment"],
+          quoteValidityDays: r.quoteValidityDays ?? 30,
           deliveryCountry: r.deliveryCountry ?? "",
+          deliveryCity: r.deliveryCity ?? undefined,
+          deliveryAddress: r.deliveryAddress ?? undefined,
+          dueDate: r.dueDate
+            ? r.dueDate.toISOString().slice(0, 10)
+            : undefined,
           status: r.status as DemoRequest["status"],
           quoteCount: countByRequest.get(r.id) ?? 0,
           createdAt: r.createdAt.toISOString().slice(0, 10),
+          items: itemsByRequest.get(r.id) ?? [],
+          attachmentUrl: r.attachmentUrl ?? undefined,
+          attachmentName: r.attachmentName ?? undefined,
+          attachmentMimeType: r.attachmentMimeType ?? undefined,
         }));
       }
     } catch (error) {
@@ -530,6 +616,9 @@ export async function getQuotesForRequestAsync(requestId: string) {
             amount: q.amount,
             currency: q.currency,
             leadTimeDays: q.leadTimeDays ?? 0,
+            deliveryPeriodDays: q.deliveryPeriodDays ?? undefined,
+            stockAvailability:
+              (q.stockAvailability as StockAvailability | null) ?? undefined,
             notes: q.notes ?? "",
             status: q.status,
           };
@@ -824,6 +913,187 @@ export async function persistCompanyProfile(input: {
   return {
     ok: true as const,
     message: `Profile for ${input.name} saved.`,
+    demo: true,
+  };
+}
+
+export async function listCompanyMediaAsync(
+  companySlug: string,
+): Promise<DemoCompanyMedia[]> {
+  const company = await getCompanyBySlugAsync(companySlug);
+  if (!company) return [];
+
+  const db = getDb();
+  if (db) {
+    try {
+      const rows = await db
+        .select()
+        .from(companyMedia)
+        .where(
+          and(eq(companyMedia.companyId, company.id), isNull(companyMedia.deletedAt)),
+        )
+        .orderBy(desc(companyMedia.createdAt));
+      return rows.map((row) => mapCompanyMediaRow(row, company.slug));
+    } catch (error) {
+      console.warn("[phase2] Neon listCompanyMedia failed", error);
+    }
+  }
+
+  return getStore().companyMedia.filter((m) => m.companySlug === companySlug);
+}
+
+export async function persistCompanyMedia(input: {
+  companySlug: string;
+  kind: DemoCompanyMedia["kind"];
+  blobUrl: string;
+  fileName: string;
+  mimeType: string;
+  byteSize: number;
+  title?: string;
+  organisationId?: string;
+  actor?: string;
+}) {
+  const company = await getCompanyBySlugAsync(input.companySlug);
+  if (!company) {
+    return { ok: false as const, message: "Company not found." };
+  }
+
+  const title = input.title?.trim() || input.fileName;
+  const db = getDb();
+  if (db) {
+    try {
+      const [row] = await db
+        .insert(companyMedia)
+        .values({
+          companyId: company.id,
+          organisationId: input.organisationId,
+          kind: input.kind,
+          blobUrl: input.blobUrl,
+          fileName: input.fileName,
+          mimeType: input.mimeType || null,
+          byteSize: input.byteSize,
+          title,
+        })
+        .returning();
+
+      if (input.kind === "photo" && !company.logoUrl) {
+        await db
+          .update(companies)
+          .set({ logoUrl: input.blobUrl, updatedAt: new Date() })
+          .where(eq(companies.id, company.id));
+      }
+
+      appendAudit("company.media.uploaded", "company_media", input.actor ?? "supplier");
+      return {
+        ok: true as const,
+        message: `${input.kind === "photo" ? "Photo" : input.kind === "video" ? "Video" : "Document"} uploaded.`,
+        media: mapCompanyMediaRow(row, company.slug),
+        demo: false as const,
+      };
+    } catch (error) {
+      console.warn("[phase2] Neon company media upload failed", error);
+    }
+  }
+
+  const media: DemoCompanyMedia = {
+    id: `media-${Date.now().toString(36)}`,
+    companyId: company.id,
+    companySlug: company.slug,
+    kind: input.kind,
+    blobUrl: input.blobUrl,
+    fileName: input.fileName,
+    mimeType: input.mimeType,
+    byteSize: input.byteSize,
+    title,
+    createdAt: new Date().toISOString(),
+  };
+  const store = getStore();
+  store.companyMedia.unshift(media);
+  const runtime = store.companies.find((c) => c.slug === company.slug);
+  if (runtime && input.kind === "photo" && !runtime.logoUrl) {
+    runtime.logoUrl = input.blobUrl;
+  }
+  appendAudit("company.media.uploaded", "company_media", input.actor ?? "supplier");
+  return {
+    ok: true as const,
+    message: `${input.kind === "photo" ? "Photo" : input.kind === "video" ? "Video" : "Document"} uploaded.`,
+    media,
+    demo: true as const,
+  };
+}
+
+export async function deleteCompanyMedia(input: {
+  mediaId: string;
+  companySlug: string;
+  actor?: string;
+}): Promise<
+  | { ok: true; message: string; blobUrl: string; demo: boolean }
+  | { ok: false; message: string }
+> {
+  const company = await getCompanyBySlugAsync(input.companySlug);
+  if (!company) {
+    return { ok: false as const, message: "Company not found." };
+  }
+
+  const db = getDb();
+  if (db) {
+    try {
+      const [row] = await db
+        .select()
+        .from(companyMedia)
+        .where(
+          and(
+            eq(companyMedia.id, input.mediaId),
+            eq(companyMedia.companyId, company.id),
+            isNull(companyMedia.deletedAt),
+          ),
+        )
+        .limit(1);
+      if (!row) {
+        return { ok: false as const, message: "Media not found." };
+      }
+
+      await db
+        .update(companyMedia)
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
+        .where(eq(companyMedia.id, row.id));
+
+      if (company.logoUrl === row.blobUrl) {
+        await db
+          .update(companies)
+          .set({ logoUrl: null, updatedAt: new Date() })
+          .where(eq(companies.id, company.id));
+      }
+
+      appendAudit("company.media.deleted", "company_media", input.actor ?? "supplier");
+      return {
+        ok: true as const,
+        message: "Media removed.",
+        blobUrl: row.blobUrl,
+        demo: false,
+      };
+    } catch (error) {
+      console.warn("[phase2] Neon company media delete failed", error);
+    }
+  }
+
+  const store = getStore();
+  const index = store.companyMedia.findIndex(
+    (m) => m.id === input.mediaId && m.companySlug === input.companySlug,
+  );
+  if (index < 0) {
+    return { ok: false as const, message: "Media not found." };
+  }
+  const [removed] = store.companyMedia.splice(index, 1);
+  const runtime = store.companies.find((c) => c.slug === input.companySlug);
+  if (runtime?.logoUrl === removed.blobUrl) {
+    runtime.logoUrl = undefined;
+  }
+  appendAudit("company.media.deleted", "company_media", input.actor ?? "supplier");
+  return {
+    ok: true as const,
+    message: "Media removed.",
+    blobUrl: removed.blobUrl,
     demo: true,
   };
 }
@@ -1244,11 +1514,37 @@ export async function persistRequest(input: {
   description: string;
   budgetMin: number;
   budgetMax: number;
+  currency: string;
+  taxTreatment: "inclusive" | "exclusive";
+  quoteValidityDays: number;
   deliveryCountry: string;
+  deliveryCity?: string;
+  deliveryAddress?: string;
+  dueDate?: string;
+  items?: RequestItemInput[];
   actor?: string;
   organisationId?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentMimeType?: string;
 }) {
   const slug = `${slugify(input.title)}-${Date.now().toString(36)}`;
+  const currency = input.currency.trim().toUpperCase() || "USD";
+  const quoteValidityDays = Math.max(1, Math.round(input.quoteValidityDays) || 30);
+  const dueDateValue = input.dueDate?.trim()
+    ? new Date(`${input.dueDate.trim()}T23:59:59.000Z`)
+    : null;
+  const cleanedItems = (input.items ?? [])
+    .map((item, index) => ({
+      productName: item.productName.trim(),
+      productCode: item.productCode?.trim() || undefined,
+      quantity: Math.max(1, Math.round(item.quantity) || 1),
+      unit: item.unit?.trim() || undefined,
+      oemOnly: Boolean(item.oemOnly),
+      notes: item.notes?.trim() || undefined,
+      sortOrder: index,
+    }))
+    .filter((item) => item.productName.length > 0);
   const db = getDb();
 
   if (db) {
@@ -1280,11 +1576,41 @@ export async function persistRequest(input: {
           description: input.description,
           budgetMin: input.budgetMin,
           budgetMax: input.budgetMax,
-          currency: "USD",
+          currency,
+          taxTreatment: input.taxTreatment,
+          quoteValidityDays,
           deliveryCountry: input.deliveryCountry,
+          deliveryCity: input.deliveryCity?.trim() || null,
+          deliveryAddress: input.deliveryAddress?.trim() || null,
+          dueDate: dueDateValue && !Number.isNaN(dueDateValue.getTime())
+            ? dueDateValue
+            : null,
           status: "open",
+          attachmentUrl: input.attachmentUrl,
+          attachmentName: input.attachmentName,
+          attachmentMimeType: input.attachmentMimeType,
         })
         .returning();
+
+      let persistedItems: DemoRequestItem[] = [];
+      if (cleanedItems.length > 0) {
+        const insertedItems = await db
+          .insert(requestItems)
+          .values(
+            cleanedItems.map((item) => ({
+              requestId: created.id,
+              productName: item.productName,
+              productCode: item.productCode,
+              quantity: item.quantity,
+              unit: item.unit,
+              oemOnly: item.oemOnly,
+              notes: item.notes,
+              sortOrder: item.sortOrder,
+            })),
+          )
+          .returning();
+        persistedItems = insertedItems.map(mapRequestItemRow);
+      }
 
       const debit = await debitCreditsPreferPool(
         db,
@@ -1304,7 +1630,12 @@ export async function persistRequest(input: {
         entityType: "request",
         entityId: created.id,
         organisationId: org.id,
-        payload: { title: input.title, credits: RFQ_CREDIT_COST },
+        payload: {
+          title: input.title,
+          credits: RFQ_CREDIT_COST,
+          hasAttachment: Boolean(input.attachmentUrl),
+          itemCount: persistedItems.length,
+        },
       });
 
       const store = getStore();
@@ -1317,10 +1648,21 @@ export async function persistRequest(input: {
         budgetMin: created.budgetMin ?? 0,
         budgetMax: created.budgetMax ?? 0,
         currency: created.currency,
+        taxTreatment: created.taxTreatment ?? "inclusive",
+        quoteValidityDays: created.quoteValidityDays ?? 30,
         deliveryCountry: created.deliveryCountry ?? "",
+        deliveryCity: created.deliveryCity ?? undefined,
+        deliveryAddress: created.deliveryAddress ?? undefined,
+        dueDate: created.dueDate
+          ? created.dueDate.toISOString().slice(0, 10)
+          : undefined,
         status: "open",
         quoteCount: 0,
         createdAt: created.createdAt.toISOString().slice(0, 10),
+        items: persistedItems,
+        attachmentUrl: created.attachmentUrl ?? undefined,
+        attachmentName: created.attachmentName ?? undefined,
+        attachmentMimeType: created.attachmentMimeType ?? undefined,
       });
       if (debit.source === "org_wallet") {
         store.wallet.balance = debit.balance;
@@ -1367,11 +1709,28 @@ export async function persistRequest(input: {
     category: "packaging-machinery",
     budgetMin: input.budgetMin,
     budgetMax: input.budgetMax,
-    currency: "USD",
+    currency,
+    taxTreatment: input.taxTreatment,
+    quoteValidityDays,
     deliveryCountry: input.deliveryCountry,
+    deliveryCity: input.deliveryCity?.trim() || undefined,
+    deliveryAddress: input.deliveryAddress?.trim() || undefined,
+    dueDate: input.dueDate?.trim() || undefined,
     status: "open",
     quoteCount: 0,
     createdAt: new Date().toISOString().slice(0, 10),
+    items: cleanedItems.map((item, index) => ({
+      id: `${id}-item-${index + 1}`,
+      productName: item.productName,
+      productCode: item.productCode,
+      quantity: item.quantity,
+      unit: item.unit,
+      oemOnly: item.oemOnly,
+      notes: item.notes,
+    })),
+    attachmentUrl: input.attachmentUrl,
+    attachmentName: input.attachmentName,
+    attachmentMimeType: input.attachmentMimeType,
   };
   store.requests.unshift(request);
   appendAudit("request.created", "request", input.actor ?? "buyer");
@@ -1387,6 +1746,8 @@ export async function persistQuote(input: {
   requestId: string;
   amount: number;
   leadTimeDays: number;
+  deliveryPeriodDays?: number;
+  stockAvailability?: StockAvailability;
   notes: string;
   companySlug?: string;
   companyName?: string;
@@ -1405,20 +1766,29 @@ export async function persistQuote(input: {
       if (neonRequest.status !== "open") {
         return { ok: false as const, message: "RFQ is not open for quotes." };
       }
+      if (isRfqPastDue(neonRequest.dueDate)) {
+        return {
+          ok: false as const,
+          message: "This RFQ has passed its closing date.",
+        };
+      }
 
       const company = await getCompanyBySlugAsync(companySlug);
       if (!company) {
         return { ok: false as const, message: "Supplier company not found." };
       }
 
+      const quoteCurrency = neonRequest.currency || "USD";
       const [created] = await db
         .insert(quotes)
         .values({
           requestId: neonRequest.id,
           companyId: company.id,
           amount: input.amount,
-          currency: "USD",
+          currency: quoteCurrency,
           leadTimeDays: input.leadTimeDays,
+          deliveryPeriodDays: input.deliveryPeriodDays,
+          stockAvailability: input.stockAvailability,
           notes: input.notes,
           status: "submitted",
         })
@@ -1434,8 +1804,10 @@ export async function persistQuote(input: {
         companyName: input.companyName ?? company.name,
         companySlug: company.slug,
         amount: input.amount,
-        currency: "USD",
+        currency: quoteCurrency,
         leadTimeDays: input.leadTimeDays,
+        deliveryPeriodDays: input.deliveryPeriodDays,
+        stockAvailability: input.stockAvailability,
         notes: input.notes,
         status: "submitted",
       });
@@ -1444,7 +1816,7 @@ export async function persistQuote(input: {
       return {
         ok: true as const,
         id: created.id,
-        message: `Quote of $${input.amount} submitted for ${neonRequest.id}.`,
+        message: `Quote of ${input.amount} ${quoteCurrency} submitted for ${neonRequest.id}.`,
         demo: false,
       };
     } catch (error) {
@@ -1461,16 +1833,25 @@ export async function persistQuote(input: {
   if (request.status !== "open") {
     return { ok: false as const, message: "RFQ is not open for quotes." };
   }
+  if (isRfqPastDue(request.dueDate)) {
+    return {
+      ok: false as const,
+      message: "This RFQ has passed its closing date.",
+    };
+  }
 
   const id = `q-${Date.now()}`;
+  const quoteCurrency = request.currency || "USD";
   const quote: DemoQuote = {
     id,
     requestId: request.id,
     companyName: input.companyName ?? "Your company",
     companySlug,
     amount: input.amount,
-    currency: "USD",
+    currency: quoteCurrency,
     leadTimeDays: input.leadTimeDays,
+    deliveryPeriodDays: input.deliveryPeriodDays,
+    stockAvailability: input.stockAvailability,
     notes: input.notes,
     status: "submitted",
   };
@@ -1481,7 +1862,7 @@ export async function persistQuote(input: {
   return {
     ok: true as const,
     id,
-    message: `Quote of $${input.amount} submitted for ${request.id}.`,
+    message: `Quote of ${input.amount} ${quoteCurrency} submitted for ${request.id}.`,
     demo: true,
   };
 }

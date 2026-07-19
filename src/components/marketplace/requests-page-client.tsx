@@ -43,12 +43,18 @@ export function RequestsPageClient({ requests }: { requests: DemoRequest[] }) {
               {r.description}
             </p>
             <div className="mt-3 flex flex-wrap gap-4 text-xs text-[var(--rq-muted)]">
-              <span>{r.deliveryCountry}</span>
+              <span>
+                {[r.deliveryCity, r.deliveryCountry].filter(Boolean).join(", ")}
+              </span>
               <span>
                 {formatCurrency(r.budgetMin, r.currency)} –{" "}
                 {formatCurrency(r.budgetMax, r.currency)}
               </span>
+              {r.dueDate ? <span>Closes {r.dueDate}</span> : null}
               <span>{r.quoteCount} quotes</span>
+              {(r.items?.length ?? 0) > 0 ? (
+                <span>{r.items.length} items</span>
+              ) : null}
               <span>Posted {r.createdAt}</span>
             </div>
           </Link>

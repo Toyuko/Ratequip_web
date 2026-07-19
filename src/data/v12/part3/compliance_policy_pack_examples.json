@@ -1,0 +1,24 @@
+[
+  {
+    "id": "policy-food-haccp-general-v1",
+    "industry": "food-manufacturing",
+    "jurisdiction": "generic",
+    "obligations": [
+      "hazard-analysis",
+      "traceability",
+      "cleaning-verification"
+    ],
+    "effectiveFrom": "2026-01-01"
+  },
+  {
+    "id": "policy-electrical-contractor-general-v1",
+    "industry": "industrial-services",
+    "jurisdiction": "generic",
+    "obligations": [
+      "electrical-licence",
+      "public-liability",
+      "site-induction"
+    ],
+    "effectiveFrom": "2026-01-01"
+  }
+]

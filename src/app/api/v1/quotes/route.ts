@@ -13,6 +13,10 @@ const schema = z.object({
   requestId: z.string().min(1),
   amount: z.number().positive(),
   leadTimeDays: z.number().int().nonnegative().default(30),
+  deliveryPeriodDays: z.number().int().nonnegative().optional(),
+  stockAvailability: z
+    .enum(["in_stock", "on_order", "unavailable"])
+    .optional(),
   notes: z.string().default(""),
   companySlug: z.string().optional(),
 });

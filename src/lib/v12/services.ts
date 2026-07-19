@@ -2,6 +2,7 @@ import {
   mayExecuteWithoutConfirmation,
   type AIDraft,
 } from "@/lib/v12/ai/confirmation-policy";
+import { hashDocumentBody } from "@/lib/v12/documents/vault";
 import { resolveQuestions, type RuleContext } from "@/lib/v12/dqe/resolver";
 import {
   evaluateEligibility,
@@ -18,7 +19,20 @@ import {
   persistRequisition,
 } from "@/lib/db/v12-neon";
 import { questionsForPack, searchTaxonomy } from "@/lib/v12/seeds";
-import { getV12Store } from "@/lib/v12/store";
+import {
+  getV12Store,
+  type AssetRecord,
+  type AwardRecord,
+  type PassportRecord,
+  type Requisition,
+} from "@/lib/v12/store";
+import {
+  getWorkflowTemplate,
+  isTerminalNode,
+  listWorkflowTemplates,
+  nextApprovalNode,
+  type WorkflowInstance,
+} from "@/lib/v12/workflow/runtime";
 import { createHash } from "node:crypto";
 
 function id(prefix: string) {
@@ -327,18 +341,28 @@ export function createRequisition(input: {
   description: string;
   taxonomyKeys: string[];
   budgetMax: number;
+  startedBy?: string;
 }) {
-  const item = {
+  const item: Requisition = {
     id: id("reqn"),
     title: input.title,
     description: input.description,
     taxonomyKeys: input.taxonomyKeys,
     budgetMax: input.budgetMax,
     currency: "USD",
-    status: "submitted" as const,
+    status: "submitted",
     createdAt: new Date().toISOString(),
   };
   getV12Store().requisitions.unshift(item);
+  const workflow = startWorkflow({
+    templateId: "wf-procurement-approval-v1",
+    subjectType: "requisition",
+    subjectId: item.id,
+    startedBy: input.startedBy ?? "buyer@demo.ratequip.com",
+  });
+  if (workflow.ok) {
+    item.workflowInstanceId = workflow.instance.id;
+  }
   neonPersist(
     "requisition",
     persistRequisition({
@@ -352,15 +376,46 @@ export function createRequisition(input: {
         taxonomyKeys: item.taxonomyKeys,
         budgetMax: item.budgetMax,
         currency: item.currency,
+        workflowInstanceId: item.workflowInstanceId,
       },
     }),
   );
   return item;
 }
 
-export function approveRequisition(idValue: string) {
+export function approveRequisition(idValue: string, actor = "manager@demo.ratequip.com") {
   const item = getV12Store().requisitions.find((r) => r.id === idValue);
   if (!item) return { ok: false as const, message: "Not found" };
+
+  // Prefer workflow completion when an instance is attached (Release 3A).
+  if (item.workflowInstanceId) {
+    const store = getV12Store();
+    const open = store.workflowTasks.find(
+      (t) =>
+        t.instanceId === item.workflowInstanceId &&
+        (t.status === "open" || t.status === "claimed"),
+    );
+    if (open) {
+      const claimed = claimWorkflowTask({ taskId: open.id, actor });
+      if (!claimed.ok) return claimed;
+      const completed = completeWorkflowTask({ taskId: open.id, actor });
+      if (!completed.ok) return completed;
+      // Finance step still open — keep submitted until terminal.
+      const stillOpen = store.workflowTasks.find(
+        (t) =>
+          t.instanceId === item.workflowInstanceId &&
+          (t.status === "open" || t.status === "claimed"),
+      );
+      if (stillOpen) {
+        return {
+          ok: true as const,
+          item,
+          message: `Workflow advanced; awaiting ${stillOpen.node}`,
+        };
+      }
+    }
+  }
+
   item.status = "approved";
   return { ok: true as const, item };
 }
@@ -398,8 +453,10 @@ export function awardRfq(input: {
   currency: string;
   reasonCodes: string[];
   awardedBy: string;
+  assetName?: string;
+  taxonomyKeys?: string[];
 }) {
-  const award = {
+  const award: AwardRecord = {
     id: id("award"),
     rfqId: input.rfqId,
     quoteId: input.quoteId,
@@ -423,9 +480,334 @@ export function awardRfq(input: {
       amount: award.amount,
     }),
   );
+
+  // Release 2B — award creates asset + digital passport stub
+  const asset = createAssetFromAward({
+    awardId: award.id,
+    rfqId: award.rfqId,
+    supplierSlug: award.supplierSlug,
+    name:
+      input.assetName ??
+      `Asset from award ${award.id.slice(0, 12)} (${award.supplierSlug})`,
+    taxonomyKeys: input.taxonomyKeys ?? [],
+    createdBy: input.awardedBy,
+  });
+  award.assetId = asset.id;
+
   return award;
 }
 
 export function taxonomySearch(q: string) {
   return searchTaxonomy(q);
+}
+
+/* ─── Release 2B: assets + passport ─── */
+
+export function createAssetFromAward(input: {
+  awardId: string;
+  rfqId: string;
+  supplierSlug: string;
+  name: string;
+  taxonomyKeys: string[];
+  createdBy: string;
+}) {
+  const store = getV12Store();
+  const asset: AssetRecord = {
+    id: id("asset"),
+    name: input.name,
+    taxonomyKeys: input.taxonomyKeys,
+    status: "commissioning",
+    supplierSlug: input.supplierSlug,
+    awardId: input.awardId,
+    rfqId: input.rfqId,
+    createdAt: new Date().toISOString(),
+    createdBy: input.createdBy,
+  };
+  const passport: PassportRecord = {
+    id: id("passport"),
+    assetId: asset.id,
+    status: "draft",
+    sections: [
+      { key: "identity", label: "Identity", value: asset.name },
+      { key: "supplier", label: "Supplier", value: input.supplierSlug },
+      { key: "award", label: "Award ref", value: input.awardId },
+      { key: "rfq", label: "RFQ ref", value: input.rfqId },
+    ],
+    evidenceDocumentIds: [],
+    createdAt: new Date().toISOString(),
+  };
+  asset.passportId = passport.id;
+  store.assets.unshift(asset);
+  store.passports.unshift(passport);
+  return asset;
+}
+
+export function listAssets() {
+  return getV12Store().assets;
+}
+
+export function issuePassport(passportId: string) {
+  const passport = getV12Store().passports.find((p) => p.id === passportId);
+  if (!passport) return { ok: false as const, message: "Passport not found" };
+  passport.status = "issued";
+  passport.issuedAt = new Date().toISOString();
+  const asset = getV12Store().assets.find((a) => a.id === passport.assetId);
+  if (asset) asset.status = "in_service";
+  return { ok: true as const, passport, asset };
+}
+
+/* ─── Release 3A: workflow ─── */
+
+export function startWorkflow(input: {
+  templateId: string;
+  subjectType: string;
+  subjectId: string;
+  startedBy: string;
+}) {
+  const template = getWorkflowTemplate(input.templateId);
+  if (!template) {
+    return { ok: false as const, message: "Unknown workflow template" };
+  }
+  const store = getV12Store();
+  const startNode = template.nodes[0] ?? "submit";
+  const firstTaskNode = template.nodes[1] ?? startNode;
+  const instance: WorkflowInstance = {
+    id: id("wfinst"),
+    templateId: template.id,
+    templateName: template.name,
+    subjectType: input.subjectType,
+    subjectId: input.subjectId,
+    status: "running",
+    currentNode: firstTaskNode,
+    startedBy: input.startedBy,
+    startedAt: new Date().toISOString(),
+    history: [
+      {
+        at: new Date().toISOString(),
+        node: startNode,
+        action: "started",
+        actor: input.startedBy,
+      },
+    ],
+  };
+  store.workflowInstances.unshift(instance);
+
+  if (!isTerminalNode(template, firstTaskNode)) {
+    store.workflowTasks.unshift({
+      id: id("wftask"),
+      instanceId: instance.id,
+      node: firstTaskNode,
+      status: "open",
+      createdAt: new Date().toISOString(),
+    });
+  } else {
+    instance.status = "completed";
+    instance.completedAt = new Date().toISOString();
+  }
+
+  return { ok: true as const, instance };
+}
+
+export function claimWorkflowTask(input: { taskId: string; actor: string }) {
+  const store = getV12Store();
+  const task = store.workflowTasks.find((t) => t.id === input.taskId);
+  if (!task) return { ok: false as const, message: "Task not found" };
+  if (task.status !== "open" && task.status !== "claimed") {
+    return { ok: false as const, message: "Task not claimable" };
+  }
+  const instance = store.workflowInstances.find((i) => i.id === task.instanceId);
+  if (instance && instance.startedBy === input.actor) {
+    return {
+      ok: false as const,
+      message: "Self-approval blocked (ADR-0024)",
+    };
+  }
+  task.status = "claimed";
+  task.claimedBy = input.actor;
+  task.assignee = input.actor;
+  return { ok: true as const, task };
+}
+
+export function completeWorkflowTask(input: { taskId: string; actor: string }) {
+  const store = getV12Store();
+  const task = store.workflowTasks.find((t) => t.id === input.taskId);
+  if (!task) return { ok: false as const, message: "Task not found" };
+  if (task.status === "open") {
+    const claimed = claimWorkflowTask(input);
+    if (!claimed.ok) return claimed;
+  }
+  if (task.status !== "claimed") {
+    return { ok: false as const, message: "Task must be claimed first" };
+  }
+  if (task.claimedBy && task.claimedBy !== input.actor) {
+    return { ok: false as const, message: "Task claimed by another actor" };
+  }
+
+  const instance = store.workflowInstances.find((i) => i.id === task.instanceId);
+  if (!instance) return { ok: false as const, message: "Instance missing" };
+  const template = getWorkflowTemplate(instance.templateId);
+  if (!template) return { ok: false as const, message: "Template missing" };
+
+  task.status = "completed";
+  task.completedBy = input.actor;
+  task.completedAt = new Date().toISOString();
+  instance.history.push({
+    at: task.completedAt,
+    node: task.node,
+    action: "completed",
+    actor: input.actor,
+  });
+
+  const next = nextApprovalNode(template, task.node);
+  if (!next || isTerminalNode(template, next)) {
+    instance.status = "completed";
+    instance.currentNode = template.nodes[template.nodes.length - 1] ?? "approved";
+    instance.completedAt = new Date().toISOString();
+    if (instance.subjectType === "requisition") {
+      const reqn = store.requisitions.find((r) => r.id === instance.subjectId);
+      if (reqn) reqn.status = "approved";
+    }
+    return { ok: true as const, task, instance };
+  }
+
+  instance.currentNode = next;
+  store.workflowTasks.unshift({
+    id: id("wftask"),
+    instanceId: instance.id,
+    node: next,
+    status: "open",
+    createdAt: new Date().toISOString(),
+  });
+  return { ok: true as const, task, instance };
+}
+
+export function listWorkflowOverview() {
+  const store = getV12Store();
+  return {
+    templates: listWorkflowTemplates(),
+    instances: store.workflowInstances,
+    tasks: store.workflowTasks,
+  };
+}
+
+/* ─── Release 3A: document vault ─── */
+
+export function createDocument(input: {
+  title: string;
+  docType: string;
+  body: string;
+  createdBy: string;
+  linkedType?: string;
+  linkedId?: string;
+}) {
+  const store = getV12Store();
+  const doc = {
+    id: id("doc"),
+    title: input.title,
+    docType: input.docType,
+    linkedType: input.linkedType,
+    linkedId: input.linkedId,
+    status: "draft" as const,
+    currentVersion: 1,
+    createdBy: input.createdBy,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  const version = {
+    id: id("docver"),
+    documentId: doc.id,
+    version: 1,
+    contentHash: hashDocumentBody(input.body),
+    label: "v1",
+    body: input.body,
+    status: "draft" as const,
+    createdBy: input.createdBy,
+    createdAt: new Date().toISOString(),
+  };
+  store.documents.unshift(doc);
+  store.documentVersions.unshift(version);
+  return { document: doc, version };
+}
+
+export function addDocumentVersion(input: {
+  documentId: string;
+  body: string;
+  createdBy: string;
+  label?: string;
+}) {
+  const store = getV12Store();
+  const doc = store.documents.find((d) => d.id === input.documentId);
+  if (!doc) return { ok: false as const, message: "Document not found" };
+  if (doc.status === "held") {
+    return { ok: false as const, message: "Document on legal hold" };
+  }
+  const current = store.documentVersions.find(
+    (v) => v.documentId === doc.id && v.version === doc.currentVersion,
+  );
+  if (current?.status === "approved") {
+    current.status = "superseded";
+  }
+  const nextVersion = doc.currentVersion + 1;
+  const version = {
+    id: id("docver"),
+    documentId: doc.id,
+    version: nextVersion,
+    contentHash: hashDocumentBody(input.body),
+    label: input.label ?? `v${nextVersion}`,
+    body: input.body,
+    status: "draft" as const,
+    createdBy: input.createdBy,
+    createdAt: new Date().toISOString(),
+  };
+  doc.currentVersion = nextVersion;
+  doc.status = "draft";
+  doc.updatedAt = new Date().toISOString();
+  store.documentVersions.unshift(version);
+  return { ok: true as const, document: doc, version };
+}
+
+export function approveDocumentVersion(input: {
+  documentId: string;
+  version: number;
+  approvedBy: string;
+}) {
+  const store = getV12Store();
+  const doc = store.documents.find((d) => d.id === input.documentId);
+  if (!doc) return { ok: false as const, message: "Document not found" };
+  const version = store.documentVersions.find(
+    (v) => v.documentId === doc.id && v.version === input.version,
+  );
+  if (!version) return { ok: false as const, message: "Version not found" };
+  if (version.status === "approved") {
+    return { ok: false as const, message: "Version already approved (immutable)" };
+  }
+  if (doc.createdBy === input.approvedBy) {
+    return {
+      ok: false as const,
+      message: "Self-approval blocked for document evidence",
+    };
+  }
+  version.status = "approved";
+  version.approvedBy = input.approvedBy;
+  version.approvedAt = new Date().toISOString();
+  doc.status = "approved";
+  doc.updatedAt = new Date().toISOString();
+
+  // Link evidence onto passport when document is tied to an asset
+  if (doc.linkedType === "asset" && doc.linkedId) {
+    const passport = store.passports.find((p) => p.assetId === doc.linkedId);
+    if (passport && !passport.evidenceDocumentIds.includes(doc.id)) {
+      passport.evidenceDocumentIds.push(doc.id);
+    }
+  }
+
+  return { ok: true as const, document: doc, version };
+}
+
+export function listDocuments() {
+  const store = getV12Store();
+  return {
+    documents: store.documents,
+    versions: store.documentVersions,
+  };
 }

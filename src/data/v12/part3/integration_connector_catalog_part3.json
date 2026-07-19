@@ -1,0 +1,55 @@
+[
+  {
+    "id": "erp-generic-rest-v1",
+    "type": "ERP",
+    "modes": [
+      "read",
+      "write-approved"
+    ],
+    "canonicalObjects": [
+      "supplier",
+      "product",
+      "requisition",
+      "purchaseOrder",
+      "receipt",
+      "invoice"
+    ]
+  },
+  {
+    "id": "cmms-generic-rest-v1",
+    "type": "CMMS",
+    "modes": [
+      "read",
+      "write-approved"
+    ],
+    "canonicalObjects": [
+      "asset",
+      "workOrder",
+      "maintenancePlan",
+      "part",
+      "meterReading"
+    ]
+  },
+  {
+    "id": "scada-opcua-read-v1",
+    "type": "SCADA",
+    "modes": [
+      "read"
+    ],
+    "protocols": [
+      "OPC-UA"
+    ]
+  },
+  {
+    "id": "iot-mqtt-edge-v1",
+    "type": "IoT",
+    "modes": [
+      "telemetry",
+      "approved-command"
+    ],
+    "protocols": [
+      "MQTT",
+      "HTTPS"
+    ]
+  }
+]

@@ -1,15 +1,25 @@
 "use server";
 
 import {
+  addDocumentVersion,
+  approveDocumentVersion,
   approveRequisition,
   awardRfq,
+  claimWorkflowTask,
+  completeWorkflowTask,
   confirmAIDraft,
   createAIDraft,
+  createDocument,
   createRequisition,
   createRfqRevision,
+  issuePassport,
+  listAssets,
+  listDocuments,
+  listWorkflowOverview,
   resolveActivationPack,
   runExplainableMatch,
   saveAnswerSet,
+  startWorkflow,
   taxonomySearch,
   upsertContractor,
   upsertOpportunity,
@@ -70,8 +80,8 @@ export async function v12CreateRequisition(
   return createRequisition(input);
 }
 
-export async function v12ApproveRequisition(id: string) {
-  return approveRequisition(id);
+export async function v12ApproveRequisition(id: string, actor?: string) {
+  return approveRequisition(id, actor);
 }
 
 export async function v12CreateRevision(
@@ -86,4 +96,56 @@ export async function v12AwardRfq(input: Parameters<typeof awardRfq>[0]) {
 
 export async function v12SearchTaxonomy(q: string) {
   return taxonomySearch(q);
+}
+
+export async function v12ListAssets() {
+  return listAssets();
+}
+
+export async function v12IssuePassport(passportId: string) {
+  return issuePassport(passportId);
+}
+
+export async function v12ListWorkflow() {
+  return listWorkflowOverview();
+}
+
+export async function v12StartWorkflow(
+  input: Parameters<typeof startWorkflow>[0],
+) {
+  return startWorkflow(input);
+}
+
+export async function v12ClaimTask(
+  input: Parameters<typeof claimWorkflowTask>[0],
+) {
+  return claimWorkflowTask(input);
+}
+
+export async function v12CompleteTask(
+  input: Parameters<typeof completeWorkflowTask>[0],
+) {
+  return completeWorkflowTask(input);
+}
+
+export async function v12ListDocuments() {
+  return listDocuments();
+}
+
+export async function v12CreateDocument(
+  input: Parameters<typeof createDocument>[0],
+) {
+  return createDocument(input);
+}
+
+export async function v12AddDocumentVersion(
+  input: Parameters<typeof addDocumentVersion>[0],
+) {
+  return addDocumentVersion(input);
+}
+
+export async function v12ApproveDocumentVersion(
+  input: Parameters<typeof approveDocumentVersion>[0],
+) {
+  return approveDocumentVersion(input);
 }

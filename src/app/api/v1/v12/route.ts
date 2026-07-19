@@ -20,13 +20,16 @@ export async function GET(req: NextRequest) {
     return apiResponse(
       req,
       ok({
-        version: "12.0.0",
-        parts: ["part1", "part2-2A"],
+        version: "12.0.0-part3",
+        parts: ["part1", "part2-2A", "part2-2B", "part3-3A"],
         counts: {
           opportunities: store.opportunities.length,
           contractors: store.contractors.length,
           requisitions: store.requisitions.length,
           awards: store.awards.length,
+          assets: store.assets.length,
+          workflowInstances: store.workflowInstances.length,
+          documents: store.documents.length,
           matchRuns: store.matchRuns.length,
           aiDrafts: store.aiDrafts.length,
         },

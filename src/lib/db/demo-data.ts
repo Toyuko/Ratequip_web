@@ -1,5 +1,18 @@
 export type DemoRole = "buyer" | "supplier" | "contractor" | "admin";
 
+export type DemoCompanyMedia = {
+  id: string;
+  companyId: string;
+  companySlug: string;
+  kind: "photo" | "video" | "document";
+  blobUrl: string;
+  fileName: string;
+  mimeType: string;
+  byteSize: number;
+  title: string;
+  createdAt: string;
+};
+
 export type DemoCompany = {
   id: string;
   name: string;
@@ -16,6 +29,8 @@ export type DemoCompany = {
   employeeRange: string;
   yearFounded: number;
   categories: string[];
+  logoUrl?: string;
+  coverUrl?: string;
 };
 
 export type DemoCategory = {
@@ -65,6 +80,16 @@ export type DemoReview = {
   createdAt: string;
 };
 
+export type DemoRequestItem = {
+  id: string;
+  productName: string;
+  productCode?: string;
+  quantity: number;
+  unit?: string;
+  oemOnly: boolean;
+  notes?: string;
+};
+
 export type DemoRequest = {
   id: string;
   title: string;
@@ -74,11 +99,22 @@ export type DemoRequest = {
   budgetMin: number;
   budgetMax: number;
   currency: string;
+  taxTreatment: "inclusive" | "exclusive";
+  quoteValidityDays: number;
   deliveryCountry: string;
+  deliveryCity?: string;
+  deliveryAddress?: string;
+  dueDate?: string;
   status: "open" | "closed" | "awarded";
   quoteCount: number;
   createdAt: string;
+  items: DemoRequestItem[];
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentMimeType?: string;
 };
+
+export type StockAvailability = "in_stock" | "on_order" | "unavailable";
 
 export type DemoQuote = {
   id: string;
@@ -88,6 +124,8 @@ export type DemoQuote = {
   amount: number;
   currency: string;
   leadTimeDays: number;
+  deliveryPeriodDays?: number;
+  stockAvailability?: StockAvailability;
   notes: string;
   status: string;
 };
@@ -1133,10 +1171,26 @@ export const demoRequests: DemoRequest[] = [
     budgetMin: 180000,
     budgetMax: 320000,
     currency: "USD",
+    taxTreatment: "inclusive",
+    quoteValidityDays: 30,
     deliveryCountry: "Thailand",
+    deliveryCity: "Bangkok",
+    deliveryAddress: "Bang Phli Industrial Estate",
+    dueDate: "2026-08-15",
     status: "open",
     quoteCount: 3,
     createdAt: "2026-06-28",
+    items: [
+      {
+        id: "ri-1",
+        productName: "Rotary filler 500ml PET",
+        productCode: "RF-500-CIP",
+        quantity: 1,
+        unit: "unit",
+        oemOnly: true,
+        notes: "12–15k bph, CIP ready",
+      },
+    ],
   },
   {
     id: "req-2",
@@ -1148,10 +1202,25 @@ export const demoRequests: DemoRequest[] = [
     budgetMin: 90000,
     budgetMax: 150000,
     currency: "USD",
+    taxTreatment: "exclusive",
+    quoteValidityDays: 45,
     deliveryCountry: "Vietnam",
+    deliveryCity: "Ho Chi Minh City",
+    dueDate: "2026-08-01",
     status: "open",
     quoteCount: 2,
     createdAt: "2026-07-02",
+    items: [
+      {
+        id: "ri-2",
+        productName: "Palletising cell",
+        productCode: "PAL-20KG",
+        quantity: 1,
+        unit: "cell",
+        oemOnly: false,
+        notes: "20 kg cartons, 12 cycles/min",
+      },
+    ],
   },
   {
     id: "req-3",
@@ -1163,10 +1232,23 @@ export const demoRequests: DemoRequest[] = [
     budgetMin: 3500,
     budgetMax: 6500,
     currency: "USD",
+    taxTreatment: "inclusive",
+    quoteValidityDays: 14,
     deliveryCountry: "China",
+    deliveryCity: "Guangzhou",
+    dueDate: "2026-07-25",
     status: "open",
     quoteCount: 4,
     createdAt: "2026-07-05",
+    items: [
+      {
+        id: "ri-3",
+        productName: "FAT witnessing service",
+        quantity: 3,
+        unit: "day",
+        oemOnly: false,
+      },
+    ],
   },
 ];
 
@@ -1179,6 +1261,8 @@ export const demoQuotes: DemoQuote[] = [
     amount: 265000,
     currency: "USD",
     leadTimeDays: 120,
+    deliveryPeriodDays: 140,
+    stockAvailability: "on_order",
     notes: "Includes FAT in Malmö and 2 weeks commissioning in Thailand.",
     status: "submitted",
   },
@@ -1190,6 +1274,8 @@ export const demoQuotes: DemoQuote[] = [
     amount: 198000,
     currency: "USD",
     leadTimeDays: 90,
+    deliveryPeriodDays: 100,
+    stockAvailability: "in_stock",
     notes: "Partner OEM fill line; local spare parts stock included for 12 months.",
     status: "submitted",
   },
@@ -1201,6 +1287,8 @@ export const demoQuotes: DemoQuote[] = [
     amount: 128000,
     currency: "USD",
     leadTimeDays: 75,
+    deliveryPeriodDays: 85,
+    stockAvailability: "on_order",
     notes: "Includes fencing, HMI Thai/EN, and operator training.",
     status: "shortlisted",
   },

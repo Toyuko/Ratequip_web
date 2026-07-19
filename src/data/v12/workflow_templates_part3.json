@@ -1,0 +1,55 @@
+[
+  {
+    "id": "wf-procurement-approval-v1",
+    "name": "Procurement approval",
+    "version": 1,
+    "nodes": [
+      "submit",
+      "manager_approval",
+      "finance_approval",
+      "approved"
+    ],
+    "policy": "amount-and-site-driven"
+  },
+  {
+    "id": "wf-document-approval-v1",
+    "name": "Controlled document approval",
+    "version": 1,
+    "nodes": [
+      "draft",
+      "technical_review",
+      "quality_approval",
+      "issued"
+    ],
+    "policy": "document-class-driven"
+  },
+  {
+    "id": "wf-capa-v1",
+    "name": "Corrective action",
+    "version": 1,
+    "nodes": [
+      "finding",
+      "containment",
+      "root_cause",
+      "action",
+      "effectiveness",
+      "closed"
+    ],
+    "policy": "risk-driven"
+  },
+  {
+    "id": "wf-plc-change-v1",
+    "name": "PLC change control",
+    "version": 1,
+    "nodes": [
+      "request",
+      "risk_review",
+      "backup",
+      "approval",
+      "change",
+      "verification",
+      "close"
+    ],
+    "policy": "ot-safety"
+  }
+]

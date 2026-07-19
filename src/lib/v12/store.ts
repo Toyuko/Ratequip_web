@@ -1,5 +1,13 @@
 import type { AIDraft } from "@/lib/v12/ai/confirmation-policy";
+import type {
+  DocumentRecord,
+  DocumentVersion,
+} from "@/lib/v12/documents/vault";
 import type { Ranked } from "@/lib/v12/recommendations/ranker";
+import type {
+  WorkflowInstance,
+  WorkflowTask,
+} from "@/lib/v12/workflow/runtime";
 
 export type OpportunityProfile = {
   id: string;
@@ -40,6 +48,7 @@ export type Requisition = {
   status: "draft" | "submitted" | "approved" | "sourcing" | "closed";
   createdAt: string;
   rfqId?: string;
+  workflowInstanceId?: string;
 };
 
 export type RfqRevision = {
@@ -63,6 +72,7 @@ export type AwardRecord = {
   policyVersion: string;
   awardedAt: string;
   awardedBy: string;
+  assetId?: string;
 };
 
 export type SrmScorecard = {
@@ -95,6 +105,31 @@ export type MatchRun = {
   createdAt: string;
 };
 
+/** Release 2B — asset register + digital passport stub */
+export type AssetRecord = {
+  id: string;
+  name: string;
+  taxonomyKeys: string[];
+  status: "commissioning" | "in_service" | "maintenance" | "disposed";
+  supplierSlug: string;
+  awardId?: string;
+  rfqId?: string;
+  passportId?: string;
+  serialHint?: string;
+  createdAt: string;
+  createdBy: string;
+};
+
+export type PassportRecord = {
+  id: string;
+  assetId: string;
+  status: "draft" | "issued" | "shared";
+  sections: Array<{ key: string; label: string; value: string }>;
+  evidenceDocumentIds: string[];
+  issuedAt?: string;
+  createdAt: string;
+};
+
 type V12Store = {
   opportunities: OpportunityProfile[];
   contractors: ContractorProfile[];
@@ -106,6 +141,12 @@ type V12Store = {
   aiDrafts: AIDraft[];
   answerSets: Record<string, Record<string, unknown>>;
   matchRuns: MatchRun[];
+  assets: AssetRecord[];
+  passports: PassportRecord[];
+  workflowInstances: WorkflowInstance[];
+  workflowTasks: WorkflowTask[];
+  documents: DocumentRecord[];
+  documentVersions: DocumentVersion[];
 };
 
 declare global {
@@ -171,6 +212,12 @@ function seedStore(): V12Store {
     aiDrafts: [],
     answerSets: {},
     matchRuns: [],
+    assets: [],
+    passports: [],
+    workflowInstances: [],
+    workflowTasks: [],
+    documents: [],
+    documentVersions: [],
   };
 }
 

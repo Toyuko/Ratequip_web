@@ -1,0 +1,31 @@
+[
+  {
+    "id": "api-marketplace-core-v1",
+    "audience": "partner",
+    "scopes": [
+      "companies.read",
+      "products.read",
+      "rfqs.write"
+    ],
+    "meter": "requests"
+  },
+  {
+    "id": "api-assets-maintenance-v1",
+    "audience": "enterprise",
+    "scopes": [
+      "assets.read",
+      "maintenance.read",
+      "maintenance.write"
+    ],
+    "meter": "requests"
+  },
+  {
+    "id": "api-catalog-bulk-v1",
+    "audience": "manufacturer",
+    "scopes": [
+      "catalog.read",
+      "catalog.write"
+    ],
+    "meter": "records"
+  }
+]

@@ -268,6 +268,17 @@ export const moderationQueue = pgTable("moderation_queue", {
   ...timestamps,
 });
 
+export const taxTreatmentEnum = pgEnum("tax_treatment", [
+  "inclusive",
+  "exclusive",
+]);
+
+export const stockAvailabilityEnum = pgEnum("stock_availability", [
+  "in_stock",
+  "on_order",
+  "unavailable",
+]);
+
 export const requests = pgTable("requests", {
   id: uuid("id").defaultRandom().primaryKey(),
   organisationId: uuid("organisation_id")
@@ -281,9 +292,33 @@ export const requests = pgTable("requests", {
   budgetMin: integer("budget_min"),
   budgetMax: integer("budget_max"),
   currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  taxTreatment: taxTreatmentEnum("tax_treatment")
+    .notNull()
+    .default("inclusive"),
+  quoteValidityDays: integer("quote_validity_days").notNull().default(30),
   deliveryCountry: varchar("delivery_country", { length: 100 }),
+  deliveryCity: varchar("delivery_city", { length: 120 }),
+  deliveryAddress: text("delivery_address"),
   status: requestStatusEnum("status").notNull().default("open"),
   dueDate: timestamp("due_date", { withTimezone: true }),
+  attachmentUrl: text("attachment_url"),
+  attachmentName: varchar("attachment_name", { length: 255 }),
+  attachmentMimeType: varchar("attachment_mime_type", { length: 128 }),
+  ...timestamps,
+});
+
+export const requestItems = pgTable("request_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  requestId: uuid("request_id")
+    .notNull()
+    .references(() => requests.id, { onDelete: "cascade" }),
+  productName: varchar("product_name", { length: 255 }).notNull(),
+  productCode: varchar("product_code", { length: 128 }),
+  quantity: integer("quantity").notNull().default(1),
+  unit: varchar("unit", { length: 32 }),
+  oemOnly: boolean("oem_only").notNull().default(false),
+  notes: text("notes"),
+  sortOrder: integer("sort_order").notNull().default(0),
   ...timestamps,
 });
 
@@ -299,6 +334,8 @@ export const quotes = pgTable("quotes", {
   amount: integer("amount").notNull(),
   currency: varchar("currency", { length: 3 }).notNull().default("USD"),
   leadTimeDays: integer("lead_time_days"),
+  deliveryPeriodDays: integer("delivery_period_days"),
+  stockAvailability: stockAvailabilityEnum("stock_availability"),
   notes: text("notes"),
   status: quoteStatusEnum("status").notNull().default("submitted"),
   ...timestamps,
@@ -402,6 +439,23 @@ export const evidenceDocuments = pgTable("evidence_documents", {
   fileName: varchar("file_name", { length: 255 }).notNull(),
   mimeType: varchar("mime_type", { length: 128 }),
   purpose: varchar("purpose", { length: 64 }).notNull(),
+  ...timestamps,
+});
+
+/** Account-owned photos, videos, and documents for a company profile. */
+export const companyMedia = pgTable("company_media", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  companyId: uuid("company_id")
+    .notNull()
+    .references(() => companies.id),
+  organisationId: uuid("organisation_id").references(() => organisations.id),
+  uploadedByUserId: uuid("uploaded_by_user_id").references(() => users.id),
+  kind: varchar("kind", { length: 32 }).notNull(),
+  blobUrl: text("blob_url").notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  mimeType: varchar("mime_type", { length: 128 }),
+  byteSize: integer("byte_size"),
+  title: varchar("title", { length: 255 }),
   ...timestamps,
 });
 
