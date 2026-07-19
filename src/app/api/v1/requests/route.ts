@@ -33,6 +33,21 @@ const createSchema = z.object({
   deliveryCity: z.string().optional(),
   deliveryAddress: z.string().optional(),
   dueDate: z.string().optional(),
+  referenceModel: z.string().optional(),
+  complianceStandards: z.array(z.string()).optional(),
+  materialOfConstruction: z.string().optional(),
+  utilitiesNotes: z.string().optional(),
+  warrantyMonthsRequired: z.number().int().nonnegative().optional(),
+  deliveryWeeksRequired: z.number().int().positive().optional(),
+  scopeOfSupply: z.array(z.string()).optional(),
+  technicalRequirements: z
+    .array(
+      z.object({
+        text: z.string().min(1),
+        priority: z.enum(["must", "prefer", "optional"]).default("must"),
+      }),
+    )
+    .optional(),
   items: z
     .array(
       z.object({

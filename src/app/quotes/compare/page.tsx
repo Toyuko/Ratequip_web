@@ -43,11 +43,12 @@ export default async function CompareQuotesPage({
             <tr>
               <th className="px-4 py-3">Supplier</th>
               <th className="px-4 py-3">Amount</th>
+              <th className="px-4 py-3">Meets reqs</th>
               <th className="px-4 py-3">Availability</th>
               <th className="px-4 py-3">Lead time</th>
               <th className="px-4 py-3">Delivery</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Notes</th>
+              <th className="px-4 py-3">Notes / deviations</th>
             </tr>
           </thead>
           <tbody>
@@ -65,6 +66,9 @@ export default async function CompareQuotesPage({
                   {formatCurrency(q.amount, q.currency)}
                 </td>
                 <td className="px-4 py-3">
+                  {q.meetsRequirements === false ? "No" : "Yes"}
+                </td>
+                <td className="px-4 py-3">
                   {stockLabel(q.stockAvailability)}
                 </td>
                 <td className="px-4 py-3">{q.leadTimeDays} days</td>
@@ -76,7 +80,14 @@ export default async function CompareQuotesPage({
                 <td className="px-4 py-3">
                   <Badge variant="muted">{q.status}</Badge>
                 </td>
-                <td className="px-4 py-3 text-[var(--rq-slate)]">{q.notes}</td>
+                <td className="px-4 py-3 text-[var(--rq-slate)]">
+                  {q.notes}
+                  {q.deviations ? (
+                    <span className="mt-1 block text-amber-800 dark:text-amber-200">
+                      Deviations: {q.deviations}
+                    </span>
+                  ) : null}
+                </td>
               </tr>
             ))}
           </tbody>

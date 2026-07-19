@@ -9,6 +9,11 @@ import {
   recordAwardCommission,
 } from "@/lib/billing/operations";
 import {
+  normalizeRequirements,
+  normalizeStringList,
+  type TechnicalRequirement,
+} from "@/lib/rfq/types";
+import {
   demoCategories,
   type DemoClaim,
   type DemoCompany,
@@ -569,6 +574,14 @@ export async function listRequestsAsync(): Promise<DemoRequest[]> {
           dueDate: r.dueDate
             ? r.dueDate.toISOString().slice(0, 10)
             : undefined,
+          referenceModel: r.referenceModel ?? undefined,
+          complianceStandards: normalizeStringList(r.complianceStandards),
+          materialOfConstruction: r.materialOfConstruction ?? undefined,
+          utilitiesNotes: r.utilitiesNotes ?? undefined,
+          warrantyMonthsRequired: r.warrantyMonthsRequired ?? undefined,
+          deliveryWeeksRequired: r.deliveryWeeksRequired ?? undefined,
+          scopeOfSupply: normalizeStringList(r.scopeOfSupply),
+          technicalRequirements: normalizeRequirements(r.technicalRequirements),
           status: r.status as DemoRequest["status"],
           quoteCount: countByRequest.get(r.id) ?? 0,
           createdAt: r.createdAt.toISOString().slice(0, 10),
@@ -619,6 +632,8 @@ export async function getQuotesForRequestAsync(requestId: string) {
             deliveryPeriodDays: q.deliveryPeriodDays ?? undefined,
             stockAvailability:
               (q.stockAvailability as StockAvailability | null) ?? undefined,
+            meetsRequirements: q.meetsRequirements ?? true,
+            deviations: q.deviations ?? undefined,
             notes: q.notes ?? "",
             status: q.status,
           };
@@ -1521,6 +1536,14 @@ export async function persistRequest(input: {
   deliveryCity?: string;
   deliveryAddress?: string;
   dueDate?: string;
+  referenceModel?: string;
+  complianceStandards?: string[];
+  materialOfConstruction?: string;
+  utilitiesNotes?: string;
+  warrantyMonthsRequired?: number;
+  deliveryWeeksRequired?: number;
+  scopeOfSupply?: string[];
+  technicalRequirements?: TechnicalRequirement[];
   items?: RequestItemInput[];
   actor?: string;
   organisationId?: string;
@@ -1534,6 +1557,11 @@ export async function persistRequest(input: {
   const dueDateValue = input.dueDate?.trim()
     ? new Date(`${input.dueDate.trim()}T23:59:59.000Z`)
     : null;
+  const complianceStandards = normalizeStringList(input.complianceStandards);
+  const scopeOfSupply = normalizeStringList(input.scopeOfSupply);
+  const technicalRequirements = normalizeRequirements(
+    input.technicalRequirements,
+  );
   const cleanedItems = (input.items ?? [])
     .map((item, index) => ({
       productName: item.productName.trim(),
@@ -1585,6 +1613,15 @@ export async function persistRequest(input: {
           dueDate: dueDateValue && !Number.isNaN(dueDateValue.getTime())
             ? dueDateValue
             : null,
+          referenceModel: input.referenceModel?.trim() || null,
+          complianceStandards,
+          materialOfConstruction:
+            input.materialOfConstruction?.trim() || null,
+          utilitiesNotes: input.utilitiesNotes?.trim() || null,
+          warrantyMonthsRequired: input.warrantyMonthsRequired ?? null,
+          deliveryWeeksRequired: input.deliveryWeeksRequired ?? null,
+          scopeOfSupply,
+          technicalRequirements,
           status: "open",
           attachmentUrl: input.attachmentUrl,
           attachmentName: input.attachmentName,
@@ -1656,6 +1693,16 @@ export async function persistRequest(input: {
         dueDate: created.dueDate
           ? created.dueDate.toISOString().slice(0, 10)
           : undefined,
+        referenceModel: created.referenceModel ?? undefined,
+        complianceStandards: normalizeStringList(created.complianceStandards),
+        materialOfConstruction: created.materialOfConstruction ?? undefined,
+        utilitiesNotes: created.utilitiesNotes ?? undefined,
+        warrantyMonthsRequired: created.warrantyMonthsRequired ?? undefined,
+        deliveryWeeksRequired: created.deliveryWeeksRequired ?? undefined,
+        scopeOfSupply: normalizeStringList(created.scopeOfSupply),
+        technicalRequirements: normalizeRequirements(
+          created.technicalRequirements,
+        ),
         status: "open",
         quoteCount: 0,
         createdAt: created.createdAt.toISOString().slice(0, 10),
@@ -1716,6 +1763,14 @@ export async function persistRequest(input: {
     deliveryCity: input.deliveryCity?.trim() || undefined,
     deliveryAddress: input.deliveryAddress?.trim() || undefined,
     dueDate: input.dueDate?.trim() || undefined,
+    referenceModel: input.referenceModel?.trim() || undefined,
+    complianceStandards,
+    materialOfConstruction: input.materialOfConstruction?.trim() || undefined,
+    utilitiesNotes: input.utilitiesNotes?.trim() || undefined,
+    warrantyMonthsRequired: input.warrantyMonthsRequired,
+    deliveryWeeksRequired: input.deliveryWeeksRequired,
+    scopeOfSupply,
+    technicalRequirements,
     status: "open",
     quoteCount: 0,
     createdAt: new Date().toISOString().slice(0, 10),
@@ -1748,11 +1803,21 @@ export async function persistQuote(input: {
   leadTimeDays: number;
   deliveryPeriodDays?: number;
   stockAvailability?: StockAvailability;
+  meetsRequirements?: boolean;
+  deviations?: string;
   notes: string;
   companySlug?: string;
   companyName?: string;
   actor?: string;
 }) {
+  const meetsRequirements = input.meetsRequirements !== false;
+  const deviations = input.deviations?.trim() || undefined;
+  if (!meetsRequirements && !deviations) {
+    return {
+      ok: false as const,
+      message: "List deviations where requirements cannot be met.",
+    };
+  }
   const store = getStore();
   const companySlug = input.companySlug ?? "nordicfill-systems";
   const db = getDb();
@@ -1789,6 +1854,8 @@ export async function persistQuote(input: {
           leadTimeDays: input.leadTimeDays,
           deliveryPeriodDays: input.deliveryPeriodDays,
           stockAvailability: input.stockAvailability,
+          meetsRequirements,
+          deviations,
           notes: input.notes,
           status: "submitted",
         })
@@ -1808,6 +1875,8 @@ export async function persistQuote(input: {
         leadTimeDays: input.leadTimeDays,
         deliveryPeriodDays: input.deliveryPeriodDays,
         stockAvailability: input.stockAvailability,
+        meetsRequirements,
+        deviations,
         notes: input.notes,
         status: "submitted",
       });
@@ -1852,6 +1921,8 @@ export async function persistQuote(input: {
     leadTimeDays: input.leadTimeDays,
     deliveryPeriodDays: input.deliveryPeriodDays,
     stockAvailability: input.stockAvailability,
+    meetsRequirements,
+    deviations,
     notes: input.notes,
     status: "submitted",
   };

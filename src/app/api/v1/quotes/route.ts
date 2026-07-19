@@ -17,6 +17,8 @@ const schema = z.object({
   stockAvailability: z
     .enum(["in_stock", "on_order", "unavailable"])
     .optional(),
+  meetsRequirements: z.boolean().optional(),
+  deviations: z.string().optional(),
   notes: z.string().default(""),
   companySlug: z.string().optional(),
 });

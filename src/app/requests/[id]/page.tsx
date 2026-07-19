@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { RfqProjectCompanion } from "@/components/marketplace/rfq-project-companion";
 import { RequestStatusActions } from "@/components/marketplace/request-status-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,10 +103,30 @@ export default async function RequestDetailPage({
         </div>
         <div>
           <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
-            Category
+            Delivery from PO
           </dt>
           <dd className="font-semibold text-[var(--rq-ink)]">
-            {request.category || "—"}
+            {request.deliveryWeeksRequired != null
+              ? `${request.deliveryWeeksRequired} weeks`
+              : "Not set"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+            Warranty required
+          </dt>
+          <dd className="font-semibold text-[var(--rq-ink)]">
+            {request.warrantyMonthsRequired != null
+              ? `${request.warrantyMonthsRequired} months`
+              : "Not set"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+            Reference model
+          </dt>
+          <dd className="font-semibold text-[var(--rq-ink)]">
+            {request.referenceModel || "—"}
           </dd>
         </div>
         <div>
@@ -116,6 +137,46 @@ export default async function RequestDetailPage({
             {request.quoteCount}
           </dd>
         </div>
+        {(request.complianceStandards?.length ?? 0) > 0 ? (
+          <div className="sm:col-span-2">
+            <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+              Compliance
+            </dt>
+            <dd className="font-semibold text-[var(--rq-ink)]">
+              {request.complianceStandards.join(" · ")}
+            </dd>
+          </div>
+        ) : null}
+        {(request.scopeOfSupply?.length ?? 0) > 0 ? (
+          <div className="sm:col-span-2">
+            <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+              Scope of supply
+            </dt>
+            <dd className="font-semibold capitalize text-[var(--rq-ink)]">
+              {request.scopeOfSupply.join(" · ")}
+            </dd>
+          </div>
+        ) : null}
+        {request.materialOfConstruction ? (
+          <div className="sm:col-span-2">
+            <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+              Material of construction
+            </dt>
+            <dd className="font-semibold text-[var(--rq-ink)]">
+              {request.materialOfConstruction}
+            </dd>
+          </div>
+        ) : null}
+        {request.utilitiesNotes ? (
+          <div className="sm:col-span-2">
+            <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+              Utilities
+            </dt>
+            <dd className="font-semibold text-[var(--rq-ink)]">
+              {request.utilitiesNotes}
+            </dd>
+          </div>
+        ) : null}
         {request.attachmentName || request.attachmentUrl ? (
           <div className="sm:col-span-2">
             <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
@@ -139,6 +200,25 @@ export default async function RequestDetailPage({
           </div>
         ) : null}
       </dl>
+
+      {(request.technicalRequirements?.length ?? 0) > 0 ? (
+        <section className="mt-8">
+          <h2 className="text-xl font-bold text-[var(--rq-ink)]">
+            Technical requirements
+          </h2>
+          <ul className="mt-4 space-y-2 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4">
+            {request.technicalRequirements.map((req, index) => (
+              <li
+                key={`${req.text}-${index}`}
+                className="flex flex-wrap items-start gap-2 text-sm text-[var(--rq-slate)]"
+              >
+                <Badge variant="muted">{req.priority}</Badge>
+                <span>{req.text}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {items.length > 0 ? (
         <section className="mt-8">
@@ -197,6 +277,8 @@ export default async function RequestDetailPage({
         </Button>
       </div>
 
+      <RfqProjectCompanion requestId={request.id} />
+
       <section className="mt-10">
         <h2 className="text-xl font-bold text-[var(--rq-ink)]">
           Submitted quotes
@@ -221,7 +303,16 @@ export default async function RequestDetailPage({
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-[var(--rq-slate)]">{q.notes}</p>
+                {q.deviations ? (
+                  <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">
+                    Deviations: {q.deviations}
+                  </p>
+                ) : null}
                 <p className="mt-2 text-xs text-[var(--rq-muted)]">
+                  {q.meetsRequirements === false
+                    ? "Does not meet all must-haves"
+                    : "Meets requirements"}
+                  {" · "}
                   Lead time {q.leadTimeDays} days
                   {q.deliveryPeriodDays != null
                     ? ` · Delivery ${q.deliveryPeriodDays} days`

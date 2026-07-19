@@ -44,6 +44,8 @@ export async function submitQuote(input: {
   leadTimeDays: number;
   deliveryPeriodDays?: number;
   stockAvailability?: string;
+  meetsRequirements?: boolean;
+  deviations?: string;
   notes: string;
   companySlug?: string;
 }) {
@@ -62,6 +64,14 @@ export async function submitQuote(input: {
       ? (input.stockAvailability as "in_stock" | "on_order" | "unavailable")
       : undefined;
 
+  const meetsRequirements = input.meetsRequirements !== false;
+  if (!meetsRequirements && !input.deviations?.trim()) {
+    return {
+      ok: false as const,
+      message: "List deviations where requirements cannot be met.",
+    };
+  }
+
   const actor = await actorFromCookies();
   const jar = await cookies();
   const result = await persistQuote({
@@ -70,6 +80,8 @@ export async function submitQuote(input: {
     leadTimeDays: input.leadTimeDays,
     deliveryPeriodDays: input.deliveryPeriodDays,
     stockAvailability,
+    meetsRequirements,
+    deviations: input.deviations,
     notes: input.notes,
     companySlug:
       input.companySlug ?? jar.get("rq_org_slug")?.value ?? "nordicfill-systems",
@@ -130,6 +142,17 @@ export async function createRequest(input: {
   deliveryCity?: string;
   deliveryAddress?: string;
   dueDate?: string;
+  referenceModel?: string;
+  complianceStandards?: string[];
+  materialOfConstruction?: string;
+  utilitiesNotes?: string;
+  warrantyMonthsRequired?: number;
+  deliveryWeeksRequired?: number;
+  scopeOfSupply?: string[];
+  technicalRequirements?: {
+    text: string;
+    priority: "must" | "prefer" | "optional";
+  }[];
   items?: {
     productName: string;
     productCode?: string;
@@ -215,6 +238,14 @@ export async function createRequest(input: {
     deliveryCity: input.deliveryCity,
     deliveryAddress: input.deliveryAddress,
     dueDate: input.dueDate,
+    referenceModel: input.referenceModel,
+    complianceStandards: input.complianceStandards,
+    materialOfConstruction: input.materialOfConstruction,
+    utilitiesNotes: input.utilitiesNotes,
+    warrantyMonthsRequired: input.warrantyMonthsRequired,
+    deliveryWeeksRequired: input.deliveryWeeksRequired,
+    scopeOfSupply: input.scopeOfSupply,
+    technicalRequirements: input.technicalRequirements,
     items,
     actor,
     organisationId,

@@ -133,6 +133,15 @@ export function listCategoriesSync() {
   return demoCategories;
 }
 
+function categoryMatchSlugsSync(slug: string): string[] {
+  const category = demoCategories.find((c) => c.slug === slug);
+  if (!category) return [slug];
+  const children = demoCategories
+    .filter((c) => c.parentId === category.id)
+    .map((c) => c.slug);
+  return [category.slug, ...children];
+}
+
 export function listCompaniesSync(opts?: {
   q?: string;
   category?: string;
@@ -146,6 +155,15 @@ export function listCompaniesSync(opts?: {
         c.name.toLowerCase().includes(q) ||
         c.headline.toLowerCase().includes(q) ||
         c.description.toLowerCase().includes(q),
+    );
+  }
+  if (opts?.category) {
+    const wanted = opts.category.toLowerCase();
+    const matchSlugs = new Set(
+      categoryMatchSlugsSync(wanted).map((s) => s.toLowerCase()),
+    );
+    items = items.filter((c) =>
+      c.categories.some((cat) => matchSlugs.has(cat.toLowerCase())),
     );
   }
   if (opts?.country) {

@@ -28,6 +28,9 @@ export default async function SupplierQuotesPage({
           ]
             .filter(Boolean)
             .join(", ")}
+          referenceModel={request?.referenceModel}
+          complianceStandards={request?.complianceStandards}
+          technicalRequirements={request?.technicalRequirements}
           items={request?.items ?? []}
           closed={
             !request ||

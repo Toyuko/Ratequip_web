@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitQuote } from "@/lib/actions/marketplace";
-import type { DemoRequestItem } from "@/lib/db/demo-data";
+import type {
+  DemoRequestItem,
+  DemoTechnicalRequirement,
+} from "@/lib/db/demo-data";
 
 export function QuoteForm({
   requestId,
@@ -16,6 +20,9 @@ export function QuoteForm({
   quoteValidityDays,
   dueDate,
   shipTo,
+  referenceModel,
+  complianceStandards,
+  technicalRequirements,
   items,
   closed,
 }: {
@@ -26,12 +33,16 @@ export function QuoteForm({
   quoteValidityDays: number;
   dueDate?: string;
   shipTo?: string;
+  referenceModel?: string;
+  complianceStandards?: string[];
+  technicalRequirements?: DemoTechnicalRequirement[];
   items: DemoRequestItem[];
   closed?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const [meetsRequirements, setMeetsRequirements] = useState(true);
 
   return (
     <div className="max-w-2xl space-y-4">
@@ -69,7 +80,33 @@ export function QuoteForm({
             </dt>
             <dd>{shipTo || "—"}</dd>
           </div>
+          {referenceModel ? (
+            <div className="sm:col-span-2">
+              <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+                Reference model
+              </dt>
+              <dd>{referenceModel}</dd>
+            </div>
+          ) : null}
+          {(complianceStandards?.length ?? 0) > 0 ? (
+            <div className="sm:col-span-2">
+              <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+                Compliance
+              </dt>
+              <dd>{complianceStandards?.join(" · ")}</dd>
+            </div>
+          ) : null}
         </dl>
+        {(technicalRequirements?.length ?? 0) > 0 ? (
+          <ul className="mt-4 space-y-2 border-t border-[var(--rq-border)] pt-3 text-sm">
+            {technicalRequirements!.map((req, index) => (
+              <li key={`${req.text}-${index}`} className="flex gap-2">
+                <Badge variant="muted">{req.priority}</Badge>
+                <span className="text-[var(--rq-slate)]">{req.text}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {items.length > 0 ? (
           <ul className="mt-4 space-y-1 border-t border-[var(--rq-border)] pt-3 text-sm text-[var(--rq-slate)]">
             {items.map((item) => (
@@ -100,6 +137,8 @@ export function QuoteForm({
               leadTimeDays: Number(fd.get("leadTime")),
               deliveryPeriodDays: Number(fd.get("deliveryPeriod")) || undefined,
               stockAvailability: String(fd.get("stockAvailability") ?? ""),
+              meetsRequirements,
+              deviations: String(fd.get("deviations") ?? ""),
               notes: String(fd.get("notes") ?? ""),
             });
             setError(!result.ok);
@@ -130,7 +169,7 @@ export function QuoteForm({
             required
             disabled={closed}
             defaultValue="in_stock"
-            className="mt-1 flex h-10 w-full rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 text-sm text-[var(--rq-ink)] disabled:opacity-60"
+            className="mt-1 flex h-10 w-full rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 text-sm disabled:opacity-60"
           >
             <option value="in_stock">In stock</option>
             <option value="on_order">On order / made to order</option>
@@ -150,9 +189,7 @@ export function QuoteForm({
             />
           </div>
           <div>
-            <Label htmlFor="deliveryPeriod">
-              Delivery to site (days)
-            </Label>
+            <Label htmlFor="deliveryPeriod">Delivery to site (days)</Label>
             <Input
               id="deliveryPeriod"
               name="deliveryPeriod"
@@ -163,6 +200,46 @@ export function QuoteForm({
             />
           </div>
         </div>
+        <fieldset className="space-y-3 rounded-md border border-[var(--rq-border)] p-3">
+          <legend className="px-1 text-sm font-medium text-[var(--rq-ink)]">
+            Requirements compliance
+          </legend>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="meets"
+              checked={meetsRequirements}
+              disabled={closed}
+              onChange={() => setMeetsRequirements(true)}
+            />
+            Can meet all must-have requirements
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="meets"
+              checked={!meetsRequirements}
+              disabled={closed}
+              onChange={() => setMeetsRequirements(false)}
+            />
+            Cannot meet some requirements (list deviations)
+          </label>
+          {!meetsRequirements ? (
+            <div>
+              <Label htmlFor="deviations">Deviations</Label>
+              <Textarea
+                id="deviations"
+                name="deviations"
+                required
+                disabled={closed}
+                className="mt-1"
+                placeholder="Clearly identify where the offer cannot meet the URS / RFQ criteria"
+              />
+            </div>
+          ) : (
+            <input type="hidden" name="deviations" value="" />
+          )}
+        </fieldset>
         <div>
           <Label htmlFor="notes">Notes</Label>
           <Textarea
@@ -170,7 +247,7 @@ export function QuoteForm({
             name="notes"
             disabled={closed}
             className="mt-1"
-            placeholder="Confirm OEM match, inclusions, freight, or exclusions"
+            placeholder="Confirm OEM match, inclusions, freight, FAT/SAT, or exclusions"
           />
         </div>
         {closed ? (

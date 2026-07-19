@@ -90,6 +90,11 @@ export type DemoRequestItem = {
   notes?: string;
 };
 
+export type DemoTechnicalRequirement = {
+  text: string;
+  priority: "must" | "prefer" | "optional";
+};
+
 export type DemoRequest = {
   id: string;
   title: string;
@@ -105,6 +110,14 @@ export type DemoRequest = {
   deliveryCity?: string;
   deliveryAddress?: string;
   dueDate?: string;
+  referenceModel?: string;
+  complianceStandards: string[];
+  materialOfConstruction?: string;
+  utilitiesNotes?: string;
+  warrantyMonthsRequired?: number;
+  deliveryWeeksRequired?: number;
+  scopeOfSupply: string[];
+  technicalRequirements: DemoTechnicalRequirement[];
   status: "open" | "closed" | "awarded";
   quoteCount: number;
   createdAt: string;
@@ -126,6 +139,8 @@ export type DemoQuote = {
   leadTimeDays: number;
   deliveryPeriodDays?: number;
   stockAvailability?: StockAvailability;
+  meetsRequirements: boolean;
+  deviations?: string;
   notes: string;
   status: string;
 };
@@ -1177,6 +1192,23 @@ export const demoRequests: DemoRequest[] = [
     deliveryCity: "Bangkok",
     deliveryAddress: "Bang Phli Industrial Estate",
     dueDate: "2026-08-15",
+    referenceModel: "Hygienic rotary filler, CIP ready",
+    complianceStandards: ["GMP / cGMP", "OH&S / WHS"],
+    materialOfConstruction: "Product contact SS316L",
+    utilitiesNotes: "3-phase power; clean dry instrument air",
+    warrantyMonthsRequired: 12,
+    deliveryWeeksRequired: 16,
+    scopeOfSupply: ["supply", "commission", "training", "spares"],
+    technicalRequirements: [
+      {
+        text: "Suitable for 500ml PET at 12–15k bph with CIP",
+        priority: "must",
+      },
+      {
+        text: "Local ASEAN commissioning support included",
+        priority: "prefer",
+      },
+    ],
     status: "open",
     quoteCount: 3,
     createdAt: "2026-06-28",
@@ -1207,6 +1239,21 @@ export const demoRequests: DemoRequest[] = [
     deliveryCountry: "Vietnam",
     deliveryCity: "Ho Chi Minh City",
     dueDate: "2026-08-01",
+    complianceStandards: ["ISO", "OH&S / WHS"],
+    materialOfConstruction: "Painted steel cell with safety fencing",
+    warrantyMonthsRequired: 12,
+    deliveryWeeksRequired: 12,
+    scopeOfSupply: ["supply", "install", "commission", "training"],
+    technicalRequirements: [
+      {
+        text: "12 cycles/min for 20 kg cartons",
+        priority: "must",
+      },
+      {
+        text: "Thai/EN HMI and operator training",
+        priority: "must",
+      },
+    ],
     status: "open",
     quoteCount: 2,
     createdAt: "2026-07-02",
@@ -1237,6 +1284,14 @@ export const demoRequests: DemoRequest[] = [
     deliveryCountry: "China",
     deliveryCity: "Guangzhou",
     dueDate: "2026-07-25",
+    complianceStandards: [],
+    scopeOfSupply: ["validation"],
+    technicalRequirements: [
+      {
+        text: "Photo evidence pack and punch list after 3-day FAT",
+        priority: "must",
+      },
+    ],
     status: "open",
     quoteCount: 4,
     createdAt: "2026-07-05",
@@ -1263,6 +1318,7 @@ export const demoQuotes: DemoQuote[] = [
     leadTimeDays: 120,
     deliveryPeriodDays: 140,
     stockAvailability: "on_order",
+    meetsRequirements: true,
     notes: "Includes FAT in Malmö and 2 weeks commissioning in Thailand.",
     status: "submitted",
   },
@@ -1276,6 +1332,9 @@ export const demoQuotes: DemoQuote[] = [
     leadTimeDays: 90,
     deliveryPeriodDays: 100,
     stockAvailability: "in_stock",
+    meetsRequirements: false,
+    deviations:
+      "Partner OEM line meets throughput; CIP package is optional add-on, not base quote.",
     notes: "Partner OEM fill line; local spare parts stock included for 12 months.",
     status: "submitted",
   },
@@ -1289,6 +1348,7 @@ export const demoQuotes: DemoQuote[] = [
     leadTimeDays: 75,
     deliveryPeriodDays: 85,
     stockAvailability: "on_order",
+    meetsRequirements: true,
     notes: "Includes fencing, HMI Thai/EN, and operator training.",
     status: "shortlisted",
   },

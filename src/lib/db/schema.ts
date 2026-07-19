@@ -299,6 +299,20 @@ export const requests = pgTable("requests", {
   deliveryCountry: varchar("delivery_country", { length: 100 }),
   deliveryCity: varchar("delivery_city", { length: 120 }),
   deliveryAddress: text("delivery_address"),
+  /** e.g. Lao Soung LS800-1S — match existing installed equipment */
+  referenceModel: varchar("reference_model", { length: 255 }),
+  /** GMP, TGA, FDA, ISO 14644, Australian Standards, etc. */
+  complianceStandards: jsonb("compliance_standards").$type<string[]>().default([]),
+  materialOfConstruction: text("material_of_construction"),
+  utilitiesNotes: text("utilities_notes"),
+  warrantyMonthsRequired: integer("warranty_months_required"),
+  deliveryWeeksRequired: integer("delivery_weeks_required"),
+  /** supply | install | commission | validation | training | spares */
+  scopeOfSupply: jsonb("scope_of_supply").$type<string[]>().default([]),
+  /** Must / prefer / optional technical requirements (URS-style checklist) */
+  technicalRequirements: jsonb("technical_requirements")
+    .$type<{ text: string; priority: "must" | "prefer" | "optional" }[]>()
+    .default([]),
   status: requestStatusEnum("status").notNull().default("open"),
   dueDate: timestamp("due_date", { withTimezone: true }),
   attachmentUrl: text("attachment_url"),
@@ -336,6 +350,10 @@ export const quotes = pgTable("quotes", {
   leadTimeDays: integer("lead_time_days"),
   deliveryPeriodDays: integer("delivery_period_days"),
   stockAvailability: stockAvailabilityEnum("stock_availability"),
+  /** True if supplier can meet all must-have requirements */
+  meetsRequirements: boolean("meets_requirements").notNull().default(true),
+  /** Deviations from URS / RFQ requirements — required when meetsRequirements is false */
+  deviations: text("deviations"),
   notes: text("notes"),
   status: quoteStatusEnum("status").notNull().default("submitted"),
   ...timestamps,
