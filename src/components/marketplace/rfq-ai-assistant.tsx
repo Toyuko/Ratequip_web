@@ -26,6 +26,7 @@ export function RfqAiAssistant({
           <p className="mt-1 text-xs text-[var(--rq-muted)]">
             Paste a URS excerpt or describe the equipment need. We draft title,
             line items, compliance, and must-have requirements for you to edit.
+            Uses free-tier AI (falls back to a local draft if rate-limited).
           </p>
         </div>
       </div>

@@ -1,5 +1,10 @@
 import { generateObject } from "ai";
 import {
+  RFQ_AI_MAX_RETRIES,
+  RFQ_AI_MODEL,
+  aiFallbackMessage,
+} from "@/lib/ai/model";
+import {
   COMPLIANCE_OPTIONS,
   SCOPE_OF_SUPPLY_OPTIONS,
   type TechnicalRequirement,
@@ -111,12 +116,13 @@ export async function draftRfqFromPrompt(prompt: string): Promise<{
 
   try {
     const { object } = await generateObject({
-      model: "openai/gpt-5.4",
+      model: RFQ_AI_MODEL,
       schema: rfqDraftSchema,
       system: SYSTEM,
       prompt: cleaned.slice(0, 14000),
       temperature: 0.2,
-      abortSignal: AbortSignal.timeout(4000),
+      maxRetries: RFQ_AI_MAX_RETRIES,
+      abortSignal: AbortSignal.timeout(20000),
     });
     return {
       draft: object,
@@ -128,8 +134,7 @@ export async function draftRfqFromPrompt(prompt: string): Promise<{
     return {
       draft: heuristicDraft(cleaned),
       source: "heuristic",
-      message:
-        "AI gateway unavailable — generated a starter draft from your text. Review carefully.",
+      message: aiFallbackMessage(error, "draft"),
     };
   }
 }

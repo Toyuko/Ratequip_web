@@ -1,4 +1,9 @@
 import { generateObject } from "ai";
+import {
+  RFQ_AI_MAX_RETRIES,
+  RFQ_AI_MODEL,
+  aiFallbackMessage,
+} from "@/lib/ai/model";
 import { listCompanies, listCompaniesSync } from "@/lib/db/queries";
 import type { DemoCompany } from "@/lib/db/demo-data";
 import {
@@ -82,18 +87,20 @@ function dedupeNeeds(needs: ProjectNeedDraft[]) {
   });
 }
 
-async function aiBreakdown(
-  input: ProjectAssistInput,
-): Promise<ProjectBreakdownDraft | null> {
+async function aiBreakdown(input: ProjectAssistInput): Promise<{
+  draft: ProjectBreakdownDraft | null;
+  error?: unknown;
+}> {
   const text = corpusFromInput(input).slice(0, 14000);
-  if (text.length < 20) return null;
+  if (text.length < 20) return { draft: null };
 
   try {
     const { object } = await generateObject({
-      model: "openai/gpt-5.4",
+      model: RFQ_AI_MODEL,
       schema: projectBreakdownSchema,
       temperature: 0.2,
-      abortSignal: AbortSignal.timeout(4000),
+      maxRetries: RFQ_AI_MAX_RETRIES,
+      abortSignal: AbortSignal.timeout(20000),
       system: `You are RateQuip's RFQ/URS project agent for industrial equipment buyers.
 Given a URS or RFQ (often for ONE machine), expand into a full project bill of needs:
 - Keep the original request as role=primary, inOriginalRfq=true
@@ -105,12 +112,14 @@ Do not invent that something was in the original RFQ unless clearly present.`,
       prompt: text,
     });
     return {
-      ...object,
-      needs: dedupeNeeds(object.needs).slice(0, 12),
+      draft: {
+        ...object,
+        needs: dedupeNeeds(object.needs).slice(0, 12),
+      },
     };
   } catch (error) {
     console.warn("[rfq-project-agent] AI breakdown failed", error);
-    return null;
+    return { draft: null, error };
   }
 }
 
@@ -258,9 +267,9 @@ export async function buildProjectCompanion(
   input: ProjectAssistInput,
 ): Promise<ProjectCompanionResult> {
   const currency = (input.currency ?? "USD").toUpperCase();
-  const ai = await aiBreakdown(input);
-  const breakdown = ai ?? heuristicBreakdown(input);
-  const source = ai ? ("ai" as const) : ("heuristic" as const);
+  const { draft: aiDraft, error: aiError } = await aiBreakdown(input);
+  const breakdown = aiDraft ?? heuristicBreakdown(input);
+  const source = aiDraft ? ("ai" as const) : ("heuristic" as const);
 
   const needs: ProjectNeedWithSuppliers[] = [];
 
@@ -288,7 +297,7 @@ export async function buildProjectCompanion(
     message:
       source === "ai"
         ? "Project breakdown ready — compare complementary suppliers below."
-        : "Starter project map from your RFQ/URS — review add-ons and compare indicative prices.",
+        : aiFallbackMessage(aiError, "project"),
   };
 }
 
