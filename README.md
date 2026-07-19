@@ -25,7 +25,7 @@ Imported from RateQuip Enterprise Master Repository **V12 Part 1 + Part 2** (19 
 | Layer | What landed in this app |
 |-------|-------------------------|
 | Seeds | Taxonomy, question packs/definitions, capabilities, roles → `src/data/v12/` |
-| Migrations (reference) | Part 1 `0001–0005` + Part 2 commercial/asset → `drizzle/v12/` |
+| Migrations | Part 1 `0001–0005` + Part 2 commercial/asset + platform bridge → `drizzle/v12/` (`rq` / `rq_audit` / `rq_outbox` schemas on Neon) |
 | Engines | DQE resolver, explainable matcher, ranker, AI confirmation → `src/lib/v12/` |
 | UI | `/v12` hub + activation, taxonomy, builders, matching, intelligence, procurement, RFQ, SRM, CRM |
 | API | `/api/v1/v12`, `/api/v1/v12/procurement` |
@@ -35,8 +35,13 @@ Imported from RateQuip Enterprise Master Repository **V12 Part 1 + Part 2** (19 
 **Part 2 Release 2A:** procurement requisitions → RFQ immutable revisions → award with reason codes → SRM/CRM spines.
 
 ```bash
+# Apply V12 SQL to Neon (uses DATABASE_URL / DATABASE_URL_UNPOOLED from .env.local)
+npm run db:migrate:v12
+npm run db:seed:v12
 npm run smoke:v12
 ```
+
+V12 tables live in the `rq` schema alongside the existing Phase 1–2 `public` tables. Runtime store still mirrors UI state; builders / match / procurement / awards also write through to Neon when `DATABASE_URL` is set.
 
 Remaining Part 2 releases (2B–2F) and Part 3 domains stay as contracts under `drizzle/v12` + `docs/v12` until scheduled.
 

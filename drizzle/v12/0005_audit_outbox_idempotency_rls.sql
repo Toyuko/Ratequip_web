@@ -6,9 +6,10 @@ CREATE TABLE rq.idempotency_records (
  PRIMARY KEY(principal_key,idempotency_key)
 );
 CREATE TABLE rq_audit.records (
- id uuid PRIMARY KEY DEFAULT gen_random_uuid(), occurred_at timestamptz NOT NULL DEFAULT now(), actor_type text NOT NULL, actor_id uuid,
+ id uuid NOT NULL DEFAULT gen_random_uuid(), occurred_at timestamptz NOT NULL DEFAULT now(), actor_type text NOT NULL, actor_id uuid,
  active_company_id uuid, action text NOT NULL, object_type text NOT NULL, object_id uuid, reason text, correlation_id uuid NOT NULL,
- before_ref text, after_ref text, metadata jsonb NOT NULL DEFAULT '{}'
+ before_ref text, after_ref text, metadata jsonb NOT NULL DEFAULT '{}',
+ PRIMARY KEY (id, occurred_at)
 ) PARTITION BY RANGE(occurred_at);
 CREATE TABLE rq_audit.records_default PARTITION OF rq_audit.records DEFAULT;
 CREATE TABLE rq_outbox.events (

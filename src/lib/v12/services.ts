@@ -10,12 +10,25 @@ import {
 import { DEFAULT_MATCH_POLICY, type MatchFeature } from "@/lib/v12/matching/types";
 import { rankCandidates } from "@/lib/v12/recommendations/ranker";
 import { listCompanies, listCompaniesSync } from "@/lib/db/queries";
+import {
+  persistAward,
+  persistContractorProfile,
+  persistMatchRun,
+  persistOpportunityProfile,
+  persistRequisition,
+} from "@/lib/db/v12-neon";
 import { questionsForPack, searchTaxonomy } from "@/lib/v12/seeds";
 import { getV12Store } from "@/lib/v12/store";
 import { createHash } from "node:crypto";
 
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function neonPersist(label: string, work: Promise<unknown>) {
+  void work.catch((err) => {
+    console.error(`[v12-neon] ${label} failed`, err);
+  });
 }
 
 export function resolveActivationPack(input: {
@@ -84,6 +97,20 @@ export function upsertOpportunity(input: {
   } else {
     store.opportunities.push(profile);
   }
+  neonPersist(
+    "opportunity",
+    persistOpportunityProfile({
+      companyId: profile.companyId,
+      companyName: profile.companyName,
+      status: profile.status,
+      targetIndustries: profile.targetIndustries,
+      targetRegions: profile.targetRegions,
+      projectValueMin: profile.projectValueMin,
+      projectValueMax: profile.projectValueMax,
+      preferredRequirementTypes: profile.preferredRequirementTypes,
+      notes: profile.notes,
+    }),
+  );
   return profile;
 }
 
@@ -115,6 +142,20 @@ export function upsertContractor(input: {
   };
   if (existing) Object.assign(existing, profile);
   else store.contractors.push(profile);
+  neonPersist(
+    "contractor",
+    persistContractorProfile({
+      companyId: profile.companyId,
+      companyName: profile.companyName,
+      status: profile.status,
+      trades: profile.trades,
+      licences: profile.licences,
+      serviceRadiusKm: profile.serviceRadiusKm,
+      emergencyAvailable: profile.emergencyAvailable,
+      rateSummary: profile.rateSummary,
+      notes: profile.notes,
+    }),
+  );
   return profile;
 }
 
@@ -210,6 +251,19 @@ export async function runExplainableMatch(input: {
     createdAt: new Date().toISOString(),
   };
   getV12Store().matchRuns.unshift(run);
+  neonPersist(
+    "match",
+    persistMatchRun({
+      requirementLabel: run.requirementLabel,
+      results: ranked.map((r) => ({
+        supplierId: r.supplierId ?? r.id,
+        eligible: r.eligible,
+        organicScore: r.organicScore,
+        reasonCodes: r.reasonCodes,
+        policyVersion: r.policyVersion ?? DEFAULT_MATCH_POLICY.version,
+      })),
+    }),
+  );
   return run;
 }
 
@@ -285,6 +339,22 @@ export function createRequisition(input: {
     createdAt: new Date().toISOString(),
   };
   getV12Store().requisitions.unshift(item);
+  neonPersist(
+    "requisition",
+    persistRequisition({
+      id: item.id,
+      companyId: "platform-buyer",
+      title: item.title,
+      status: item.status,
+      lines: [],
+      data: {
+        description: item.description,
+        taxonomyKeys: item.taxonomyKeys,
+        budgetMax: item.budgetMax,
+        currency: item.currency,
+      },
+    }),
+  );
   return item;
 }
 
@@ -342,6 +412,17 @@ export function awardRfq(input: {
     awardedBy: input.awardedBy,
   };
   getV12Store().awards.unshift(award);
+  neonPersist(
+    "award",
+    persistAward({
+      id: award.id,
+      companyId: "platform-buyer",
+      rfqId: award.rfqId,
+      supplierId: award.supplierSlug,
+      reasonCodes: award.reasonCodes,
+      amount: award.amount,
+    }),
+  );
   return award;
 }
 
