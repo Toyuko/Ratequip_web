@@ -1322,6 +1322,11 @@ export const demoPlans: DemoPlan[] = [
 
 export const upcomingModules = [
   {
+    slug: "v12",
+    name: "V12 Operating Layer",
+    summary: "Taxonomy, DQE, matching, AI confirmation, procurement & RFQ spine.",
+  },
+  {
     slug: "intelligence",
     name: "RateQuip Intelligence",
     summary: "Explainable supplier and market intelligence.",

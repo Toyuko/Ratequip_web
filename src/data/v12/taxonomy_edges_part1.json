@@ -1,0 +1,410 @@
+[
+  {
+    "from_stable_key": "tax:rq:industry.food_beverage",
+    "to_stable_key": "tax:rq:industry.food_beverage.dairy",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.food_beverage",
+    "to_stable_key": "tax:rq:industry.food_beverage.meat_poultry",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.food_beverage",
+    "to_stable_key": "tax:rq:industry.food_beverage.bakery",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.food_beverage",
+    "to_stable_key": "tax:rq:industry.food_beverage.snack_foods",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.food_beverage",
+    "to_stable_key": "tax:rq:industry.food_beverage.beverages",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.food_beverage",
+    "to_stable_key": "tax:rq:industry.food_beverage.seafood",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.food_beverage",
+    "to_stable_key": "tax:rq:industry.food_beverage.fresh_produce",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.food_beverage",
+    "to_stable_key": "tax:rq:industry.food_beverage.confectionery",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.food_beverage",
+    "to_stable_key": "tax:rq:industry.food_beverage.ready_meals",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.food_beverage",
+    "to_stable_key": "tax:rq:industry.food_beverage.ingredients",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.packaging_printing",
+    "to_stable_key": "tax:rq:industry.packaging_printing.primary_packaging",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.packaging_printing",
+    "to_stable_key": "tax:rq:industry.packaging_printing.secondary_packaging",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.packaging_printing",
+    "to_stable_key": "tax:rq:industry.packaging_printing.coding_marking",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.packaging_printing",
+    "to_stable_key": "tax:rq:industry.packaging_printing.labelling",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.packaging_printing",
+    "to_stable_key": "tax:rq:industry.packaging_printing.cartoning",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.packaging_printing",
+    "to_stable_key": "tax:rq:industry.packaging_printing.flexible_packaging",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.packaging_printing",
+    "to_stable_key": "tax:rq:industry.packaging_printing.inspection",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.packaging_printing",
+    "to_stable_key": "tax:rq:industry.packaging_printing.palletising",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.pharma_cosmetics",
+    "to_stable_key": "tax:rq:industry.pharma_cosmetics.pharmaceutical",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.pharma_cosmetics",
+    "to_stable_key": "tax:rq:industry.pharma_cosmetics.nutraceutical",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.pharma_cosmetics",
+    "to_stable_key": "tax:rq:industry.pharma_cosmetics.cosmetics",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.pharma_cosmetics",
+    "to_stable_key": "tax:rq:industry.pharma_cosmetics.personal_care",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.pharma_cosmetics",
+    "to_stable_key": "tax:rq:industry.pharma_cosmetics.medical_devices",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.manufacturing",
+    "to_stable_key": "tax:rq:industry.manufacturing.metal_fabrication",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.manufacturing",
+    "to_stable_key": "tax:rq:industry.manufacturing.plastics",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.manufacturing",
+    "to_stable_key": "tax:rq:industry.manufacturing.electronics",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.manufacturing",
+    "to_stable_key": "tax:rq:industry.manufacturing.textiles",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.manufacturing",
+    "to_stable_key": "tax:rq:industry.manufacturing.advanced_manufacturing",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.manufacturing",
+    "to_stable_key": "tax:rq:industry.manufacturing.additive_manufacturing",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.mining_resources",
+    "to_stable_key": "tax:rq:industry.mining_resources.open_cut_mining",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.mining_resources",
+    "to_stable_key": "tax:rq:industry.mining_resources.underground_mining",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.mining_resources",
+    "to_stable_key": "tax:rq:industry.mining_resources.quarrying",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.mining_resources",
+    "to_stable_key": "tax:rq:industry.mining_resources.mineral_processing",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.mining_resources",
+    "to_stable_key": "tax:rq:industry.mining_resources.oil_gas",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.construction_infrastructure",
+    "to_stable_key": "tax:rq:industry.construction_infrastructure.commercial_construction",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.construction_infrastructure",
+    "to_stable_key": "tax:rq:industry.construction_infrastructure.civil_infrastructure",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.construction_infrastructure",
+    "to_stable_key": "tax:rq:industry.construction_infrastructure.road_rail",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.construction_infrastructure",
+    "to_stable_key": "tax:rq:industry.construction_infrastructure.water_infrastructure",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.agriculture",
+    "to_stable_key": "tax:rq:industry.agriculture.cropping",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.agriculture",
+    "to_stable_key": "tax:rq:industry.agriculture.livestock",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.agriculture",
+    "to_stable_key": "tax:rq:industry.agriculture.dairy_farming",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.agriculture",
+    "to_stable_key": "tax:rq:industry.agriculture.horticulture",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.agriculture",
+    "to_stable_key": "tax:rq:industry.agriculture.aquaculture",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.logistics",
+    "to_stable_key": "tax:rq:industry.logistics.third_party_logistics",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.logistics",
+    "to_stable_key": "tax:rq:industry.logistics.cold_storage",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.logistics",
+    "to_stable_key": "tax:rq:industry.logistics.distribution_centre",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.logistics",
+    "to_stable_key": "tax:rq:industry.logistics.ecommerce_fulfilment",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.logistics",
+    "to_stable_key": "tax:rq:industry.logistics.freight_forwarding",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.energy_utilities",
+    "to_stable_key": "tax:rq:industry.energy_utilities.power_generation",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.energy_utilities",
+    "to_stable_key": "tax:rq:industry.energy_utilities.renewables",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.energy_utilities",
+    "to_stable_key": "tax:rq:industry.energy_utilities.water_treatment",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.energy_utilities",
+    "to_stable_key": "tax:rq:industry.energy_utilities.wastewater",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.energy_utilities",
+    "to_stable_key": "tax:rq:industry.energy_utilities.waste_recovery",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.automotive_transport",
+    "to_stable_key": "tax:rq:industry.automotive_transport.vehicle_manufacturing",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.automotive_transport",
+    "to_stable_key": "tax:rq:industry.automotive_transport.fleet_operations",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.automotive_transport",
+    "to_stable_key": "tax:rq:industry.automotive_transport.rail",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.automotive_transport",
+    "to_stable_key": "tax:rq:industry.automotive_transport.marine",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.automotive_transport",
+    "to_stable_key": "tax:rq:industry.automotive_transport.aviation",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.chemicals_materials",
+    "to_stable_key": "tax:rq:industry.chemicals_materials.chemicals",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.chemicals_materials",
+    "to_stable_key": "tax:rq:industry.chemicals_materials.plastics_processing",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.chemicals_materials",
+    "to_stable_key": "tax:rq:industry.chemicals_materials.rubber",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.chemicals_materials",
+    "to_stable_key": "tax:rq:industry.chemicals_materials.coatings",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.chemicals_materials",
+    "to_stable_key": "tax:rq:industry.chemicals_materials.composites",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.healthcare_laboratory",
+    "to_stable_key": "tax:rq:industry.healthcare_laboratory.hospitals",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.healthcare_laboratory",
+    "to_stable_key": "tax:rq:industry.healthcare_laboratory.pathology",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.healthcare_laboratory",
+    "to_stable_key": "tax:rq:industry.healthcare_laboratory.research_laboratory",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.healthcare_laboratory",
+    "to_stable_key": "tax:rq:industry.healthcare_laboratory.diagnostics",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  },
+  {
+    "from_stable_key": "tax:rq:industry.healthcare_laboratory",
+    "to_stable_key": "tax:rq:industry.healthcare_laboratory.scientific_instruments",
+    "edge_type": "broader_than",
+    "confidence": "1.0"
+  }
+]

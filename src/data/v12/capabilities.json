@@ -1,0 +1,1136 @@
+[
+  {
+    "id": "1f1f661b-1e2a-50c0-bb74-4784620ee02c",
+    "stable_key": "cap.design.machinery",
+    "action_key": "tax:rq:capability_action.design",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "57258f1a-4219-5f70-99c3-bea3200f13e6",
+    "stable_key": "cap.design.component",
+    "action_key": "tax:rq:capability_action.design",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "9d2311c1-85fb-5978-866f-a4b61d27d735",
+    "stable_key": "cap.design.spare_part",
+    "action_key": "tax:rq:capability_action.design",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "bd99b05a-0fa9-5fca-8cbb-06389172b197",
+    "stable_key": "cap.design.consumable",
+    "action_key": "tax:rq:capability_action.design",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "6558d50b-7290-5f70-a8f4-28b6d9071a9f",
+    "stable_key": "cap.design.software",
+    "action_key": "tax:rq:capability_action.design",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "b3446c0d-37df-5933-b162-899c92d42469",
+    "stable_key": "cap.design.industrial_service",
+    "action_key": "tax:rq:capability_action.design",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "c6de066e-de00-57ad-9185-ba4273428d6c",
+    "stable_key": "cap.manufacture.machinery",
+    "action_key": "tax:rq:capability_action.manufacture",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "e6b70b15-c4a2-5261-bd7f-d25caf772a5b",
+    "stable_key": "cap.manufacture.component",
+    "action_key": "tax:rq:capability_action.manufacture",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "615dcd67-71e7-504e-8c55-d8b1f2f724f0",
+    "stable_key": "cap.manufacture.spare_part",
+    "action_key": "tax:rq:capability_action.manufacture",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "de3bfb10-a9c4-5c06-8f88-29b8545b58d9",
+    "stable_key": "cap.manufacture.consumable",
+    "action_key": "tax:rq:capability_action.manufacture",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "013d1efc-11a1-5e8a-b53c-5b846f8692ae",
+    "stable_key": "cap.manufacture.software",
+    "action_key": "tax:rq:capability_action.manufacture",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "cec3ffc5-55e2-5c22-b627-ea3a0f986525",
+    "stable_key": "cap.manufacture.industrial_service",
+    "action_key": "tax:rq:capability_action.manufacture",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "68d94b06-179c-57f4-971b-e1d607fb0890",
+    "stable_key": "cap.supply.machinery",
+    "action_key": "tax:rq:capability_action.supply",
+    "object_class": "machinery",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "b3fd15bb-3c98-5592-9844-5be39910b902",
+    "stable_key": "cap.supply.component",
+    "action_key": "tax:rq:capability_action.supply",
+    "object_class": "component",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "9a92526c-206a-5183-af3c-5478ce1dbcef",
+    "stable_key": "cap.supply.spare_part",
+    "action_key": "tax:rq:capability_action.supply",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "9babf25e-4083-54f7-8126-1169dc854acf",
+    "stable_key": "cap.supply.consumable",
+    "action_key": "tax:rq:capability_action.supply",
+    "object_class": "consumable",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "d11cc69d-e32d-5a76-9682-22c893686960",
+    "stable_key": "cap.supply.software",
+    "action_key": "tax:rq:capability_action.supply",
+    "object_class": "software",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "a7d2c816-6587-5b1c-9c58-a3edf2dc226d",
+    "stable_key": "cap.supply.industrial_service",
+    "action_key": "tax:rq:capability_action.supply",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "aca8c8f5-4e07-564b-a11f-5710b348efab",
+    "stable_key": "cap.distribute.machinery",
+    "action_key": "tax:rq:capability_action.distribute",
+    "object_class": "machinery",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "5d76db81-b95f-5945-9291-2c350ca7bff9",
+    "stable_key": "cap.distribute.component",
+    "action_key": "tax:rq:capability_action.distribute",
+    "object_class": "component",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "28b2375b-53ef-5de3-84f6-860e8d1192de",
+    "stable_key": "cap.distribute.spare_part",
+    "action_key": "tax:rq:capability_action.distribute",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "af9afdf6-9ada-540c-9b15-462a3e67b803",
+    "stable_key": "cap.distribute.consumable",
+    "action_key": "tax:rq:capability_action.distribute",
+    "object_class": "consumable",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "2cbb1c83-9ac8-57b0-8982-8703c2c0f1f5",
+    "stable_key": "cap.distribute.software",
+    "action_key": "tax:rq:capability_action.distribute",
+    "object_class": "software",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "9c1d8dda-fc2f-5393-971a-a24d1f376216",
+    "stable_key": "cap.distribute.industrial_service",
+    "action_key": "tax:rq:capability_action.distribute",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "30ac7b43-1dd2-565f-b74c-3b3c01ca7e14",
+    "stable_key": "cap.import.machinery",
+    "action_key": "tax:rq:capability_action.import",
+    "object_class": "machinery",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "ea6c4433-d920-5471-a15c-ca6e83d712f3",
+    "stable_key": "cap.import.component",
+    "action_key": "tax:rq:capability_action.import",
+    "object_class": "component",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "a11b0096-21f7-5c98-8aed-588dc07d2e73",
+    "stable_key": "cap.import.spare_part",
+    "action_key": "tax:rq:capability_action.import",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "90ffb851-7977-5fa7-b56a-7804324e1d12",
+    "stable_key": "cap.import.consumable",
+    "action_key": "tax:rq:capability_action.import",
+    "object_class": "consumable",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "b61c1224-29c0-56c2-853a-c9e1482e5b58",
+    "stable_key": "cap.import.software",
+    "action_key": "tax:rq:capability_action.import",
+    "object_class": "software",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "7ee487dc-421a-50f9-a644-82107321474c",
+    "stable_key": "cap.import.industrial_service",
+    "action_key": "tax:rq:capability_action.import",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "68046ed7-ed7e-5485-bac1-34c172ffd24f",
+    "stable_key": "cap.export.machinery",
+    "action_key": "tax:rq:capability_action.export",
+    "object_class": "machinery",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "75cb7df4-e286-5151-9d09-7b98cd10e7cd",
+    "stable_key": "cap.export.component",
+    "action_key": "tax:rq:capability_action.export",
+    "object_class": "component",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "edbd43be-8f8e-5ca1-a32e-4bd0fd9e7129",
+    "stable_key": "cap.export.spare_part",
+    "action_key": "tax:rq:capability_action.export",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "96f84fd1-79f8-5e57-a024-5d498d328765",
+    "stable_key": "cap.export.consumable",
+    "action_key": "tax:rq:capability_action.export",
+    "object_class": "consumable",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "815d194b-2e99-5c50-aaa3-8cc6abd9a6c8",
+    "stable_key": "cap.export.software",
+    "action_key": "tax:rq:capability_action.export",
+    "object_class": "software",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "3de32ca4-aeec-5dc9-8900-be03b4cff014",
+    "stable_key": "cap.export.industrial_service",
+    "action_key": "tax:rq:capability_action.export",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_optional"
+  },
+  {
+    "id": "757bb58b-e1be-509f-969f-90075c6dcf32",
+    "stable_key": "cap.install.machinery",
+    "action_key": "tax:rq:capability_action.install",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "566dffe9-266f-5587-a6a0-289f64dc5f00",
+    "stable_key": "cap.install.component",
+    "action_key": "tax:rq:capability_action.install",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "3a670d2f-4acb-58ac-bd6d-7d8192a9cbcb",
+    "stable_key": "cap.install.spare_part",
+    "action_key": "tax:rq:capability_action.install",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "f461b52d-39dd-54ff-b5e7-f73ff3e2feb9",
+    "stable_key": "cap.install.consumable",
+    "action_key": "tax:rq:capability_action.install",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "7fa1d701-8caf-5897-8254-603b09467862",
+    "stable_key": "cap.install.software",
+    "action_key": "tax:rq:capability_action.install",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "eb5674e1-0be0-5807-b8a2-97ecd96e9eb8",
+    "stable_key": "cap.install.industrial_service",
+    "action_key": "tax:rq:capability_action.install",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "16795e93-7658-501d-8b88-de1a646c8fe8",
+    "stable_key": "cap.commission.machinery",
+    "action_key": "tax:rq:capability_action.commission",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "2cd6699e-3c20-588f-8b9d-473ceb079663",
+    "stable_key": "cap.commission.component",
+    "action_key": "tax:rq:capability_action.commission",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "f869e066-2269-597c-a78a-e6cabcac9a0c",
+    "stable_key": "cap.commission.spare_part",
+    "action_key": "tax:rq:capability_action.commission",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "9688cea2-4c71-5d52-a33b-e77d1ddfed5b",
+    "stable_key": "cap.commission.consumable",
+    "action_key": "tax:rq:capability_action.commission",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "25492f1b-bff7-5cce-ab41-3ec4dc8fa881",
+    "stable_key": "cap.commission.software",
+    "action_key": "tax:rq:capability_action.commission",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "3bf9f321-8577-564d-aa9f-f7eb80802de4",
+    "stable_key": "cap.commission.industrial_service",
+    "action_key": "tax:rq:capability_action.commission",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "b80f8fba-f618-597b-89ea-1d5b6644b8cc",
+    "stable_key": "cap.repair.machinery",
+    "action_key": "tax:rq:capability_action.repair",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "f6c9cf91-2186-5f8b-bcca-e341795388b0",
+    "stable_key": "cap.repair.component",
+    "action_key": "tax:rq:capability_action.repair",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "03e8e759-40de-5769-a4d2-76406e2400a0",
+    "stable_key": "cap.repair.spare_part",
+    "action_key": "tax:rq:capability_action.repair",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "ed16c2a9-314d-538e-99a0-8e9a31d9ecbd",
+    "stable_key": "cap.repair.consumable",
+    "action_key": "tax:rq:capability_action.repair",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "f07ead29-7291-5d70-8228-53039ebcaf63",
+    "stable_key": "cap.repair.software",
+    "action_key": "tax:rq:capability_action.repair",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "72032845-c754-5925-b035-5983f054df90",
+    "stable_key": "cap.repair.industrial_service",
+    "action_key": "tax:rq:capability_action.repair",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "b7288f42-7b42-5e90-ab76-2557f3adc02b",
+    "stable_key": "cap.maintain.machinery",
+    "action_key": "tax:rq:capability_action.maintain",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "06c499cd-c286-5060-969b-8fc53acefe61",
+    "stable_key": "cap.maintain.component",
+    "action_key": "tax:rq:capability_action.maintain",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "63fc7be4-1ce1-5f7c-b56a-7bd9d99b5540",
+    "stable_key": "cap.maintain.spare_part",
+    "action_key": "tax:rq:capability_action.maintain",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "8da5de3d-ce66-5509-bfc9-11d0955cfff4",
+    "stable_key": "cap.maintain.consumable",
+    "action_key": "tax:rq:capability_action.maintain",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "69676e65-b27a-5d37-81ff-1a7c516a0bad",
+    "stable_key": "cap.maintain.software",
+    "action_key": "tax:rq:capability_action.maintain",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "09a202b6-d2c9-5b1c-893d-92c07711a7d9",
+    "stable_key": "cap.maintain.industrial_service",
+    "action_key": "tax:rq:capability_action.maintain",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "c7779001-37bb-5877-b3fe-4c021e7b1456",
+    "stable_key": "cap.calibrate.machinery",
+    "action_key": "tax:rq:capability_action.calibrate",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "e513b738-1964-56e6-8ea1-b4514f8071b9",
+    "stable_key": "cap.calibrate.component",
+    "action_key": "tax:rq:capability_action.calibrate",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "612a566c-d3bc-5993-8e34-db89a83ac195",
+    "stable_key": "cap.calibrate.spare_part",
+    "action_key": "tax:rq:capability_action.calibrate",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "c844c705-707b-5b0c-a194-b59b8f020964",
+    "stable_key": "cap.calibrate.consumable",
+    "action_key": "tax:rq:capability_action.calibrate",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "57bde1fa-1df3-57f4-bf96-9c6417d22956",
+    "stable_key": "cap.calibrate.software",
+    "action_key": "tax:rq:capability_action.calibrate",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "1db313ae-129e-54e2-8e5b-59977b57cd5b",
+    "stable_key": "cap.calibrate.industrial_service",
+    "action_key": "tax:rq:capability_action.calibrate",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "b745dd64-086e-5d5a-8611-e04db51b8e32",
+    "stable_key": "cap.inspect.machinery",
+    "action_key": "tax:rq:capability_action.inspect",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "2f84fe9a-49d3-5217-9b37-8e4c83a27fe3",
+    "stable_key": "cap.inspect.component",
+    "action_key": "tax:rq:capability_action.inspect",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "56979784-6bb4-567e-9230-4dacd154c572",
+    "stable_key": "cap.inspect.spare_part",
+    "action_key": "tax:rq:capability_action.inspect",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "63a72c40-df49-50ee-b26d-2a18b38bfba9",
+    "stable_key": "cap.inspect.consumable",
+    "action_key": "tax:rq:capability_action.inspect",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "6c88b668-8d0b-5727-9b96-29707375de0a",
+    "stable_key": "cap.inspect.software",
+    "action_key": "tax:rq:capability_action.inspect",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "4c632ba2-9f74-5b74-9014-817fab5754e8",
+    "stable_key": "cap.inspect.industrial_service",
+    "action_key": "tax:rq:capability_action.inspect",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "cd22a2f4-2bc6-5391-8ccc-d43a440906bd",
+    "stable_key": "cap.audit.machinery",
+    "action_key": "tax:rq:capability_action.audit",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "64574eec-8fb6-5bcc-8fb3-5601fb8b49ea",
+    "stable_key": "cap.audit.component",
+    "action_key": "tax:rq:capability_action.audit",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "33ad4723-eab6-50b4-9bdc-24d725c60241",
+    "stable_key": "cap.audit.spare_part",
+    "action_key": "tax:rq:capability_action.audit",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "f85dbe30-a6dc-5c3c-8609-51684fdfe81b",
+    "stable_key": "cap.audit.consumable",
+    "action_key": "tax:rq:capability_action.audit",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "a089857c-6785-530c-bc52-81e837a2038b",
+    "stable_key": "cap.audit.software",
+    "action_key": "tax:rq:capability_action.audit",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "6c8366d7-61cf-568a-86dc-5a4bb1d70c26",
+    "stable_key": "cap.audit.industrial_service",
+    "action_key": "tax:rq:capability_action.audit",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "2ee855d0-9b73-5f49-8063-7cc3b0355190",
+    "stable_key": "cap.consult.machinery",
+    "action_key": "tax:rq:capability_action.consult",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "d073138b-03ab-584d-accb-eb0eb3eafa96",
+    "stable_key": "cap.consult.component",
+    "action_key": "tax:rq:capability_action.consult",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "9dcc2d25-188d-5615-aa6e-b9ffe0bed77f",
+    "stable_key": "cap.consult.spare_part",
+    "action_key": "tax:rq:capability_action.consult",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "d19e1cd0-c677-5a2d-be43-6d27a38d3511",
+    "stable_key": "cap.consult.consumable",
+    "action_key": "tax:rq:capability_action.consult",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "ca5e2fef-00f4-5332-a79e-d30d90131d45",
+    "stable_key": "cap.consult.software",
+    "action_key": "tax:rq:capability_action.consult",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "04caaac8-dd56-53c6-b70d-323124b48084",
+    "stable_key": "cap.consult.industrial_service",
+    "action_key": "tax:rq:capability_action.consult",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "a9d3b60d-2b01-58ac-83e1-fdbca8152a4f",
+    "stable_key": "cap.integrate.machinery",
+    "action_key": "tax:rq:capability_action.integrate",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "64f7791c-48bf-5612-a4e3-a55b21ff2fbf",
+    "stable_key": "cap.integrate.component",
+    "action_key": "tax:rq:capability_action.integrate",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "9f777a5c-b22d-5244-8567-cc0f7f3ba8f4",
+    "stable_key": "cap.integrate.spare_part",
+    "action_key": "tax:rq:capability_action.integrate",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "1e94e13a-0dc5-5618-92ba-02f4df29db1d",
+    "stable_key": "cap.integrate.consumable",
+    "action_key": "tax:rq:capability_action.integrate",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "fe121d9c-bec6-57f7-9751-95e8192e8b7c",
+    "stable_key": "cap.integrate.software",
+    "action_key": "tax:rq:capability_action.integrate",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "d25f56fe-4ced-5100-8e85-cbbe04ca7c22",
+    "stable_key": "cap.integrate.industrial_service",
+    "action_key": "tax:rq:capability_action.integrate",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "907a61ad-4cae-5cd4-95ba-51395ef8dad9",
+    "stable_key": "cap.train.machinery",
+    "action_key": "tax:rq:capability_action.train",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "8a28ba82-a03f-5f75-878e-c9fceb984cf8",
+    "stable_key": "cap.train.component",
+    "action_key": "tax:rq:capability_action.train",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "80fb47c8-4880-5a9f-8594-2ba59a762e1c",
+    "stable_key": "cap.train.spare_part",
+    "action_key": "tax:rq:capability_action.train",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "a1080d28-0eb7-5bcb-82da-5fe227b199e9",
+    "stable_key": "cap.train.consumable",
+    "action_key": "tax:rq:capability_action.train",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "10c81d0c-9489-5914-9e2b-1b5c33c095c2",
+    "stable_key": "cap.train.software",
+    "action_key": "tax:rq:capability_action.train",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "f4caba29-972a-55c1-aa04-22e52ca10098",
+    "stable_key": "cap.train.industrial_service",
+    "action_key": "tax:rq:capability_action.train",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "7f591364-1b60-5032-9107-b138165d323b",
+    "stable_key": "cap.finance.machinery",
+    "action_key": "tax:rq:capability_action.finance",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "4f2d9f9b-0d3b-56bf-a6ad-5d9e76fdd5f2",
+    "stable_key": "cap.finance.component",
+    "action_key": "tax:rq:capability_action.finance",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "957061ae-a28a-51f5-95a9-3e6786752e7d",
+    "stable_key": "cap.finance.spare_part",
+    "action_key": "tax:rq:capability_action.finance",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "73903040-522d-5c01-b9c4-adea3ac43dda",
+    "stable_key": "cap.finance.consumable",
+    "action_key": "tax:rq:capability_action.finance",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "0ae6d8f7-028c-5fe3-a9d2-f5613af1f605",
+    "stable_key": "cap.finance.software",
+    "action_key": "tax:rq:capability_action.finance",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "02b275da-8d6c-5b43-baa3-1fd016ae11f3",
+    "stable_key": "cap.finance.industrial_service",
+    "action_key": "tax:rq:capability_action.finance",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "e27f5430-10a6-5adb-9f5e-f0671fc0dcee",
+    "stable_key": "cap.insure.machinery",
+    "action_key": "tax:rq:capability_action.insure",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "60f445e4-a14c-52e5-a90b-5384e03b807a",
+    "stable_key": "cap.insure.component",
+    "action_key": "tax:rq:capability_action.insure",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "741ddf1e-0015-5394-89e8-b7b021342106",
+    "stable_key": "cap.insure.spare_part",
+    "action_key": "tax:rq:capability_action.insure",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "36ec92a4-56d7-5ef4-8af9-7a6640676718",
+    "stable_key": "cap.insure.consumable",
+    "action_key": "tax:rq:capability_action.insure",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "7329a550-4077-5a66-8a08-9ca035e50d50",
+    "stable_key": "cap.insure.software",
+    "action_key": "tax:rq:capability_action.insure",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "86f16ef2-7cb2-55b9-b1b1-3d63f8b09cd3",
+    "stable_key": "cap.insure.industrial_service",
+    "action_key": "tax:rq:capability_action.insure",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "d60bc7a9-5445-51d3-a02f-01f71056e033",
+    "stable_key": "cap.lease.machinery",
+    "action_key": "tax:rq:capability_action.lease",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "6fa40481-33b2-5aa7-aff8-39ba26c47526",
+    "stable_key": "cap.lease.component",
+    "action_key": "tax:rq:capability_action.lease",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "ede73df8-b643-5bca-be16-fca1a5de89d6",
+    "stable_key": "cap.lease.spare_part",
+    "action_key": "tax:rq:capability_action.lease",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "a2f3ecaa-b63d-5cf3-9c3b-df80b0c1067e",
+    "stable_key": "cap.lease.consumable",
+    "action_key": "tax:rq:capability_action.lease",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "5ca768cb-1181-5bea-9a50-821440a27998",
+    "stable_key": "cap.lease.software",
+    "action_key": "tax:rq:capability_action.lease",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "8cbb59f8-ff06-50c5-8bb4-2b4344af858d",
+    "stable_key": "cap.lease.industrial_service",
+    "action_key": "tax:rq:capability_action.lease",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "fb220033-55ad-5473-afb3-d6d0223fee87",
+    "stable_key": "cap.rent.machinery",
+    "action_key": "tax:rq:capability_action.rent",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "e346b851-977a-5963-b965-07a9dd71aefa",
+    "stable_key": "cap.rent.component",
+    "action_key": "tax:rq:capability_action.rent",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "beb9dd3b-de4f-5e52-b202-5537578a6639",
+    "stable_key": "cap.rent.spare_part",
+    "action_key": "tax:rq:capability_action.rent",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "0e343f33-c462-5edf-9734-b6926f759862",
+    "stable_key": "cap.rent.consumable",
+    "action_key": "tax:rq:capability_action.rent",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "0741bd70-1bb7-5ac0-865e-f6f52f31d147",
+    "stable_key": "cap.rent.software",
+    "action_key": "tax:rq:capability_action.rent",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "534ea053-d5f7-51d8-846b-a2faa7dec176",
+    "stable_key": "cap.rent.industrial_service",
+    "action_key": "tax:rq:capability_action.rent",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "bf0a0e76-d209-555a-9ffa-9d94c9c706f0",
+    "stable_key": "cap.emergency_support.machinery",
+    "action_key": "tax:rq:capability_action.emergency_support",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "be7f02a1-5a2d-5671-b4e2-d5b65c120d41",
+    "stable_key": "cap.emergency_support.component",
+    "action_key": "tax:rq:capability_action.emergency_support",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "62c9a21a-9aff-54ea-9d0b-054fd34ed5ed",
+    "stable_key": "cap.emergency_support.spare_part",
+    "action_key": "tax:rq:capability_action.emergency_support",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "3dc79493-1e65-548b-8830-c73c1abd43ba",
+    "stable_key": "cap.emergency_support.consumable",
+    "action_key": "tax:rq:capability_action.emergency_support",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "521a073e-cdc7-50c9-ad7e-bf5a4e2e43e9",
+    "stable_key": "cap.emergency_support.software",
+    "action_key": "tax:rq:capability_action.emergency_support",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "cc22b6f6-c685-50b1-b388-9bb55360c44b",
+    "stable_key": "cap.emergency_support.industrial_service",
+    "action_key": "tax:rq:capability_action.emergency_support",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "958e7fe6-2400-5da3-8d86-917f1571e9cf",
+    "stable_key": "cap.remote_support.machinery",
+    "action_key": "tax:rq:capability_action.remote_support",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "1d8699c5-23e2-5b1f-a85f-5e53beb37a79",
+    "stable_key": "cap.remote_support.component",
+    "action_key": "tax:rq:capability_action.remote_support",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "c1ba4f78-506b-5f5d-9718-6c20115461c9",
+    "stable_key": "cap.remote_support.spare_part",
+    "action_key": "tax:rq:capability_action.remote_support",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "f9582c1e-b4d3-511d-b533-71c362313782",
+    "stable_key": "cap.remote_support.consumable",
+    "action_key": "tax:rq:capability_action.remote_support",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "38d02548-ad87-56df-9003-98233d2c3f94",
+    "stable_key": "cap.remote_support.software",
+    "action_key": "tax:rq:capability_action.remote_support",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "d706688e-684d-5d2f-9488-0014e5e5f1f4",
+    "stable_key": "cap.remote_support.industrial_service",
+    "action_key": "tax:rq:capability_action.remote_support",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "50038fc1-dad3-515c-afa6-02df01adff10",
+    "stable_key": "cap.fabricate.machinery",
+    "action_key": "tax:rq:capability_action.fabricate",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "4a6c629a-0978-57e7-8ff8-fc10d39e880b",
+    "stable_key": "cap.fabricate.component",
+    "action_key": "tax:rq:capability_action.fabricate",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "fa96a4d3-1c63-5472-8104-bb1b3f3efccd",
+    "stable_key": "cap.fabricate.spare_part",
+    "action_key": "tax:rq:capability_action.fabricate",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "6d591326-68aa-5b78-a950-84387e2c3104",
+    "stable_key": "cap.fabricate.consumable",
+    "action_key": "tax:rq:capability_action.fabricate",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "8ccba354-b94b-5d1e-ae24-17c062d8289c",
+    "stable_key": "cap.fabricate.software",
+    "action_key": "tax:rq:capability_action.fabricate",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "3398f20f-a281-5e66-8e15-2dd91ede7586",
+    "stable_key": "cap.fabricate.industrial_service",
+    "action_key": "tax:rq:capability_action.fabricate",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "5e273953-53af-5b33-b7c5-61bc6731abb8",
+    "stable_key": "cap.program_plc.machinery",
+    "action_key": "tax:rq:capability_action.program_plc",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "403fe084-6375-5135-8b70-59e6b4654f2d",
+    "stable_key": "cap.program_plc.component",
+    "action_key": "tax:rq:capability_action.program_plc",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "5e7eaeb5-55cf-5ed2-a3e4-c7403cad9bdb",
+    "stable_key": "cap.program_plc.spare_part",
+    "action_key": "tax:rq:capability_action.program_plc",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "c6317c1e-1750-5ac5-864f-3dfb3011fa79",
+    "stable_key": "cap.program_plc.consumable",
+    "action_key": "tax:rq:capability_action.program_plc",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "0ec26919-e04b-56bd-915f-a53ec293bbbd",
+    "stable_key": "cap.program_plc.software",
+    "action_key": "tax:rq:capability_action.program_plc",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "5837622e-cc0c-5356-8b5d-b71a40e7a967",
+    "stable_key": "cap.program_plc.industrial_service",
+    "action_key": "tax:rq:capability_action.program_plc",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "ef3ad53f-be64-5a4d-884b-ca64f0bb929c",
+    "stable_key": "cap.program_robot.machinery",
+    "action_key": "tax:rq:capability_action.program_robot",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "75a2b17e-4234-5cfb-878c-f349f9a92d4c",
+    "stable_key": "cap.program_robot.component",
+    "action_key": "tax:rq:capability_action.program_robot",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "224a5611-5044-5367-b71c-138ee387a220",
+    "stable_key": "cap.program_robot.spare_part",
+    "action_key": "tax:rq:capability_action.program_robot",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "4254cfda-845e-55a1-b3a9-cd71f87e703f",
+    "stable_key": "cap.program_robot.consumable",
+    "action_key": "tax:rq:capability_action.program_robot",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "3d9c6cef-4e72-512b-848c-e99c9f26612e",
+    "stable_key": "cap.program_robot.software",
+    "action_key": "tax:rq:capability_action.program_robot",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "c26aa798-65b4-53b9-abfc-c0fd40d4adb5",
+    "stable_key": "cap.program_robot.industrial_service",
+    "action_key": "tax:rq:capability_action.program_robot",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "de48ae37-668a-5bf5-86f0-fe093ef5ce66",
+    "stable_key": "cap.freight.machinery",
+    "action_key": "tax:rq:capability_action.freight",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "07d04da6-0654-5b2f-bfdb-04444f25a665",
+    "stable_key": "cap.freight.component",
+    "action_key": "tax:rq:capability_action.freight",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "3a232471-9886-5eb5-ab63-8d6932763e44",
+    "stable_key": "cap.freight.spare_part",
+    "action_key": "tax:rq:capability_action.freight",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "2294f784-0295-5fde-97e3-fdb9e9737c60",
+    "stable_key": "cap.freight.consumable",
+    "action_key": "tax:rq:capability_action.freight",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "4b3036a9-061c-5f3b-bbf9-d0f30edf2a15",
+    "stable_key": "cap.freight.software",
+    "action_key": "tax:rq:capability_action.freight",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "a9a8c891-e8ce-5489-9785-1185bf04b67d",
+    "stable_key": "cap.freight.industrial_service",
+    "action_key": "tax:rq:capability_action.freight",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "702dd280-5bf9-51a9-9ccc-179bcfc47593",
+    "stable_key": "cap.warehouse.machinery",
+    "action_key": "tax:rq:capability_action.warehouse",
+    "object_class": "machinery",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "011356ff-6122-5492-acee-75f2ad96626e",
+    "stable_key": "cap.warehouse.component",
+    "action_key": "tax:rq:capability_action.warehouse",
+    "object_class": "component",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "46ecb761-15aa-577e-a6b2-5ce85f529a08",
+    "stable_key": "cap.warehouse.spare_part",
+    "action_key": "tax:rq:capability_action.warehouse",
+    "object_class": "spare_part",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "5f067add-eafa-539c-be43-25798e87008c",
+    "stable_key": "cap.warehouse.consumable",
+    "action_key": "tax:rq:capability_action.warehouse",
+    "object_class": "consumable",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "a4087f6c-cb53-53cf-bb05-80b7a5607df3",
+    "stable_key": "cap.warehouse.software",
+    "action_key": "tax:rq:capability_action.warehouse",
+    "object_class": "software",
+    "verification_policy": "evidence_recommended"
+  },
+  {
+    "id": "79f579d6-6a89-506d-be5e-aff45c547c64",
+    "stable_key": "cap.warehouse.industrial_service",
+    "action_key": "tax:rq:capability_action.warehouse",
+    "object_class": "industrial_service",
+    "verification_policy": "evidence_recommended"
+  }
+]

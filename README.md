@@ -18,6 +18,28 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## V12 Enterprise Layer (Parts 1 & 2)
+
+Imported from RateQuip Enterprise Master Repository **V12 Part 1 + Part 2** (19 Jul 2026).
+
+| Layer | What landed in this app |
+|-------|-------------------------|
+| Seeds | Taxonomy, question packs/definitions, capabilities, roles → `src/data/v12/` |
+| Migrations (reference) | Part 1 `0001–0005` + Part 2 commercial/asset → `drizzle/v12/` |
+| Engines | DQE resolver, explainable matcher, ranker, AI confirmation → `src/lib/v12/` |
+| UI | `/v12` hub + activation, taxonomy, builders, matching, intelligence, procurement, RFQ, SRM, CRM |
+| API | `/api/v1/v12`, `/api/v1/v12/procurement` |
+| Docs | `docs/v12/` charter, backlog, READMEs |
+
+**Part 1 vertical slice:** activation (DQE) → builders → explainable match → AI draft/confirm.  
+**Part 2 Release 2A:** procurement requisitions → RFQ immutable revisions → award with reason codes → SRM/CRM spines.
+
+```bash
+npm run smoke:v12
+```
+
+Remaining Part 2 releases (2B–2F) and Part 3 domains stay as contracts under `drizzle/v12` + `docs/v12` until scheduled.
+
 ## Phase 2 persistence (working MVP)
 
 Mutations are no longer toast-only:

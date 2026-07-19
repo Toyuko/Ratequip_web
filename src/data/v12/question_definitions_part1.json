@@ -1,0 +1,2395 @@
+[
+  {
+    "id": "universal.intent",
+    "version": 1,
+    "pack_id": "universal",
+    "pack_version": 1,
+    "prompt": "What do you want to achieve first?",
+    "answer_type": "single_select",
+    "display_order": 10,
+    "visibility_rule": {},
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [
+      "find_supplier",
+      "create_rfq",
+      "claim_company",
+      "publish_products",
+      "find_work",
+      "add_asset"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "universal.primary_role",
+    "version": 1,
+    "pack_id": "universal",
+    "pack_version": 1,
+    "prompt": "What is your main role?",
+    "answer_type": "taxonomy_select",
+    "display_order": 20,
+    "visibility_rule": {},
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "universal.company_context",
+    "version": 1,
+    "pack_id": "universal",
+    "pack_version": 1,
+    "prompt": "Which company are you acting for?",
+    "answer_type": "company_reference",
+    "display_order": 30,
+    "visibility_rule": {},
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "private"
+  },
+  {
+    "id": "universal.primary_industry",
+    "version": 1,
+    "pack_id": "universal",
+    "pack_version": 1,
+    "prompt": "Select the primary industry for this company or site.",
+    "answer_type": "taxonomy_select",
+    "display_order": 40,
+    "visibility_rule": {},
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {
+      "dashboard": "industry_preset",
+      "matching": "primary_industry"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "universal.locations",
+    "version": 1,
+    "pack_id": "universal",
+    "pack_version": 1,
+    "prompt": "Add operating sites or service regions.",
+    "answer_type": "location_collection",
+    "display_order": 50,
+    "visibility_rule": {},
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "private"
+  },
+  {
+    "id": "buyer.001",
+    "version": 1,
+    "pack_id": "role.buyer",
+    "pack_version": 1,
+    "prompt": "What products, equipment or services do you regularly purchase?",
+    "answer_type": "multi_select",
+    "display_order": 101,
+    "visibility_rule": {
+      "roleIn": [
+        "buyer",
+        "maintenance_manager",
+        "finance_approver"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "buyer.002",
+    "version": 1,
+    "pack_id": "role.buyer",
+    "pack_version": 1,
+    "prompt": "Which purchases require internal approval?",
+    "answer_type": "structured",
+    "display_order": 102,
+    "visibility_rule": {
+      "roleIn": [
+        "buyer",
+        "maintenance_manager",
+        "finance_approver"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "buyer.003",
+    "version": 1,
+    "pack_id": "role.buyer",
+    "pack_version": 1,
+    "prompt": "What project value ranges are typical?",
+    "answer_type": "structured",
+    "display_order": 103,
+    "visibility_rule": {
+      "roleIn": [
+        "buyer",
+        "maintenance_manager",
+        "finance_approver"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "buyer.004",
+    "version": 1,
+    "pack_id": "role.buyer",
+    "pack_version": 1,
+    "prompt": "Which certifications are mandatory for suppliers?",
+    "answer_type": "multi_select",
+    "display_order": 104,
+    "visibility_rule": {
+      "roleIn": [
+        "buyer",
+        "maintenance_manager",
+        "finance_approver"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "buyer.005",
+    "version": 1,
+    "pack_id": "role.buyer",
+    "pack_version": 1,
+    "prompt": "Do you permit public, private or invite-only RFQs?",
+    "answer_type": "multi_select",
+    "display_order": 105,
+    "visibility_rule": {
+      "roleIn": [
+        "buyer",
+        "maintenance_manager",
+        "finance_approver"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "buyer.006",
+    "version": 1,
+    "pack_id": "role.buyer",
+    "pack_version": 1,
+    "prompt": "Which existing suppliers should be saved as incumbents?",
+    "answer_type": "multi_select",
+    "display_order": 106,
+    "visibility_rule": {
+      "roleIn": [
+        "buyer",
+        "maintenance_manager",
+        "finance_approver"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "supplier.001",
+    "version": 1,
+    "pack_id": "role.supplier",
+    "pack_version": 1,
+    "prompt": "What do you manufacture, sell or distribute?",
+    "answer_type": "multi_select",
+    "display_order": 201,
+    "visibility_rule": {
+      "roleIn": [
+        "supplier",
+        "manufacturer",
+        "distributor"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "supplier.002",
+    "version": 1,
+    "pack_id": "role.supplier",
+    "pack_version": 1,
+    "prompt": "Which industries do you target?",
+    "answer_type": "multi_select",
+    "display_order": 202,
+    "visibility_rule": {
+      "roleIn": [
+        "supplier",
+        "manufacturer",
+        "distributor"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "supplier.003",
+    "version": 1,
+    "pack_id": "role.supplier",
+    "pack_version": 1,
+    "prompt": "Which regions can you supply or service?",
+    "answer_type": "multi_select",
+    "display_order": 203,
+    "visibility_rule": {
+      "roleIn": [
+        "supplier",
+        "manufacturer",
+        "distributor"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "supplier.004",
+    "version": 1,
+    "pack_id": "role.supplier",
+    "pack_version": 1,
+    "prompt": "What RFQ types do you prefer?",
+    "answer_type": "multi_select",
+    "display_order": 204,
+    "visibility_rule": {
+      "roleIn": [
+        "supplier",
+        "manufacturer",
+        "distributor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "supplier.005",
+    "version": 1,
+    "pack_id": "role.supplier",
+    "pack_version": 1,
+    "prompt": "What project values fit your business?",
+    "answer_type": "structured",
+    "display_order": 205,
+    "visibility_rule": {
+      "roleIn": [
+        "supplier",
+        "manufacturer",
+        "distributor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "supplier.006",
+    "version": 1,
+    "pack_id": "role.supplier",
+    "pack_version": 1,
+    "prompt": "What are your current lead-time bands?",
+    "answer_type": "structured",
+    "display_order": 206,
+    "visibility_rule": {
+      "roleIn": [
+        "supplier",
+        "manufacturer",
+        "distributor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "supplier.007",
+    "version": 1,
+    "pack_id": "role.supplier",
+    "pack_version": 1,
+    "prompt": "Which brands and technologies do you support?",
+    "answer_type": "multi_select",
+    "display_order": 207,
+    "visibility_rule": {
+      "roleIn": [
+        "supplier",
+        "manufacturer",
+        "distributor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "supplier.008",
+    "version": 1,
+    "pack_id": "role.supplier",
+    "pack_version": 1,
+    "prompt": "What installation, commissioning, training and maintenance services are available?",
+    "answer_type": "multi_select",
+    "display_order": 208,
+    "visibility_rule": {
+      "roleIn": [
+        "supplier",
+        "manufacturer",
+        "distributor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "supplier.009",
+    "version": 1,
+    "pack_id": "role.supplier",
+    "pack_version": 1,
+    "prompt": "What capacity constraints should matching consider?",
+    "answer_type": "structured",
+    "display_order": 209,
+    "visibility_rule": {
+      "roleIn": [
+        "supplier",
+        "manufacturer",
+        "distributor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "contractor.001",
+    "version": 1,
+    "pack_id": "role.contractor",
+    "pack_version": 1,
+    "prompt": "Select all trades and disciplines.",
+    "answer_type": "multi_select",
+    "display_order": 301,
+    "visibility_rule": {
+      "roleIn": [
+        "contractor"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "contractor.002",
+    "version": 1,
+    "pack_id": "role.contractor",
+    "pack_version": 1,
+    "prompt": "Add licences and jurisdictions.",
+    "answer_type": "structured",
+    "display_order": 302,
+    "visibility_rule": {
+      "roleIn": [
+        "contractor"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "private"
+  },
+  {
+    "id": "contractor.003",
+    "version": 1,
+    "pack_id": "role.contractor",
+    "pack_version": 1,
+    "prompt": "Which equipment and brands have you worked on?",
+    "answer_type": "multi_select",
+    "display_order": 303,
+    "visibility_rule": {
+      "roleIn": [
+        "contractor"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "contractor.004",
+    "version": 1,
+    "pack_id": "role.contractor",
+    "pack_version": 1,
+    "prompt": "What is your normal travel radius?",
+    "answer_type": "structured",
+    "display_order": 304,
+    "visibility_rule": {
+      "roleIn": [
+        "contractor"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "contractor.005",
+    "version": 1,
+    "pack_id": "role.contractor",
+    "pack_version": 1,
+    "prompt": "Are emergency, night, weekend or FIFO engagements accepted?",
+    "answer_type": "multi_select",
+    "display_order": 305,
+    "visibility_rule": {
+      "roleIn": [
+        "contractor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "contractor.006",
+    "version": 1,
+    "pack_id": "role.contractor",
+    "pack_version": 1,
+    "prompt": "Add rates, call-out rules and tax basis.",
+    "answer_type": "structured",
+    "display_order": 306,
+    "visibility_rule": {
+      "roleIn": [
+        "contractor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "private"
+  },
+  {
+    "id": "contractor.007",
+    "version": 1,
+    "pack_id": "role.contractor",
+    "pack_version": 1,
+    "prompt": "Set current and recurring availability.",
+    "answer_type": "structured",
+    "display_order": 307,
+    "visibility_rule": {
+      "roleIn": [
+        "contractor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "contractor.008",
+    "version": 1,
+    "pack_id": "role.contractor",
+    "pack_version": 1,
+    "prompt": "List vehicles, tools and specialist equipment owned.",
+    "answer_type": "multi_select",
+    "display_order": 308,
+    "visibility_rule": {
+      "roleIn": [
+        "contractor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "contractor.009",
+    "version": 1,
+    "pack_id": "role.contractor",
+    "pack_version": 1,
+    "prompt": "Select site types and industry experience.",
+    "answer_type": "multi_select",
+    "display_order": 309,
+    "visibility_rule": {
+      "roleIn": [
+        "contractor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "contractor.010",
+    "version": 1,
+    "pack_id": "role.contractor",
+    "pack_version": 1,
+    "prompt": "Add insurance and credential expiry dates.",
+    "answer_type": "structured",
+    "display_order": 310,
+    "visibility_rule": {
+      "roleIn": [
+        "contractor"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "private"
+  },
+  {
+    "id": "industry.food.001",
+    "version": 1,
+    "pack_id": "industry.food",
+    "pack_version": 1,
+    "prompt": "Which food categories are produced?",
+    "answer_type": "multi_select",
+    "display_order": 401,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.food_beverage"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.food.002",
+    "version": 1,
+    "pack_id": "industry.food",
+    "pack_version": 1,
+    "prompt": "Which processing operations are performed?",
+    "answer_type": "multi_select",
+    "display_order": 402,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.food_beverage"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.food.003",
+    "version": 1,
+    "pack_id": "industry.food",
+    "pack_version": 1,
+    "prompt": "Which packaging formats are used?",
+    "answer_type": "multi_select",
+    "display_order": 403,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.food_beverage"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.food.004",
+    "version": 1,
+    "pack_id": "industry.food",
+    "pack_version": 1,
+    "prompt": "Is the facility wet washdown, dry clean or mixed?",
+    "answer_type": "multi_select",
+    "display_order": 404,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.food_beverage"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.food.005",
+    "version": 1,
+    "pack_id": "industry.food",
+    "pack_version": 1,
+    "prompt": "Which food-safety programs apply?",
+    "answer_type": "multi_select",
+    "display_order": 405,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.food_beverage"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.food.006",
+    "version": 1,
+    "pack_id": "industry.food",
+    "pack_version": 1,
+    "prompt": "Which temperature zones and cold-chain requirements apply?",
+    "answer_type": "multi_select",
+    "display_order": 406,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.food_beverage"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.food.007",
+    "version": 1,
+    "pack_id": "industry.food",
+    "pack_version": 1,
+    "prompt": "Which coding, labelling, inspection and traceability systems are used?",
+    "answer_type": "multi_select",
+    "display_order": 407,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.food_beverage"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.food.008",
+    "version": 1,
+    "pack_id": "industry.food",
+    "pack_version": 1,
+    "prompt": "Which ingredient and consumable categories recur?",
+    "answer_type": "multi_select",
+    "display_order": 408,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.food_beverage"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.packaging.001",
+    "version": 1,
+    "pack_id": "industry.packaging",
+    "pack_version": 1,
+    "prompt": "Which primary and secondary packaging formats are handled?",
+    "answer_type": "multi_select",
+    "display_order": 501,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.packaging_printing"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.packaging.002",
+    "version": 1,
+    "pack_id": "industry.packaging",
+    "pack_version": 1,
+    "prompt": "Which coding and marking technologies are used?",
+    "answer_type": "multi_select",
+    "display_order": 502,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.packaging_printing"
+      ]
+    },
+    "required_rule": {
+      "const": true
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.packaging.003",
+    "version": 1,
+    "pack_id": "industry.packaging",
+    "pack_version": 1,
+    "prompt": "Which line speeds and product dimensions are typical?",
+    "answer_type": "structured",
+    "display_order": 503,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.packaging_printing"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.packaging.004",
+    "version": 1,
+    "pack_id": "industry.packaging",
+    "pack_version": 1,
+    "prompt": "Which GS1 or traceability standards apply?",
+    "answer_type": "multi_select",
+    "display_order": 504,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.packaging_printing"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "industry.packaging.005",
+    "version": 1,
+    "pack_id": "industry.packaging",
+    "pack_version": 1,
+    "prompt": "Is integration required with PLC, ERP, MES or vision systems?",
+    "answer_type": "multi_select",
+    "display_order": 505,
+    "visibility_rule": {
+      "taxonomyDescendantOf": [
+        "universal.primary_industry",
+        "tax:rq:industry.packaging_printing"
+      ]
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {},
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.conveyor.capacity",
+    "version": 1,
+    "pack_id": "equipment.conveyor",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to conveyor?",
+    "answer_type": "quantity_range",
+    "display_order": 643,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.conveyor"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.conveyor.environment",
+    "version": 1,
+    "pack_id": "equipment.conveyor",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for conveyor.",
+    "answer_type": "multi_select",
+    "display_order": 645,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.conveyor"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.belt_conveyor.capacity",
+    "version": 1,
+    "pack_id": "equipment.belt_conveyor",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to belt conveyor?",
+    "answer_type": "quantity_range",
+    "display_order": 645,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.belt_conveyor"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.belt_conveyor.environment",
+    "version": 1,
+    "pack_id": "equipment.belt_conveyor",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for belt conveyor.",
+    "answer_type": "multi_select",
+    "display_order": 647,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.belt_conveyor"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.slat_conveyor.capacity",
+    "version": 1,
+    "pack_id": "equipment.slat_conveyor",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to slat conveyor?",
+    "answer_type": "quantity_range",
+    "display_order": 647,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.slat_conveyor"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.slat_conveyor.environment",
+    "version": 1,
+    "pack_id": "equipment.slat_conveyor",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for slat conveyor.",
+    "answer_type": "multi_select",
+    "display_order": 649,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.slat_conveyor"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.screw_conveyor.capacity",
+    "version": 1,
+    "pack_id": "equipment.screw_conveyor",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to screw conveyor?",
+    "answer_type": "quantity_range",
+    "display_order": 649,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.screw_conveyor"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.screw_conveyor.environment",
+    "version": 1,
+    "pack_id": "equipment.screw_conveyor",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for screw conveyor.",
+    "answer_type": "multi_select",
+    "display_order": 651,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.screw_conveyor"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.vibratory_conveyor.capacity",
+    "version": 1,
+    "pack_id": "equipment.vibratory_conveyor",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to vibratory conveyor?",
+    "answer_type": "quantity_range",
+    "display_order": 651,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.vibratory_conveyor"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.vibratory_conveyor.environment",
+    "version": 1,
+    "pack_id": "equipment.vibratory_conveyor",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for vibratory conveyor.",
+    "answer_type": "multi_select",
+    "display_order": 653,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.vibratory_conveyor"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.mixer.capacity",
+    "version": 1,
+    "pack_id": "equipment.mixer",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to mixer?",
+    "answer_type": "quantity_range",
+    "display_order": 653,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.mixer"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.mixer.environment",
+    "version": 1,
+    "pack_id": "equipment.mixer",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for mixer.",
+    "answer_type": "multi_select",
+    "display_order": 655,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.mixer"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.ribbon_blender.capacity",
+    "version": 1,
+    "pack_id": "equipment.ribbon_blender",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to ribbon blender?",
+    "answer_type": "quantity_range",
+    "display_order": 655,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.ribbon_blender"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.ribbon_blender.environment",
+    "version": 1,
+    "pack_id": "equipment.ribbon_blender",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for ribbon blender.",
+    "answer_type": "multi_select",
+    "display_order": 657,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.ribbon_blender"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.high_shear_mixer.capacity",
+    "version": 1,
+    "pack_id": "equipment.high_shear_mixer",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to high shear mixer?",
+    "answer_type": "quantity_range",
+    "display_order": 657,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.high_shear_mixer"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.high_shear_mixer.environment",
+    "version": 1,
+    "pack_id": "equipment.high_shear_mixer",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for high shear mixer.",
+    "answer_type": "multi_select",
+    "display_order": 659,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.high_shear_mixer"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.filler.capacity",
+    "version": 1,
+    "pack_id": "equipment.filler",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to filler?",
+    "answer_type": "quantity_range",
+    "display_order": 659,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.filler"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.filler.environment",
+    "version": 1,
+    "pack_id": "equipment.filler",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for filler.",
+    "answer_type": "multi_select",
+    "display_order": 661,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.filler"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.auger_filler.capacity",
+    "version": 1,
+    "pack_id": "equipment.auger_filler",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to auger filler?",
+    "answer_type": "quantity_range",
+    "display_order": 661,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.auger_filler"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.auger_filler.environment",
+    "version": 1,
+    "pack_id": "equipment.auger_filler",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for auger filler.",
+    "answer_type": "multi_select",
+    "display_order": 663,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.auger_filler"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.liquid_filler.capacity",
+    "version": 1,
+    "pack_id": "equipment.liquid_filler",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to liquid filler?",
+    "answer_type": "quantity_range",
+    "display_order": 663,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.liquid_filler"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.liquid_filler.environment",
+    "version": 1,
+    "pack_id": "equipment.liquid_filler",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for liquid filler.",
+    "answer_type": "multi_select",
+    "display_order": 665,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.liquid_filler"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.pouch_filler.capacity",
+    "version": 1,
+    "pack_id": "equipment.pouch_filler",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to pouch filler?",
+    "answer_type": "quantity_range",
+    "display_order": 665,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.pouch_filler"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.pouch_filler.environment",
+    "version": 1,
+    "pack_id": "equipment.pouch_filler",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for pouch filler.",
+    "answer_type": "multi_select",
+    "display_order": 667,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.pouch_filler"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.labeller.capacity",
+    "version": 1,
+    "pack_id": "equipment.labeller",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to labeller?",
+    "answer_type": "quantity_range",
+    "display_order": 667,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.labeller"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.labeller.environment",
+    "version": 1,
+    "pack_id": "equipment.labeller",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for labeller.",
+    "answer_type": "multi_select",
+    "display_order": 669,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.labeller"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.carton_labeller.capacity",
+    "version": 1,
+    "pack_id": "equipment.carton_labeller",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to carton labeller?",
+    "answer_type": "quantity_range",
+    "display_order": 669,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.carton_labeller"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.carton_labeller.environment",
+    "version": 1,
+    "pack_id": "equipment.carton_labeller",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for carton labeller.",
+    "answer_type": "multi_select",
+    "display_order": 671,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.carton_labeller"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.wrap_labeller.capacity",
+    "version": 1,
+    "pack_id": "equipment.wrap_labeller",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to wrap labeller?",
+    "answer_type": "quantity_range",
+    "display_order": 671,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.wrap_labeller"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.wrap_labeller.environment",
+    "version": 1,
+    "pack_id": "equipment.wrap_labeller",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for wrap labeller.",
+    "answer_type": "multi_select",
+    "display_order": 673,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.wrap_labeller"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.coding_printer.capacity",
+    "version": 1,
+    "pack_id": "equipment.coding_printer",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to coding printer?",
+    "answer_type": "quantity_range",
+    "display_order": 673,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.coding_printer"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.coding_printer.environment",
+    "version": 1,
+    "pack_id": "equipment.coding_printer",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for coding printer.",
+    "answer_type": "multi_select",
+    "display_order": 675,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.coding_printer"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.tij_printer.capacity",
+    "version": 1,
+    "pack_id": "equipment.tij_printer",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to tij printer?",
+    "answer_type": "quantity_range",
+    "display_order": 675,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.tij_printer"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.tij_printer.environment",
+    "version": 1,
+    "pack_id": "equipment.tij_printer",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for tij printer.",
+    "answer_type": "multi_select",
+    "display_order": 677,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.tij_printer"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.cij_printer.capacity",
+    "version": 1,
+    "pack_id": "equipment.cij_printer",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to cij printer?",
+    "answer_type": "quantity_range",
+    "display_order": 677,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.cij_printer"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.cij_printer.environment",
+    "version": 1,
+    "pack_id": "equipment.cij_printer",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for cij printer.",
+    "answer_type": "multi_select",
+    "display_order": 679,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.cij_printer"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.laser_coder.capacity",
+    "version": 1,
+    "pack_id": "equipment.laser_coder",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to laser coder?",
+    "answer_type": "quantity_range",
+    "display_order": 679,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.laser_coder"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.laser_coder.environment",
+    "version": 1,
+    "pack_id": "equipment.laser_coder",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for laser coder.",
+    "answer_type": "multi_select",
+    "display_order": 681,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.laser_coder"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.thermal_transfer_printer.capacity",
+    "version": 1,
+    "pack_id": "equipment.thermal_transfer_printer",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to thermal transfer printer?",
+    "answer_type": "quantity_range",
+    "display_order": 681,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.thermal_transfer_printer"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.thermal_transfer_printer.environment",
+    "version": 1,
+    "pack_id": "equipment.thermal_transfer_printer",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for thermal transfer printer.",
+    "answer_type": "multi_select",
+    "display_order": 683,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.thermal_transfer_printer"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.metal_detector.capacity",
+    "version": 1,
+    "pack_id": "equipment.metal_detector",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to metal detector?",
+    "answer_type": "quantity_range",
+    "display_order": 683,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.metal_detector"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.metal_detector.environment",
+    "version": 1,
+    "pack_id": "equipment.metal_detector",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for metal detector.",
+    "answer_type": "multi_select",
+    "display_order": 685,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.metal_detector"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.checkweigher.capacity",
+    "version": 1,
+    "pack_id": "equipment.checkweigher",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to checkweigher?",
+    "answer_type": "quantity_range",
+    "display_order": 685,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.checkweigher"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.checkweigher.environment",
+    "version": 1,
+    "pack_id": "equipment.checkweigher",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for checkweigher.",
+    "answer_type": "multi_select",
+    "display_order": 687,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.checkweigher"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.xray_inspection.capacity",
+    "version": 1,
+    "pack_id": "equipment.xray_inspection",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to xray inspection?",
+    "answer_type": "quantity_range",
+    "display_order": 687,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.xray_inspection"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.xray_inspection.environment",
+    "version": 1,
+    "pack_id": "equipment.xray_inspection",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for xray inspection.",
+    "answer_type": "multi_select",
+    "display_order": 689,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.xray_inspection"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.vision_inspection.capacity",
+    "version": 1,
+    "pack_id": "equipment.vision_inspection",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to vision inspection?",
+    "answer_type": "quantity_range",
+    "display_order": 689,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.vision_inspection"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.vision_inspection.environment",
+    "version": 1,
+    "pack_id": "equipment.vision_inspection",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for vision inspection.",
+    "answer_type": "multi_select",
+    "display_order": 691,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.vision_inspection"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.cartoner.capacity",
+    "version": 1,
+    "pack_id": "equipment.cartoner",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to cartoner?",
+    "answer_type": "quantity_range",
+    "display_order": 691,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.cartoner"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.cartoner.environment",
+    "version": 1,
+    "pack_id": "equipment.cartoner",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for cartoner.",
+    "answer_type": "multi_select",
+    "display_order": 693,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.cartoner"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.case_packer.capacity",
+    "version": 1,
+    "pack_id": "equipment.case_packer",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to case packer?",
+    "answer_type": "quantity_range",
+    "display_order": 693,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.case_packer"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.case_packer.environment",
+    "version": 1,
+    "pack_id": "equipment.case_packer",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for case packer.",
+    "answer_type": "multi_select",
+    "display_order": 695,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.case_packer"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.palletiser.capacity",
+    "version": 1,
+    "pack_id": "equipment.palletiser",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to palletiser?",
+    "answer_type": "quantity_range",
+    "display_order": 695,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.palletiser"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.palletiser.environment",
+    "version": 1,
+    "pack_id": "equipment.palletiser",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for palletiser.",
+    "answer_type": "multi_select",
+    "display_order": 697,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.palletiser"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.robotic_arm.capacity",
+    "version": 1,
+    "pack_id": "equipment.robotic_arm",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to robotic arm?",
+    "answer_type": "quantity_range",
+    "display_order": 697,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.robotic_arm"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.robotic_arm.environment",
+    "version": 1,
+    "pack_id": "equipment.robotic_arm",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for robotic arm.",
+    "answer_type": "multi_select",
+    "display_order": 699,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.robotic_arm"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.air_compressor.capacity",
+    "version": 1,
+    "pack_id": "equipment.air_compressor",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to air compressor?",
+    "answer_type": "quantity_range",
+    "display_order": 699,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.air_compressor"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.air_compressor.environment",
+    "version": 1,
+    "pack_id": "equipment.air_compressor",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for air compressor.",
+    "answer_type": "multi_select",
+    "display_order": 701,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.air_compressor"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.pump.capacity",
+    "version": 1,
+    "pack_id": "equipment.pump",
+    "pack_version": 1,
+    "prompt": "What required capacity or throughput applies to pump?",
+    "answer_type": "quantity_range",
+    "display_order": 701,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.pump"
+    },
+    "required_rule": {
+      "whenIntentIn": [
+        "create_rfq"
+      ]
+    },
+    "consequence_map": {
+      "matching": "capacity"
+    },
+    "options": [],
+    "sensitivity": "internal"
+  },
+  {
+    "id": "equipment.pump.environment",
+    "version": 1,
+    "pack_id": "equipment.pump",
+    "pack_version": 1,
+    "prompt": "Describe the operating environment for pump.",
+    "answer_type": "multi_select",
+    "display_order": 703,
+    "visibility_rule": {
+      "selectedTaxonomy": "tax:rq:machinery.pump"
+    },
+    "required_rule": {
+      "const": false
+    },
+    "consequence_map": {
+      "matching": "environment"
+    },
+    "options": [
+      "dry",
+      "wet_washdown",
+      "cold",
+      "hot",
+      "dusty",
+      "hazardous",
+      "cleanroom"
+    ],
+    "sensitivity": "internal"
+  }
+]

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { upcomingModules } from "@/lib/db/demo-data";
 
@@ -19,6 +19,10 @@ export default async function ModuleComingSoonPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  if (slug === "v12") redirect("/v12");
+  if (slug === "srm") redirect("/v12/srm");
+  if (slug === "intelligence" || slug === "ai-copilot") redirect("/v12/intelligence");
+
   const mod = upcomingModules.find((m) => m.slug === slug);
   if (!mod) notFound();
 

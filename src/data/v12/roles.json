@@ -1,0 +1,92 @@
+[
+  {
+    "id": "buyer",
+    "label": "Buyer / Purchaser",
+    "selectable": true
+  },
+  {
+    "id": "maintenance_manager",
+    "label": "Maintenance / Production / Engineering Manager",
+    "selectable": true
+  },
+  {
+    "id": "supplier",
+    "label": "Supplier",
+    "selectable": true
+  },
+  {
+    "id": "manufacturer",
+    "label": "Manufacturer",
+    "selectable": true
+  },
+  {
+    "id": "distributor",
+    "label": "Distributor",
+    "selectable": true
+  },
+  {
+    "id": "contractor",
+    "label": "Contractor / Installer",
+    "selectable": true
+  },
+  {
+    "id": "consultant",
+    "label": "Consultant / Engineer",
+    "selectable": true
+  },
+  {
+    "id": "freight_provider",
+    "label": "Freight Provider",
+    "selectable": true
+  },
+  {
+    "id": "warehouse_provider",
+    "label": "Warehouse Provider",
+    "selectable": true
+  },
+  {
+    "id": "inspector",
+    "label": "Inspector / Auditor",
+    "selectable": true
+  },
+  {
+    "id": "finance_provider",
+    "label": "Finance Provider",
+    "selectable": true
+  },
+  {
+    "id": "insurance_provider",
+    "label": "Insurance Provider",
+    "selectable": true
+  },
+  {
+    "id": "training_provider",
+    "label": "Training Provider",
+    "selectable": true
+  },
+  {
+    "id": "event_provider",
+    "label": "Event Provider",
+    "selectable": true
+  },
+  {
+    "id": "company_admin",
+    "label": "Company Administrator",
+    "selectable": true
+  },
+  {
+    "id": "finance_approver",
+    "label": "Finance Approver",
+    "selectable": true
+  },
+  {
+    "id": "platform_admin",
+    "label": "RateQuip Platform Administrator",
+    "selectable": false
+  },
+  {
+    "id": "support_operator",
+    "label": "Support Operator",
+    "selectable": false
+  }
+]

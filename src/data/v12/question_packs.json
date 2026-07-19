@@ -1,0 +1,218 @@
+[
+  {
+    "id": "equipment.air_compressor",
+    "version": 1,
+    "name": "Equipment Air_Compressor",
+    "status": "published"
+  },
+  {
+    "id": "equipment.auger_filler",
+    "version": 1,
+    "name": "Equipment Auger_Filler",
+    "status": "published"
+  },
+  {
+    "id": "equipment.belt_conveyor",
+    "version": 1,
+    "name": "Equipment Belt_Conveyor",
+    "status": "published"
+  },
+  {
+    "id": "equipment.carton_labeller",
+    "version": 1,
+    "name": "Equipment Carton_Labeller",
+    "status": "published"
+  },
+  {
+    "id": "equipment.cartoner",
+    "version": 1,
+    "name": "Equipment Cartoner",
+    "status": "published"
+  },
+  {
+    "id": "equipment.case_packer",
+    "version": 1,
+    "name": "Equipment Case_Packer",
+    "status": "published"
+  },
+  {
+    "id": "equipment.checkweigher",
+    "version": 1,
+    "name": "Equipment Checkweigher",
+    "status": "published"
+  },
+  {
+    "id": "equipment.cij_printer",
+    "version": 1,
+    "name": "Equipment Cij_Printer",
+    "status": "published"
+  },
+  {
+    "id": "equipment.coding_printer",
+    "version": 1,
+    "name": "Equipment Coding_Printer",
+    "status": "published"
+  },
+  {
+    "id": "equipment.conveyor",
+    "version": 1,
+    "name": "Equipment Conveyor",
+    "status": "published"
+  },
+  {
+    "id": "equipment.filler",
+    "version": 1,
+    "name": "Equipment Filler",
+    "status": "published"
+  },
+  {
+    "id": "equipment.high_shear_mixer",
+    "version": 1,
+    "name": "Equipment High_Shear_Mixer",
+    "status": "published"
+  },
+  {
+    "id": "equipment.labeller",
+    "version": 1,
+    "name": "Equipment Labeller",
+    "status": "published"
+  },
+  {
+    "id": "equipment.laser_coder",
+    "version": 1,
+    "name": "Equipment Laser_Coder",
+    "status": "published"
+  },
+  {
+    "id": "equipment.liquid_filler",
+    "version": 1,
+    "name": "Equipment Liquid_Filler",
+    "status": "published"
+  },
+  {
+    "id": "equipment.metal_detector",
+    "version": 1,
+    "name": "Equipment Metal_Detector",
+    "status": "published"
+  },
+  {
+    "id": "equipment.mixer",
+    "version": 1,
+    "name": "Equipment Mixer",
+    "status": "published"
+  },
+  {
+    "id": "equipment.palletiser",
+    "version": 1,
+    "name": "Equipment Palletiser",
+    "status": "published"
+  },
+  {
+    "id": "equipment.pouch_filler",
+    "version": 1,
+    "name": "Equipment Pouch_Filler",
+    "status": "published"
+  },
+  {
+    "id": "equipment.pump",
+    "version": 1,
+    "name": "Equipment Pump",
+    "status": "published"
+  },
+  {
+    "id": "equipment.ribbon_blender",
+    "version": 1,
+    "name": "Equipment Ribbon_Blender",
+    "status": "published"
+  },
+  {
+    "id": "equipment.robotic_arm",
+    "version": 1,
+    "name": "Equipment Robotic_Arm",
+    "status": "published"
+  },
+  {
+    "id": "equipment.screw_conveyor",
+    "version": 1,
+    "name": "Equipment Screw_Conveyor",
+    "status": "published"
+  },
+  {
+    "id": "equipment.slat_conveyor",
+    "version": 1,
+    "name": "Equipment Slat_Conveyor",
+    "status": "published"
+  },
+  {
+    "id": "equipment.thermal_transfer_printer",
+    "version": 1,
+    "name": "Equipment Thermal_Transfer_Printer",
+    "status": "published"
+  },
+  {
+    "id": "equipment.tij_printer",
+    "version": 1,
+    "name": "Equipment Tij_Printer",
+    "status": "published"
+  },
+  {
+    "id": "equipment.vibratory_conveyor",
+    "version": 1,
+    "name": "Equipment Vibratory_Conveyor",
+    "status": "published"
+  },
+  {
+    "id": "equipment.vision_inspection",
+    "version": 1,
+    "name": "Equipment Vision_Inspection",
+    "status": "published"
+  },
+  {
+    "id": "equipment.wrap_labeller",
+    "version": 1,
+    "name": "Equipment Wrap_Labeller",
+    "status": "published"
+  },
+  {
+    "id": "equipment.xray_inspection",
+    "version": 1,
+    "name": "Equipment Xray_Inspection",
+    "status": "published"
+  },
+  {
+    "id": "industry.food",
+    "version": 1,
+    "name": "Industry Food",
+    "status": "published"
+  },
+  {
+    "id": "industry.packaging",
+    "version": 1,
+    "name": "Industry Packaging",
+    "status": "published"
+  },
+  {
+    "id": "role.buyer",
+    "version": 1,
+    "name": "Role Buyer",
+    "status": "published"
+  },
+  {
+    "id": "role.contractor",
+    "version": 1,
+    "name": "Role Contractor",
+    "status": "published"
+  },
+  {
+    "id": "role.supplier",
+    "version": 1,
+    "name": "Role Supplier",
+    "status": "published"
+  },
+  {
+    "id": "universal",
+    "version": 1,
+    "name": "Universal",
+    "status": "published"
+  }
+]

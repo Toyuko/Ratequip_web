@@ -27,6 +27,7 @@ export function SiteHeader() {
   const nav = [
     { href: "/suppliers", label: t.nav.suppliers },
     { href: "/requests", label: t.nav.rfqs },
+    { href: "/v12", label: "V12" },
     { href: "/categories", label: t.nav.categories },
     { href: "/pricing", label: t.nav.pricing },
   ];
