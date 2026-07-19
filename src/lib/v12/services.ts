@@ -5,6 +5,15 @@ import {
 import { hashDocumentBody } from "@/lib/v12/documents/vault";
 import { resolveQuestions, type RuleContext } from "@/lib/v12/dqe/resolver";
 import {
+  analyzeDocumentText,
+  listIndustryPacks,
+} from "@/lib/v12/intelligence/analyzer";
+import {
+  canEnterPublishedScope,
+  readinessScore,
+} from "@/lib/v12/intelligence/classification";
+import type { AnalysisRun } from "@/lib/v12/intelligence/types";
+import {
   evaluateEligibility,
   scoreMatch,
 } from "@/lib/v12/matching/scorer";
@@ -34,6 +43,8 @@ import {
   type WorkflowInstance,
 } from "@/lib/v12/workflow/runtime";
 import { createHash } from "node:crypto";
+
+export { listIndustryPacks };
 
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -810,4 +821,202 @@ export function listDocuments() {
     documents: store.documents,
     versions: store.documentVersions,
   };
+}
+
+/* ─── Release 5A: document intelligence + requirement ledger ─── */
+
+export function uploadAndAnalyzeUrs(input: {
+  title: string;
+  sourceText: string;
+  industryPack: string;
+  createdBy: string;
+  companyId?: string;
+  filename?: string;
+}) {
+  const store = getV12Store();
+
+  // Reuse Domain 38 vault for evidence continuity
+  const vault = createDocument({
+    title: input.title,
+    docType: "urs_rfq",
+    body: input.sourceText,
+    createdBy: input.createdBy,
+    linkedType: "analysis",
+  });
+
+  const run: AnalysisRun = {
+    id: id("arun"),
+    companyId: input.companyId ?? "platform-buyer",
+    title: input.title,
+    industryPack: input.industryPack,
+    status: "running",
+    policyVersion: "pending",
+    modelVersion: "rules-v1-stub",
+    documentId: vault.document.id,
+    documentVersionId: vault.version.id,
+    vaultDocumentId: vault.document.id,
+    sourceFilename: input.filename ?? `${input.title}.txt`,
+    sourceText: input.sourceText,
+    startedAt: new Date().toISOString(),
+    createdBy: input.createdBy,
+  };
+  store.analysisRuns.unshift(run);
+
+  const result = analyzeDocumentText({
+    analysisRunId: run.id,
+    documentVersionId: vault.version.id,
+    industryPack: input.industryPack,
+    sourceText: input.sourceText,
+  });
+
+  store.intelligenceClauses.push(...result.clauses);
+  store.intelligenceRequirements.push(...result.requirements);
+  store.intelligenceGaps.push(...result.gaps);
+  store.intelligenceQuestions.push(...result.questions);
+  store.intelligenceRecommendations.push(...result.recommendations);
+
+  run.status = "completed";
+  run.completedAt = new Date().toISOString();
+  run.confidence = result.confidence;
+  run.policyVersion = result.policyVersion;
+
+  return {
+    run,
+    vault,
+    counts: {
+      clauses: result.clauses.length,
+      requirements: result.requirements.length,
+      gaps: result.gaps.length,
+      questions: result.questions.length,
+      recommendations: result.recommendations.length,
+    },
+    explicitRecall: result.explicitRecall,
+    readiness: readinessScore({
+      requirements: result.requirements,
+      openGaps: result.gaps.length,
+      unansweredBlockingQuestions: result.questions.filter(
+        (q) => q.blocksPublication && !q.answer,
+      ).length,
+    }),
+  };
+}
+
+export function listAnalysisOverview(runId?: string) {
+  const store = getV12Store();
+  const runs = store.analysisRuns;
+  const run = runId
+    ? runs.find((r) => r.id === runId)
+    : runs[0];
+  if (!run) {
+    return {
+      packs: listIndustryPacks(),
+      runs,
+      run: null,
+      requirements: [],
+      gaps: [],
+      questions: [],
+      recommendations: [],
+      readiness: 0,
+    };
+  }
+  const requirements = store.intelligenceRequirements.filter(
+    (r) => r.analysisRunId === run.id,
+  );
+  const gaps = store.intelligenceGaps.filter((g) => g.analysisRunId === run.id);
+  const questions = store.intelligenceQuestions.filter(
+    (q) => q.analysisRunId === run.id,
+  );
+  const recommendations = store.intelligenceRecommendations.filter(
+    (r) => r.analysisRunId === run.id,
+  );
+  return {
+    packs: listIndustryPacks(),
+    runs,
+    run,
+    requirements,
+    gaps,
+    questions,
+    recommendations,
+    readiness: readinessScore({
+      requirements,
+      openGaps: gaps.length,
+      unansweredBlockingQuestions: questions.filter(
+        (q) => q.blocksPublication && !q.answer,
+      ).length,
+    }),
+  };
+}
+
+export function confirmRequirement(input: {
+  requirementId: string;
+  reviewerId: string;
+  note?: string;
+}) {
+  const req = getV12Store().intelligenceRequirements.find(
+    (r) => r.id === input.requirementId,
+  );
+  if (!req) return { ok: false as const, message: "Requirement not found" };
+  if (req.reviewerStatus !== "pending") {
+    return { ok: false as const, message: "Requirement already reviewed" };
+  }
+  req.reviewerStatus = "confirmed";
+  req.reviewedBy = input.reviewerId;
+  req.reviewedAt = new Date().toISOString();
+  req.reviewNote = input.note;
+  return { ok: true as const, requirement: req };
+}
+
+export function rejectRequirement(input: {
+  requirementId: string;
+  reviewerId: string;
+  note?: string;
+}) {
+  const req = getV12Store().intelligenceRequirements.find(
+    (r) => r.id === input.requirementId,
+  );
+  if (!req) return { ok: false as const, message: "Requirement not found" };
+  if (req.reviewerStatus !== "pending") {
+    return { ok: false as const, message: "Requirement already reviewed" };
+  }
+  req.reviewerStatus = "rejected";
+  req.reviewedBy = input.reviewerId;
+  req.reviewedAt = new Date().toISOString();
+  req.reviewNote = input.note;
+  return { ok: true as const, requirement: req };
+}
+
+export function answerIntelligenceQuestion(input: {
+  questionId: string;
+  answer: string;
+  answeredBy: string;
+}) {
+  const q = getV12Store().intelligenceQuestions.find(
+    (x) => x.id === input.questionId,
+  );
+  if (!q) return { ok: false as const, message: "Question not found" };
+  q.answer = input.answer;
+  q.answeredBy = input.answeredBy;
+  q.answeredAt = new Date().toISOString();
+  return { ok: true as const, question: q };
+}
+
+export function approveIntelligenceRecommendation(input: {
+  recommendationId: string;
+  reviewerId: string;
+}) {
+  const rec = getV12Store().intelligenceRecommendations.find(
+    (r) => r.id === input.recommendationId,
+  );
+  if (!rec) return { ok: false as const, message: "Recommendation not found" };
+  rec.buyerConfirmationStatus = "approved";
+  if (!canEnterPublishedScope(rec)) {
+    // Keep approved for audit but mark that it cannot enter published scope
+    return {
+      ok: true as const,
+      recommendation: rec,
+      publishable: false as const,
+      message: "Approved for record but blocked from published scope",
+    };
+  }
+  return { ok: true as const, recommendation: rec, publishable: true as const };
 }

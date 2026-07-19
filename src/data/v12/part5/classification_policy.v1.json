@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "classes": [
+    "explicit_requirement",
+    "implied_prerequisite",
+    "required_interface",
+    "likely_project_requirement",
+    "risk_control_recommendation",
+    "optional_enhancement",
+    "alternative_solution",
+    "future_stage_opportunity",
+    "commercial_opportunity_only",
+    "out_of_scope",
+    "insufficient_information"
+  ],
+  "rules": {
+    "explicit_requirement": "Requires direct source evidence or buyer confirmation",
+    "commercial_opportunity_only": "Never blocks project and never presented as mandatory",
+    "insufficient_information": "Abstain and ask a question"
+  },
+  "minimum_confidence_for_suggestion": 0.65,
+  "minimum_confidence_for_auto_draft": 0.85,
+  "human_confirmation_required": true
+}

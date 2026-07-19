@@ -1,0 +1,33 @@
+{
+  "scenario": "Hand sanitiser integrated line",
+  "explicit": [
+    "raw water tank/pump",
+    "water treatment",
+    "DM tank/pump",
+    "ethanol storage/transfer",
+    "peroxide vessels/pumps",
+    "1000L mixer",
+    "finished storage",
+    "filling",
+    "unscrambler",
+    "capping",
+    "labelling",
+    "coding",
+    "conveyor",
+    "compressor"
+  ],
+  "risk_controls": [
+    "hazardous-area classification",
+    "explosion-protected pumps/controls",
+    "earthing/bonding",
+    "ventilation/fire",
+    "DG storage and bunding"
+  ],
+  "suggested": [
+    "pipework",
+    "installation",
+    "validation",
+    "maintenance",
+    "packaging suppliers"
+  ]
+}

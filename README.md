@@ -18,34 +18,33 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## V12 Enterprise Layer (Parts 1–3)
+## V12 Enterprise Layer (Parts 1–3 + Part 5)
 
-Imported from RateQuip Enterprise Master Repository **V12 Part 1 + Part 2 + Part 3** (19 Jul 2026).
+Imported from RateQuip Enterprise Master Repository **V12 Parts 1–3** and **V12.2 Add-On 02 / Part 5** (19–20 Jul 2026).
 
 | Layer | What landed in this app |
 |-------|-------------------------|
-| Seeds | Taxonomy, question packs, capabilities, roles, workflow templates → `src/data/v12/` |
-| Migrations | Part 1 `0001–0005`, Part 2 `0006–0013`, Part 3 `0014` (workflow/vault), platform bridge `0090` → `drizzle/v12/` |
-| Engines | DQE, matcher, ranker, AI confirmation, workflow runtime, document vault → `src/lib/v12/` |
-| UI | `/v12` hub + activation, taxonomy, builders, matching, intelligence, procurement, RFQ, SRM, CRM, assets, workflow, documents |
-| API | `/api/v1/v12`, `/procurement`, `/workflow`, `/documents` |
-| Docs | `docs/v12/` charter, Part 1–3 READMEs/backlogs |
+| Seeds | Taxonomy, packs, roles, workflow templates, Part 5 industry/classification packs → `src/data/v12/` |
+| Migrations | `0001–0014`, Part 5 `0024–0029`, platform bridge `0090` → `drizzle/v12/` |
+| Engines | DQE, matcher, ranker, AI confirmation, workflow, document vault, URS analyzer/ledger → `src/lib/v12/` |
+| UI | `/v12` hub + prior slices + **requirement ledger** |
+| API | `/api/v1/v12`, `/procurement`, `/workflow`, `/documents`, `/intelligence/ledger` |
+| Docs | `docs/v12/` charter, Part 1–3 & 5 READMEs/backlogs |
 
-**Part 1 vertical slice:** activation (DQE) → builders → explainable match → AI draft/confirm.  
-**Part 2 Release 2A:** procurement → RFQ revisions/award → SRM/CRM.  
-**Part 2 Release 2B (thin):** award → asset + digital passport.  
-**Part 3 Release 3A (thin):** workflow approvals (no self-approval) + document vault immutability.
+**Part 1:** activation → builders → explainable match → AI draft/confirm.  
+**Part 2 2A/2B:** procurement/RFQ/award → asset + passport.  
+**Part 3 3A:** workflow + document vault.  
+**Part 5 5A:** URS/RFQ analysis → evidence-linked requirements → confirm/reject + gaps/questions.
 
 ```bash
-# Apply V12 SQL to Neon (uses DATABASE_URL / DATABASE_URL_UNPOOLED from .env.local)
 npm run db:migrate:v12
 npm run db:seed:v12
 npm run smoke:v12
 ```
 
-V12 tables live in `rq` / `workflow` / `documents` schemas alongside Phase 1–2 `public` tables. Runtime store mirrors UI state; builders / match / procurement / awards also write through to Neon when `DATABASE_URL` is set.
+Schemas: `rq` / `workflow` / `documents` / `rq_intelligence` / `rq_ecosystem` / `rq_marketplace_ext`.
 
-Remaining Part 2 releases (2C–2F) and Part 3 releases (3B–3F / migrations `0015–0023`) stay as repository contracts until scheduled.
+Deferred: Part 2 **2C–2F**, Part 3 **3B–3F** (`0015–0023`), Part 5 **5B–5D** product surface, Part 4 package (not found on disk).
 
 ## Phase 2 persistence (working MVP)
 

@@ -3,6 +3,14 @@ import type {
   DocumentRecord,
   DocumentVersion,
 } from "@/lib/v12/documents/vault";
+import type {
+  AnalysisRun,
+  ClauseRecord,
+  IntelligenceGap,
+  IntelligenceQuestion,
+  IntelligenceRecommendation,
+  RequirementCandidate,
+} from "@/lib/v12/intelligence/types";
 import type { Ranked } from "@/lib/v12/recommendations/ranker";
 import type {
   WorkflowInstance,
@@ -147,6 +155,13 @@ type V12Store = {
   workflowTasks: WorkflowTask[];
   documents: DocumentRecord[];
   documentVersions: DocumentVersion[];
+  /** Part 5 / Release 5A */
+  analysisRuns: AnalysisRun[];
+  intelligenceClauses: ClauseRecord[];
+  intelligenceRequirements: RequirementCandidate[];
+  intelligenceGaps: IntelligenceGap[];
+  intelligenceQuestions: IntelligenceQuestion[];
+  intelligenceRecommendations: IntelligenceRecommendation[];
 };
 
 declare global {
@@ -218,6 +233,12 @@ function seedStore(): V12Store {
     workflowTasks: [],
     documents: [],
     documentVersions: [],
+    analysisRuns: [],
+    intelligenceClauses: [],
+    intelligenceRequirements: [],
+    intelligenceGaps: [],
+    intelligenceQuestions: [],
+    intelligenceRecommendations: [],
   };
 }
 

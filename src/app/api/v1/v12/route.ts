@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
     return apiResponse(
       req,
       ok({
-        version: "12.0.0-part3",
-        parts: ["part1", "part2-2A", "part2-2B", "part3-3A"],
+        version: "12.2.0-addon02-part5",
+        parts: ["part1", "part2-2A", "part2-2B", "part3-3A", "part5-5A"],
         counts: {
           opportunities: store.opportunities.length,
           contractors: store.contractors.length,
@@ -30,6 +30,8 @@ export async function GET(req: NextRequest) {
           assets: store.assets.length,
           workflowInstances: store.workflowInstances.length,
           documents: store.documents.length,
+          analysisRuns: store.analysisRuns.length,
+          intelligenceRequirements: store.intelligenceRequirements.length,
           matchRuns: store.matchRuns.length,
           aiDrafts: store.aiDrafts.length,
         },

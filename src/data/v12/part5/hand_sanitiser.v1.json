@@ -1,0 +1,27 @@
+{
+  "industry": "hand_sanitiser",
+  "version": "1.0.0",
+  "adjacent": [
+    "raw-water storage",
+    "water treatment",
+    "DM storage",
+    "ethanol/peroxide storage",
+    "DG bunding",
+    "hazardous-area assessment",
+    "explosion-protected pumps/controls",
+    "earthing/bonding",
+    "ventilation/fire protection",
+    "mixing",
+    "finished storage",
+    "filling",
+    "capping",
+    "labelling",
+    "coding",
+    "compressed air"
+  ],
+  "critical_questions": [
+    "Ethanol concentration and hazardous-area classification?",
+    "Liquid and gel viscosity range?",
+    "Jurisdictional DG storage, fire and ventilation approvals?"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "scenario": "Pet-food mixing and depositing",
+  "explicit": [
+    "mixer",
+    "low-shear transfer",
+    "buffer",
+    "depositor",
+    "existing thermoformer interface"
+  ],
+  "suggested": [
+    "ingredient suppliers",
+    "dry premix",
+    "refrigeration",
+    "CIP",
+    "packaging film",
+    "food technologist",
+    "QA laboratory",
+    "automation",
+    "commissioning",
+    "maintenance"
+  ],
+  "rules": [
+    "suggestions remain draft",
+    "no fabricated process values"
+  ]
+}

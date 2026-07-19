@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "groups": {
+    "business_objective": [
+      "What measurable business outcome must the project achieve?",
+      "Is the request replacement, expansion, debottlenecking, compliance remediation or new product launch?"
+    ],
+    "current_process": [
+      "Describe the current process from raw-material receipt to finished-goods dispatch.",
+      "Which steps are manual, constrained or outsourced?"
+    ],
+    "product": [
+      "What products, viscosities, particle sizes, temperatures and sensitivities apply?",
+      "Provide representative samples and worst-case product properties."
+    ],
+    "capacity": [
+      "What nominal, peak and future throughput is required?",
+      "What upstream and downstream speeds constrain the target?"
+    ],
+    "cleaning": [
+      "What cleaning method, chemicals, temperatures, validation and changeover time apply?",
+      "Are allergens, potent compounds or cross-contamination controls required?"
+    ],
+    "integration": [
+      "Define mechanical heights, product connections, signal handshakes, line control ownership and data protocols.",
+      "Which existing PLC/SCADA/MES systems must integrate?"
+    ],
+    "commercial": [
+      "What budget band, required delivery date, payment terms and Incoterms apply?",
+      "May suppliers quote partial lots, alternatives, rental, refurbished or staged options?"
+    ],
+    "lifecycle": [
+      "What FAT, SAT, IQ/OQ/PQ, training, documentation, warranty, service response and spares are required?",
+      "What expected asset life and support horizon applies?"
+    ]
+  },
+  "question_contract": {
+    "whyAsked": true,
+    "triggerEvidence": true,
+    "answerOwner": true,
+    "blocksMatching": true,
+    "blocksPublication": true,
+    "unknownSupplierRecommendAllowed": true
+  }
+}

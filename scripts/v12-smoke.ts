@@ -8,19 +8,26 @@ import { DEFAULT_MATCH_POLICY } from "../src/lib/v12/matching/types";
 import { rankCandidates } from "../src/lib/v12/recommendations/ranker";
 import { mayExecuteWithoutConfirmation } from "../src/lib/v12/ai/confirmation-policy";
 import {
+  assertEvidenceLinked,
+  canEnterPublishedScope,
+} from "../src/lib/v12/intelligence/classification";
+import {
   approveDocumentVersion,
   approveRequisition,
   awardRfq,
   claimWorkflowTask,
   completeWorkflowTask,
   confirmAIDraft,
+  confirmRequirement,
   createAIDraft,
   createDocument,
   createRequisition,
   createRfqRevision,
   issuePassport,
+  rejectRequirement,
   resolveActivationPack,
   runExplainableMatch,
+  uploadAndAnalyzeUrs,
 } from "../src/lib/v12/services";
 import { resetV12Store, getV12Store } from "../src/lib/v12/store";
 import { questionsForPack } from "../src/lib/v12/seeds";
@@ -216,6 +223,68 @@ async function main() {
   });
   if (again.ok) throw new Error("approved version must be immutable");
 
+  // Part 5 / Release 5A — requirement ledger
+  try {
+    assertEvidenceLinked({
+      id: "x",
+      analysisRunId: "a",
+      clauseId: "c",
+      originalText: "x",
+      normalisedText: "x",
+      classification: "explicit_requirement",
+      mandatory: true,
+      confidence: 0.9,
+      evidence: [],
+      reviewerStatus: "pending",
+    });
+    throw new Error("explicit without evidence should throw");
+  } catch (e) {
+    if (!(e instanceof Error) || e.message !== "EXPLICIT_REQUIREMENT_REQUIRES_EVIDENCE") {
+      throw e;
+    }
+  }
+  if (
+    canEnterPublishedScope({
+      buyerConfirmationStatus: "approved",
+      classification: "commercial_opportunity_only",
+    })
+  ) {
+    throw new Error("commercial-only must not enter published scope");
+  }
+
+  const analysis = uploadAndAnalyzeUrs({
+    title: "Smoke capping URS",
+    industryPack: "pharma_capping",
+    createdBy: "buyer@demo.ratequip.com",
+    sourceText: `
+      The machine shall be a single head capper capable of 20-60 containers/min.
+      It must accept screw and press-on caps.
+      Infeed after counting/filling shall be provided.
+      Foil presence and cap-height inspection are required with reject tray.
+      Checkweigher outfeed and validation documentation are mandatory.
+    `,
+  });
+  if (analysis.counts.requirements < 4) {
+    throw new Error("expected multiple explicit requirements from fixture terms");
+  }
+  if (analysis.explicitRecall < 0.5) {
+    throw new Error(`explicit recall too low: ${analysis.explicitRecall}`);
+  }
+  const firstReq = getV12Store().intelligenceRequirements.find(
+    (r) => r.analysisRunId === analysis.run.id,
+  );
+  if (!firstReq) throw new Error("no ledger requirement");
+  const ledgerConfirm = confirmRequirement({
+    requirementId: firstReq.id,
+    reviewerId: "buyer_engineer@demo.ratequip.com",
+  });
+  if (!ledgerConfirm.ok) throw new Error(ledgerConfirm.message);
+  const ledgerReject = rejectRequirement({
+    requirementId: firstReq.id,
+    reviewerId: "buyer_engineer@demo.ratequip.com",
+  });
+  if (ledgerReject.ok) throw new Error("double review should fail");
+
   console.log("V12 smoke passed.", {
     questions: pack.questions.length,
     matchCount: match.results.length,
@@ -223,6 +292,9 @@ async function main() {
     assetId: award.assetId,
     workflowTemplates: listWorkflowTemplates().length,
     documentHash: doc.version.contentHash,
+    analysisRunId: analysis.run.id,
+    ledgerRequirements: analysis.counts.requirements,
+    explicitRecall: analysis.explicitRecall,
     policy: scored.policyVersion,
   });
 }

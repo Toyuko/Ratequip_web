@@ -1,0 +1,24 @@
+{
+  "industry": "pet_food",
+  "version": "1.0.0",
+  "adjacent": [
+    "meat/mince suppliers",
+    "dry premix",
+    "oil/water dosing",
+    "low-shear transfer",
+    "buffer agitation",
+    "refrigeration",
+    "CIP",
+    "thermoformer integration",
+    "film supply",
+    "seal testing",
+    "QA laboratory",
+    "food technologist",
+    "maintenance"
+  ],
+  "critical_questions": [
+    "Maximum particle size and meat temperature?",
+    "Allowed shear and oxygen exposure?",
+    "Existing thermoformer make/model, indexing and deposit window?"
+  ]
+}

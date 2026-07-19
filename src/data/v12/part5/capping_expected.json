@@ -1,0 +1,24 @@
+{
+  "scenario": "Pharmaceutical capping",
+  "explicit": [
+    "single head capper",
+    "20-60 containers/min",
+    "screw and press-on caps",
+    "infeed after counting/filling",
+    "foil presence and cap-height inspection",
+    "reject tray",
+    "checkweigher outfeed",
+    "validation"
+  ],
+  "suggested": [
+    "bottle/cap suppliers",
+    "induction sealer",
+    "labeller",
+    "coder/serialization",
+    "SCADA integration",
+    "FAT/SAT/IQ/OQ/PQ",
+    "training",
+    "spares"
+  ],
+  "minimum_explicit_recall": 0.95
+}

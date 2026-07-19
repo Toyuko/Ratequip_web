@@ -1,0 +1,19 @@
+{
+  "industry": "mining_assay",
+  "version": "1.0.0",
+  "adjacent": [
+    "sampling plan",
+    "sample preparation",
+    "chain of custody",
+    "accredited assay lab",
+    "customs/quarantine",
+    "courier",
+    "geologist/metallurgist interpretation",
+    "follow-up tests"
+  ],
+  "critical_questions": [
+    "Sample matrix, mass and suspected minerals?",
+    "Required detection limit and method?",
+    "Can the sample legally leave the origin jurisdiction?"
+  ]
+}

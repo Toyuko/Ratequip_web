@@ -1,0 +1,25 @@
+{
+  "industry": "pharma_capping",
+  "version": "1.0.0",
+  "adjacent": [
+    "counting/filling",
+    "bottle and cap supply",
+    "unscrambling",
+    "cap feeding",
+    "conveyors",
+    "induction sealing",
+    "cap-height/foil inspection",
+    "reject",
+    "checkweigher",
+    "labelling",
+    "coding/serialization",
+    "SCADA",
+    "validation",
+    "spares"
+  ],
+  "critical_questions": [
+    "Torque units and verified acceptance range?",
+    "Required electronic records and audit trail?",
+    "Validation responsibility and TGA/cGMP evidence expectations?"
+  ]
+}

@@ -39,8 +39,13 @@ const cards = [
   },
   {
     href: "/v12/intelligence",
-    title: "Intelligence AI",
+    title: "Intelligence AI (D13)",
     body: "Grounded drafts that stay unpublished until human confirmation.",
+  },
+  {
+    href: "/v12/requirement-ledger",
+    title: "Requirement ledger (5A)",
+    body: "URS/RFQ analysis → evidence-linked clauses → confirm/reject + gaps.",
   },
   {
     href: "/v12/procurement",
@@ -88,15 +93,17 @@ export default function V12HubPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <Badge variant="orange">V12 Parts 1–3 · Releases 2A / 2B / 3A</Badge>
+      <Badge variant="orange">
+        V12 Parts 1–3 + 5 · Releases 2A / 2B / 3A / 5A
+      </Badge>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         RateQuip V12 operating layer
       </h1>
       <p className="mt-3 max-w-3xl text-[var(--rq-slate)]">
-        From Enterprise Master Repository V12 Parts 1–3: activation foundations,
-        commercial spine, award→asset continuity, plus workflow orchestration
-        and document evidence. Later Part 2/3 domains remain as schema contracts
-        until scheduled.
+        From Enterprise Master Repository V12 Parts 1–3 and V12.2 Add-On 02 Part
+        5: activation, commercial spine, award→asset, workflow/evidence, plus
+        URS/RFQ requirement ledger with human confirm/reject. Later domains
+        remain as schema contracts until scheduled.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-4">
@@ -113,6 +120,7 @@ export default function V12HubPage() {
               store.assets.length +
               store.workflowInstances.length +
               store.documents.length +
+              store.analysisRuns.length +
               templates,
           )}
         />

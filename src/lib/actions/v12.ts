@@ -2,25 +2,32 @@
 
 import {
   addDocumentVersion,
+  answerIntelligenceQuestion,
   approveDocumentVersion,
+  approveIntelligenceRecommendation,
   approveRequisition,
   awardRfq,
   claimWorkflowTask,
   completeWorkflowTask,
   confirmAIDraft,
+  confirmRequirement,
   createAIDraft,
   createDocument,
   createRequisition,
   createRfqRevision,
   issuePassport,
+  listAnalysisOverview,
   listAssets,
   listDocuments,
+  listIndustryPacks,
   listWorkflowOverview,
+  rejectRequirement,
   resolveActivationPack,
   runExplainableMatch,
   saveAnswerSet,
   startWorkflow,
   taxonomySearch,
+  uploadAndAnalyzeUrs,
   upsertContractor,
   upsertOpportunity,
 } from "@/lib/v12/services";
@@ -148,4 +155,42 @@ export async function v12ApproveDocumentVersion(
   input: Parameters<typeof approveDocumentVersion>[0],
 ) {
   return approveDocumentVersion(input);
+}
+
+export async function v12ListIndustryPacks() {
+  return listIndustryPacks();
+}
+
+export async function v12UploadAnalyzeUrs(
+  input: Parameters<typeof uploadAndAnalyzeUrs>[0],
+) {
+  return uploadAndAnalyzeUrs(input);
+}
+
+export async function v12ListAnalysis(runId?: string) {
+  return listAnalysisOverview(runId);
+}
+
+export async function v12ConfirmRequirement(
+  input: Parameters<typeof confirmRequirement>[0],
+) {
+  return confirmRequirement(input);
+}
+
+export async function v12RejectRequirement(
+  input: Parameters<typeof rejectRequirement>[0],
+) {
+  return rejectRequirement(input);
+}
+
+export async function v12AnswerIntelQuestion(
+  input: Parameters<typeof answerIntelligenceQuestion>[0],
+) {
+  return answerIntelligenceQuestion(input);
+}
+
+export async function v12ApproveIntelRecommendation(
+  input: Parameters<typeof approveIntelligenceRecommendation>[0],
+) {
+  return approveIntelligenceRecommendation(input);
 }
