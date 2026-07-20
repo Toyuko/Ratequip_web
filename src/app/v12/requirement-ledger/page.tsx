@@ -67,20 +67,21 @@ export default function RequirementLedgerPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <Badge variant="orange">Release 5A · Features 161–163 (+ Part 4 preview)</Badge>
+      <Badge variant="orange">Specification helper</Badge>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
-        Requirement ledger
+        Read my specification
       </h1>
       <p className="mt-2 text-[var(--rq-slate)]">
-        V12.2 Domains 66 / 67 / 70 — paste a URS/RFQ, extract evidence-linked
-        requirements, confirm or reject each item. Chargeable analysis requires
-        a Part 4 usage preview confirmation first.{" "}
+        Paste a URS or RFQ. RateQuip lists what it thinks you asked for. You
+        accept or reject each item, fill gaps, and answer follow-up questions.
+        Nothing is treated as final until a person confirms. You will see the
+        credit cost first.{" "}
         <Link href="/v12/release-control" className="text-orange-700 underline">
-          Release control
+          Usage controls
         </Link>{" "}
         ·{" "}
-        <Link href="/v12/intelligence" className="text-orange-700 underline">
-          Domain 13 AI drafts
+        <Link href="/v12" className="text-orange-700 underline">
+          Back to guide
         </Link>
       </p>
 
@@ -154,7 +155,7 @@ export default function RequirementLedgerPage() {
           />
         </div>
         <Button type="submit" disabled={pending}>
-          Upload & analyse
+          Read this specification
         </Button>
       </form>
 
@@ -170,7 +171,7 @@ export default function RequirementLedgerPage() {
       ) : null}
 
       <h2 className="mt-10 text-lg font-semibold text-[var(--rq-ink)]">
-        Extracted requirements
+        What we found (accept or reject)
       </h2>
       <ul className="mt-3 space-y-3">
         {requirements.length === 0 ? (
@@ -251,7 +252,7 @@ export default function RequirementLedgerPage() {
       </ul>
 
       <h2 className="mt-10 text-lg font-semibold text-[var(--rq-ink)]">
-        Gaps
+        Possible gaps
       </h2>
       <ul className="mt-3 space-y-2">
         {gaps.length === 0 ? (
@@ -270,7 +271,7 @@ export default function RequirementLedgerPage() {
       </ul>
 
       <h2 className="mt-10 text-lg font-semibold text-[var(--rq-ink)]">
-        Questions
+        Questions for you
       </h2>
       <ul className="mt-3 space-y-3">
         {questions.map((q) => (
@@ -308,7 +309,7 @@ export default function RequirementLedgerPage() {
       </ul>
 
       <h2 className="mt-10 text-lg font-semibold text-[var(--rq-ink)]">
-        Suggestions (draft)
+        Suggestions (not decided yet)
       </h2>
       <ul className="mt-3 space-y-2">
         {recommendations.map((r) => (

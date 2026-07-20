@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,24 +30,26 @@ export default function ReleaseControlPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <Badge variant="orange">Release 4A · Features 141 / 143 / 145</Badge>
+      <Badge variant="orange">Credits & pilots</Badge>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
-        Release & entitlement control
+        Usage & pilot controls
       </h1>
       <p className="mt-2 text-[var(--rq-slate)]">
-        V12.1 Part 4 — add-on release registry, cohort kill switches, and usage
-        preview before chargeable URS analysis. App migrations{" "}
-        <code className="text-xs">0030–0034</code> (canonical Part 4 was
-        0024–0028).
+        Before RateQuip runs a chargeable AI analysis, you see an estimate and
+        confirm it. You can also turn a pilot feature off instantly if something
+        looks wrong.{" "}
+        <Link href="/v12" className="text-orange-700 underline">
+          Back to guide
+        </Link>
       </p>
 
       {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
 
       <div className="mt-8 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
-        <h2 className="font-semibold text-[var(--rq-ink)]">Entitlement</h2>
+        <h2 className="font-semibold text-[var(--rq-ink)]">Your credit balance</h2>
         <p className="mt-2 text-sm text-[var(--rq-slate)]">
-          Remaining:{" "}
-          <strong>{data?.entitlementRemaining ?? "…"}</strong> credits
+          Credits left:{" "}
+          <strong>{data?.entitlementRemaining ?? "…"}</strong>
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button
@@ -56,16 +59,16 @@ export default function ReleaseControlPage() {
               startTransition(async () => {
                 const preview = await v12PreviewUrsUsage();
                 setMessage(
-                  `Preview ${preview.id}: ${preview.low}–${preview.high} ${preview.unit}` +
+                  `Estimated cost for reading a specification: ${preview.low}–${preview.high} ${preview.unit}` +
                     (preview.warnings.length
-                      ? ` · warnings: ${preview.warnings.join(", ")}`
+                      ? ` (note: ${preview.warnings.join(", ")})`
                       : ""),
                 );
                 reload();
               })
             }
           >
-            Preview URS analysis usage
+            Show cost estimate
           </Button>
           {data?.previews[0] && !data.previews[0].confirmed ? (
             <Button
@@ -80,21 +83,21 @@ export default function ReleaseControlPage() {
                   });
                   setMessage(
                     res.ok
-                      ? `Confirmed preview ${res.preview.id}`
+                      ? "Cost estimate confirmed — you can run the analysis"
                       : res.message,
                   );
                   reload();
                 })
               }
             >
-              Confirm latest preview
+              Confirm this estimate
             </Button>
           ) : null}
         </div>
       </div>
 
       <h2 className="mt-10 text-lg font-semibold text-[var(--rq-ink)]">
-        Registered releases
+        Platform versions installed
       </h2>
       <ul className="mt-3 space-y-2">
         {(data?.releases ?? []).map((r) => (
@@ -107,15 +110,14 @@ export default function ReleaseControlPage() {
               <Badge variant="muted">{r.status ?? "registered"}</Badge>
             </div>
             <p className="mt-1 text-[var(--rq-muted)]">
-              predecessor {r.predecessor} · migrations {r.minMigration}–
-              {r.maxMigration}
+              Built on {r.predecessor}
             </p>
           </li>
         ))}
       </ul>
 
       <h2 className="mt-10 text-lg font-semibold text-[var(--rq-ink)]">
-        Cohorts
+        Pilot groups
       </h2>
       <ul className="mt-3 space-y-3">
         {(data?.cohorts ?? []).map((c) => (
@@ -127,14 +129,14 @@ export default function ReleaseControlPage() {
               <span className="font-medium text-[var(--rq-ink)]">{c.key}</span>
               <Badge variant={c.enabledForDemo ? "success" : "muted"}>
                 {c.killSwitch
-                  ? "killed"
+                  ? "turned off"
                   : c.enabledForDemo
-                    ? "enabled"
+                    ? "on"
                     : "off"}
               </Badge>
             </div>
             <p className="mt-1 text-xs text-[var(--rq-muted)]">
-              flag {c.flagKey} · {c.percentage}% · members {c.memberCount}
+              Feature: {c.flagKey}
             </p>
             <Button
               className="mt-3"
@@ -151,14 +153,14 @@ export default function ReleaseControlPage() {
                 })
               }
             >
-              {c.killSwitch ? "Clear kill switch" : "Engage kill switch"}
+              {c.killSwitch ? "Turn pilot back on" : "Turn pilot off now"}
             </Button>
           </li>
         ))}
       </ul>
 
       <h2 className="mt-10 text-lg font-semibold text-[var(--rq-ink)]">
-        Usage ledger
+        Recent credit use
       </h2>
       <ul className="mt-3 space-y-2 text-sm">
         {(data?.ledger ?? []).length === 0 ? (
