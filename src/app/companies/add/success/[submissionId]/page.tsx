@@ -105,8 +105,15 @@ export default function AddSuccessPage() {
         </p>
 
         <div className="flex flex-wrap gap-3">
+          <Button asChild>
+            <Link
+              href={`/v12/activation?company=${encodeURIComponent(submission.companyName ?? "")}&from=listing`}
+            >
+              Continue AI company setup
+            </Link>
+          </Button>
           {slug ? (
-            <Button asChild>
+            <Button asChild variant="outline">
               <Link href={`/companies/${slug}`}>View profile</Link>
             </Button>
           ) : null}

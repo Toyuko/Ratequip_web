@@ -10,7 +10,7 @@ Industrial buying is often messy: wrong-fit suppliers, unclear why someone was s
 
 ## How a typical project works
 
-1. **Set up** — Answer guided questions about your company and role.  
+1. **Set up** — An AI-guided interview asks about your role, industry and how you operate. You confirm suggestions before they stick, then see trusted and relevant companies matched to your profile.  
 2. **Describe the need** — Use shared equipment categories so everyone means the same thing.  
 3. **See a shortlist** — Matches come with reasons, not a black box.  
 4. **Approve and quote** — Internal approval, then RFQ, comparison, and award with a trail.  

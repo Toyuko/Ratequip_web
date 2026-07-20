@@ -44,6 +44,18 @@ import {
 } from "@/lib/db/v12-neon";
 import { questionsForPack, searchTaxonomy } from "@/lib/v12/seeds";
 import {
+  buildCompanySetupSections,
+  buildSetupSuggestions,
+  COMPANY_SETUP_POLICY,
+  listSetupIndustryPacks,
+  summariseAnswers,
+} from "@/lib/v12/operating-profile/interview";
+import { suggestCompaniesForOperatingProfile } from "@/lib/v12/operating-profile/company-suggester";
+import type {
+  CompanyRole,
+  SetupSuggestion,
+} from "@/lib/v12/operating-profile/types";
+import {
   getV12Store,
   type AssetRecord,
   type AwardRecord,
@@ -60,7 +72,7 @@ import {
 } from "@/lib/v12/workflow/runtime";
 import { createHash } from "node:crypto";
 
-export { listIndustryPacks };
+export { listIndustryPacks, listSetupIndustryPacks };
 
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -1421,5 +1433,248 @@ export function listCatalogFactory() {
     jobs: store.catalogJobs,
     drafts: store.catalogDrafts,
     entitlementRemaining: store.entitlementRemaining,
+  };
+}
+
+/* ─── Release 5C: AI company setup / business operating profile ─── */
+
+export function startCompanySetup(input: {
+  companyName: string;
+  role: CompanyRole;
+  industryPack: string;
+  companyId?: string;
+}) {
+  const companyName = input.companyName.trim();
+  if (!companyName) {
+    return { ok: false as const, message: "Company name is required" };
+  }
+  if (!["buyer", "supplier", "contractor"].includes(input.role)) {
+    return { ok: false as const, message: "Invalid role" };
+  }
+  const packs = listSetupIndustryPacks();
+  if (!packs.some((p) => p.id === input.industryPack)) {
+    return { ok: false as const, message: "Unknown industry pack" };
+  }
+
+  const store = getV12Store();
+  const companyId = input.companyId ?? id("co");
+  const sections = buildCompanySetupSections({
+    role: input.role,
+    industryPack: input.industryPack,
+  });
+  const now = new Date().toISOString();
+  const session = {
+    id: id("setup"),
+    companyId,
+    companyName,
+    role: input.role,
+    industryPack: input.industryPack,
+    status: "in_progress" as const,
+    sectionIndex: 0,
+    sections,
+    answers: {} as Record<string, string>,
+    suggestions: [] as SetupSuggestion[],
+    companySuggestions: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+  store.companySetupSessions.unshift(session);
+  return {
+    ok: true as const,
+    session,
+    policyVersion: COMPANY_SETUP_POLICY,
+    industryPacks: packs,
+  };
+}
+
+export function saveCompanySetupSection(input: {
+  sessionId: string;
+  answers: Record<string, string>;
+  advance?: boolean;
+}) {
+  const store = getV12Store();
+  const session = store.companySetupSessions.find((s) => s.id === input.sessionId);
+  if (!session) return { ok: false as const, message: "Setup session not found" };
+  if (session.status === "completed") {
+    return { ok: false as const, message: "Setup already completed" };
+  }
+
+  session.answers = { ...session.answers, ...input.answers };
+  session.updatedAt = new Date().toISOString();
+
+  if (input.advance !== false) {
+    const next = session.sectionIndex + 1;
+    if (next >= session.sections.length) {
+      session.suggestions = buildSetupSuggestions({
+        role: session.role,
+        industryPack: session.industryPack,
+        answers: session.answers,
+      });
+      session.status = "review";
+      session.sectionIndex = session.sections.length;
+    } else {
+      session.sectionIndex = next;
+      session.status = "in_progress";
+    }
+  }
+
+  return {
+    ok: true as const,
+    session,
+    currentSection: session.sections[session.sectionIndex] ?? null,
+  };
+}
+
+export function reviewCompanySetupSuggestions(input: {
+  sessionId: string;
+  decisions: Array<{ id: string; status: "accepted" | "rejected" }>;
+}) {
+  const store = getV12Store();
+  const session = store.companySetupSessions.find((s) => s.id === input.sessionId);
+  if (!session) return { ok: false as const, message: "Setup session not found" };
+  if (session.status !== "review" && session.status !== "in_progress") {
+    return { ok: false as const, message: "Session is not in review" };
+  }
+
+  for (const d of input.decisions) {
+    const sug = session.suggestions.find((s) => s.id === d.id);
+    if (sug) sug.status = d.status;
+  }
+  session.status = "review";
+  session.updatedAt = new Date().toISOString();
+  return { ok: true as const, session };
+}
+
+export function confirmCompanySetup(input: {
+  sessionId: string;
+  confirmedBy: string;
+}) {
+  const store = getV12Store();
+  const session = store.companySetupSessions.find((s) => s.id === input.sessionId);
+  if (!session) return { ok: false as const, message: "Setup session not found" };
+
+  if (session.suggestions.length === 0) {
+    session.suggestions = buildSetupSuggestions({
+      role: session.role,
+      industryPack: session.industryPack,
+      answers: session.answers,
+    });
+  }
+
+  const pending = session.suggestions.filter((s) => s.status === "pending");
+  if (pending.length > 0) {
+    return {
+      ok: false as const,
+      message: "Accept or reject each AI suggestion before confirming the company profile",
+      code: "HUMAN_CONFIRMATION_REQUIRED" as const,
+    };
+  }
+
+  const now = new Date().toISOString();
+  const draftProfile = {
+    id: id("oprof"),
+    companyId: session.companyId,
+    companyName: session.companyName,
+    role: session.role,
+    industryPack: session.industryPack,
+    status: "confirmed" as const,
+    policyVersion: COMPANY_SETUP_POLICY,
+    answers: { ...session.answers },
+    sections: summariseAnswers(session.sections, session.answers),
+    suggestions: session.suggestions.map((s) => ({ ...s })),
+    companySuggestions: [] as ReturnType<
+      typeof suggestCompaniesForOperatingProfile
+    >,
+    createdAt: session.createdAt,
+    confirmedAt: now,
+    confirmedBy: input.confirmedBy,
+  };
+
+  draftProfile.companySuggestions = suggestCompaniesForOperatingProfile(
+    draftProfile,
+    { limit: 6 },
+  );
+
+  const existingIdx = store.operatingProfiles.findIndex(
+    (p) => p.companyId === session.companyId,
+  );
+  if (existingIdx >= 0) store.operatingProfiles[existingIdx] = draftProfile;
+  else store.operatingProfiles.unshift(draftProfile);
+
+  session.status = "completed";
+  session.profileId = draftProfile.id;
+  session.companySuggestions = draftProfile.companySuggestions;
+  session.updatedAt = now;
+  store.answerSets[`company-setup-${session.companyId}`] = session.answers;
+
+  return {
+    ok: true as const,
+    session,
+    profile: draftProfile,
+    companySuggestions: draftProfile.companySuggestions,
+    acceptedSuggestions: draftProfile.suggestions.filter(
+      (s) => s.status === "accepted",
+    ).length,
+  };
+}
+
+export function reviewProfileCompanySuggestion(input: {
+  profileId: string;
+  suggestionId: string;
+  status: "saved" | "dismissed";
+}) {
+  const store = getV12Store();
+  const profile = store.operatingProfiles.find((p) => p.id === input.profileId);
+  if (!profile) return { ok: false as const, message: "Profile not found" };
+  const suggestion = profile.companySuggestions.find(
+    (s) => s.id === input.suggestionId,
+  );
+  if (!suggestion) {
+    return { ok: false as const, message: "Company suggestion not found" };
+  }
+  suggestion.status = input.status;
+  const session = store.companySetupSessions.find(
+    (s) => s.profileId === profile.id,
+  );
+  if (session) {
+    const mirror = session.companySuggestions.find(
+      (s) => s.id === suggestion.id,
+    );
+    if (mirror) mirror.status = input.status;
+  }
+  return { ok: true as const, profile, suggestion };
+}
+
+export function refreshCompanySuggestionsForProfile(profileId: string) {
+  const store = getV12Store();
+  const profile = store.operatingProfiles.find((p) => p.id === profileId);
+  if (!profile) return { ok: false as const, message: "Profile not found" };
+  profile.companySuggestions = suggestCompaniesForOperatingProfile(profile, {
+    limit: 6,
+  });
+  const session = store.companySetupSessions.find(
+    (s) => s.profileId === profile.id,
+  );
+  if (session) session.companySuggestions = profile.companySuggestions;
+  return {
+    ok: true as const,
+    profile,
+    companySuggestions: profile.companySuggestions,
+  };
+}
+
+export function listCompanySetup(sessionId?: string) {
+  const store = getV12Store();
+  const session = sessionId
+    ? store.companySetupSessions.find((s) => s.id === sessionId)
+    : store.companySetupSessions[0];
+  return {
+    session: session ?? null,
+    currentSection: session
+      ? (session.sections[session.sectionIndex] ?? null)
+      : null,
+    profiles: store.operatingProfiles,
+    industryPacks: listSetupIndustryPacks(),
+    policyVersion: COMPANY_SETUP_POLICY,
   };
 }

@@ -382,6 +382,7 @@ async function main() {
   await sql`DELETE FROM projects`;
   await sql`DELETE FROM requests`;
   await sql`DELETE FROM company_claims`;
+  await sql`DELETE FROM company_media`;
   await sql`DELETE FROM products`;
   await sql`DELETE FROM company_categories`;
   await sql`DELETE FROM trust_scores`;
@@ -389,12 +390,14 @@ async function main() {
   await sql`DELETE FROM evidence_documents`;
   await sql`DELETE FROM moderation_queue`;
   await sql`DELETE FROM notifications`;
-  await sql`DELETE FROM credit_ledger_entries`;
-  await sql`DELETE FROM credit_wallets`;
   await sql`DELETE FROM subscriptions`;
   await sql`DELETE FROM organisation_members`;
   await sql`DELETE FROM audit_events`;
   await sql`DELETE FROM companies`;
+  // Wallets last: a live app may recreate the demo org wallet during a long
+  // companies wipe, so clear ledger/wallets immediately before the org row.
+  await sql`DELETE FROM credit_ledger_entries`;
+  await sql`DELETE FROM credit_wallets`;
   await sql`DELETE FROM organisations WHERE slug = 'demo-buyer-org'`;
 
   const catRows = await sql`SELECT id, slug FROM categories`;

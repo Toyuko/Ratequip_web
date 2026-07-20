@@ -15,6 +15,10 @@ import type { LedgerEntry, UsagePreview } from "@/lib/v12/part4/entitlements";
 import type { Cohort } from "@/lib/v12/part4/rollout";
 import type { ReleaseContract } from "@/lib/v12/part4/releaseRegistry";
 import type { DraftProduct } from "@/lib/v12/catalogue-factory/extractor";
+import type {
+  CompanySetupSession,
+  OperatingProfileRecord,
+} from "@/lib/v12/operating-profile/types";
 import type { Ranked } from "@/lib/v12/recommendations/ranker";
 import type {
   WorkflowInstance,
@@ -198,6 +202,9 @@ type V12Store = {
   entitlementRemaining: number;
   catalogJobs: CatalogImportJob[];
   catalogDrafts: DraftProduct[];
+  /** Part 5 / Release 5C — company setup / operating profile */
+  companySetupSessions: CompanySetupSession[];
+  operatingProfiles: OperatingProfileRecord[];
 };
 
 declare global {
@@ -303,6 +310,8 @@ function seedStore(): V12Store {
     entitlementRemaining: 250,
     catalogJobs: [],
     catalogDrafts: [],
+    companySetupSessions: [],
+    operatingProfiles: [],
   };
 }
 

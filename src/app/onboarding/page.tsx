@@ -164,7 +164,7 @@ export default function OnboardingPage() {
           });
         }}
       >
-        {pending ? "Saving…" : "Continue to dashboard"}
+        {pending ? "Saving…" : "Continue to company setup"}
       </Button>
     </div>
   );

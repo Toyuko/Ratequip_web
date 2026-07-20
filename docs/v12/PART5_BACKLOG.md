@@ -14,6 +14,8 @@ Graph, adjacency, work packages, interfaces, options/TCO/schedule (Domains 68–
 ## Release 5C — operating profile & extended marketplaces
 Business operating profile + workforce/lab/freight/capacity/innovation (Domains 75–80). Migration `0027`.
 
+**Status in web app:** thin slice landed — AI company setup wizard at `/v12/activation` (and `/api/v1/v12/company-setup`). Uses Part 5 `universal_industrial` + industry packs; human confirm before profile is saved. After confirm, explainable company suggestions (trusted suppliers / profile-relevant) are ranked from the marketplace. Full Domains 76–80 marketplaces deferred.
+
 ## Release 5D — hardening
 Full RLS/outbox (`0028`), projections (`0029`), disclosure grants, workspace bootstrap, analytics.
 

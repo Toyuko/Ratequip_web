@@ -11,7 +11,7 @@ const journey = [
   {
     step: "1",
     title: "Set up your company",
-    body: "Answer a short guided questionnaire for your role and industry so RateQuip understands what you buy or sell.",
+    body: "Answer a short AI-guided questionnaire for your role, industry and operating profile, then see trusted suppliers matched to your business.",
     href: "/v12/activation",
     cta: "Start setup",
   },
@@ -72,7 +72,7 @@ const tools = [
       {
         href: "/v12/activation",
         title: "Company setup",
-        body: "Guided questions that adapt to your role and industry.",
+        body: "AI interview for role, industry and operating profile — you confirm suggestions before they stick.",
       },
       {
         href: "/v12/taxonomy",

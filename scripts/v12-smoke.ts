@@ -31,9 +31,13 @@ import {
   processCatalogImport,
   publishCatalogJob,
   rejectRequirement,
+  confirmCompanySetup,
+  reviewCompanySetupSuggestions,
   resolveActivationPack,
   reviewCatalogDraft,
   runExplainableMatch,
+  saveCompanySetupSection,
+  startCompanySetup,
   uploadAndAnalyzeUrs,
 } from "../src/lib/v12/services";
 import { resetV12Store, getV12Store } from "../src/lib/v12/store";
@@ -372,6 +376,68 @@ Capacity: 20-60 bags/min`,
     throw new Error("publish failed");
   }
 
+  const setup = startCompanySetup({
+    companyName: "Smoke Foods Pty Ltd",
+    role: "buyer",
+    industryPack: "pet_food",
+  });
+  if (!setup.ok) throw new Error(setup.message);
+  if (setup.session.sections.length < 5) {
+    throw new Error("expected multi-section company setup interview");
+  }
+
+  let setupSession = setup.session;
+  for (let i = 0; i < setup.session.sections.length; i++) {
+    const section = setupSession.sections[setupSession.sectionIndex]!;
+    const answers: Record<string, string> = {};
+    for (const q of section.questions) {
+      answers[q.id] =
+        q.inputType === "single_select" && q.options?.[0]
+          ? q.options[0].value
+          : `smoke-answer-${q.id}`;
+    }
+    const advanced = saveCompanySetupSection({
+      sessionId: setupSession.id,
+      answers,
+      advance: true,
+    });
+    if (!advanced.ok) throw new Error(advanced.message);
+    setupSession = advanced.session;
+  }
+  if (setupSession.status !== "review" || setupSession.suggestions.length < 1) {
+    throw new Error("setup should reach review with suggestions");
+  }
+
+  const reviewedSetup = reviewCompanySetupSuggestions({
+    sessionId: setupSession.id,
+    decisions: setupSession.suggestions.map((s) => ({
+      id: s.id,
+      status: "accepted" as const,
+    })),
+  });
+  if (!reviewedSetup.ok) throw new Error(reviewedSetup.message);
+
+  const confirmedSetup = confirmCompanySetup({
+    sessionId: setupSession.id,
+    confirmedBy: "smoke@demo.ratequip.com",
+  });
+  if (!confirmedSetup.ok || confirmedSetup.profile.status !== "confirmed") {
+    throw new Error("company operating profile confirm failed");
+  }
+  if (
+    !confirmedSetup.companySuggestions ||
+    confirmedSetup.companySuggestions.length < 1
+  ) {
+    throw new Error("expected AI company suggestions from operating profile");
+  }
+  if (
+    !confirmedSetup.companySuggestions.some(
+      (c) => c.badge === "trusted_supplier" || c.trustScore >= 70,
+    )
+  ) {
+    throw new Error("expected trusted/relevant supplier in suggestions");
+  }
+
   console.log("V12 smoke passed.", {
     questions: pack.questions.length,
     matchCount: match.results.length,
@@ -384,6 +450,10 @@ Capacity: 20-60 bags/min`,
     explicitRecall: analysis.explicitRecall,
     catalogDrafts: processed.drafts.length,
     catalogPublished: published.publishedCount,
+    setupSections: setup.session.sections.length,
+    operatingProfileId: confirmedSetup.profile.id,
+    suggestedCompanies: confirmedSetup.companySuggestions.length,
+    topSuggested: confirmedSetup.companySuggestions[0]?.companyName,
     policy: scored.policyVersion,
   });
 }

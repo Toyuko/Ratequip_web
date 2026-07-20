@@ -40,6 +40,14 @@ import {
   reviewCatalogDraft,
   publishCatalogJob,
   listCatalogFactory,
+  startCompanySetup,
+  saveCompanySetupSection,
+  reviewCompanySetupSuggestions,
+  confirmCompanySetup,
+  listCompanySetup,
+  listSetupIndustryPacks,
+  reviewProfileCompanySuggestion,
+  refreshCompanySuggestionsForProfile,
 } from "@/lib/v12/services";
 
 export async function v12ResolveQuestions(input: {
@@ -227,6 +235,48 @@ export async function v12PublishCatalogJob(
 
 export async function v12ListCatalogFactory() {
   return listCatalogFactory();
+}
+
+export async function v12ListSetupIndustryPacks() {
+  return listSetupIndustryPacks();
+}
+
+export async function v12StartCompanySetup(
+  input: Parameters<typeof startCompanySetup>[0],
+) {
+  return startCompanySetup(input);
+}
+
+export async function v12SaveCompanySetupSection(
+  input: Parameters<typeof saveCompanySetupSection>[0],
+) {
+  return saveCompanySetupSection(input);
+}
+
+export async function v12ReviewCompanySetupSuggestions(
+  input: Parameters<typeof reviewCompanySetupSuggestions>[0],
+) {
+  return reviewCompanySetupSuggestions(input);
+}
+
+export async function v12ConfirmCompanySetup(
+  input: Parameters<typeof confirmCompanySetup>[0],
+) {
+  return confirmCompanySetup(input);
+}
+
+export async function v12ListCompanySetup(sessionId?: string) {
+  return listCompanySetup(sessionId);
+}
+
+export async function v12ReviewProfileCompanySuggestion(
+  input: Parameters<typeof reviewProfileCompanySuggestion>[0],
+) {
+  return reviewProfileCompanySuggestion(input);
+}
+
+export async function v12RefreshCompanySuggestions(profileId: string) {
+  return refreshCompanySuggestionsForProfile(profileId);
 }
 
 export async function v12ListAnalysis(runId?: string) {
