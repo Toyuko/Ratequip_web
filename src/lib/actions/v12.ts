@@ -20,16 +20,20 @@ import {
   listAssets,
   listDocuments,
   listIndustryPacks,
+  listReleaseControl,
   listWorkflowOverview,
+  previewUrsAnalysisUsage,
   rejectRequirement,
   resolveActivationPack,
   runExplainableMatch,
   saveAnswerSet,
+  setCohortKillSwitch,
   startWorkflow,
   taxonomySearch,
   uploadAndAnalyzeUrs,
   upsertContractor,
   upsertOpportunity,
+  confirmUsagePreview,
 } from "@/lib/v12/services";
 
 export async function v12ResolveQuestions(input: {
@@ -165,6 +169,26 @@ export async function v12UploadAnalyzeUrs(
   input: Parameters<typeof uploadAndAnalyzeUrs>[0],
 ) {
   return uploadAndAnalyzeUrs(input);
+}
+
+export async function v12PreviewUrsUsage() {
+  return previewUrsAnalysisUsage();
+}
+
+export async function v12ConfirmUsagePreview(
+  input: Parameters<typeof confirmUsagePreview>[0],
+) {
+  return confirmUsagePreview(input);
+}
+
+export async function v12ListReleaseControl() {
+  return listReleaseControl();
+}
+
+export async function v12SetCohortKillSwitch(
+  input: Parameters<typeof setCohortKillSwitch>[0],
+) {
+  return setCohortKillSwitch(input);
 }
 
 export async function v12ListAnalysis(runId?: string) {

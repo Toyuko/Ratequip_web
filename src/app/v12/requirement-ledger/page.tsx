@@ -10,7 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   v12AnswerIntelQuestion,
   v12ConfirmRequirement,
+  v12ConfirmUsagePreview,
   v12ListAnalysis,
+  v12PreviewUrsUsage,
   v12RejectRequirement,
   v12UploadAnalyzeUrs,
 } from "@/lib/actions/v12";
@@ -65,14 +67,18 @@ export default function RequirementLedgerPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <Badge variant="orange">Release 5A · Features 141–149 / 161</Badge>
+      <Badge variant="orange">Release 5A · Features 161–163 (+ Part 4 preview)</Badge>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         Requirement ledger
       </h1>
       <p className="mt-2 text-[var(--rq-slate)]">
         V12.2 Domains 66 / 67 / 70 — paste a URS/RFQ, extract evidence-linked
-        requirements, confirm or reject each item. Suggestions stay draft until
-        a buyer confirms.{" "}
+        requirements, confirm or reject each item. Chargeable analysis requires
+        a Part 4 usage preview confirmation first.{" "}
+        <Link href="/v12/release-control" className="text-orange-700 underline">
+          Release control
+        </Link>{" "}
+        ·{" "}
         <Link href="/v12/intelligence" className="text-orange-700 underline">
           Domain 13 AI drafts
         </Link>
@@ -84,14 +90,26 @@ export default function RequirementLedgerPage() {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
           startTransition(async () => {
+            // Part 4 ADR-0041: preview → confirm → analyse
+            const preview = await v12PreviewUrsUsage();
+            await v12ConfirmUsagePreview({
+              previewId: preview.id,
+              confirmedBy: "buyer@demo.ratequip.com",
+            });
             const res = await v12UploadAnalyzeUrs({
               title: String(fd.get("title")),
               sourceText: String(fd.get("body")),
               industryPack: String(fd.get("pack")),
               createdBy: "buyer@demo.ratequip.com",
+              previewId: preview.id,
+              confirmUsage: true,
             });
+            if (!res.ok) {
+              setMessage(res.message);
+              return;
+            }
             setMessage(
-              `Analysis ${res.run.id} complete · ${res.counts.requirements} requirements · recall ${(res.explicitRecall * 100).toFixed(0)}% · readiness ${res.readiness}`,
+              `Analysis ${res.run.id} complete · ${res.counts.requirements} requirements · recall ${(res.explicitRecall * 100).toFixed(0)}% · readiness ${res.readiness} · remaining ${res.entitlementRemaining}`,
             );
             reload(res.run.id);
           });

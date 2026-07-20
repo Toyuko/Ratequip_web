@@ -11,6 +11,9 @@ import type {
   IntelligenceRecommendation,
   RequirementCandidate,
 } from "@/lib/v12/intelligence/types";
+import type { LedgerEntry, UsagePreview } from "@/lib/v12/part4/entitlements";
+import type { Cohort } from "@/lib/v12/part4/rollout";
+import type { ReleaseContract } from "@/lib/v12/part4/releaseRegistry";
 import type { Ranked } from "@/lib/v12/recommendations/ranker";
 import type {
   WorkflowInstance,
@@ -162,6 +165,12 @@ type V12Store = {
   intelligenceGaps: IntelligenceGap[];
   intelligenceQuestions: IntelligenceQuestion[];
   intelligenceRecommendations: IntelligenceRecommendation[];
+  /** Part 4 / Release 4A */
+  releases: ReleaseContract[];
+  cohorts: Cohort[];
+  usagePreviews: UsagePreview[];
+  usageLedger: LedgerEntry[];
+  entitlementRemaining: number;
 };
 
 declare global {
@@ -239,6 +248,32 @@ function seedStore(): V12Store {
     intelligenceGaps: [],
     intelligenceQuestions: [],
     intelligenceRecommendations: [],
+    releases: [
+      {
+        key: "12.1.0-addon.1-part4",
+        predecessor: "12.0.0-part3",
+        minMigration: 30,
+        maxMigration: 34,
+        checksum:
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        status: "registered",
+        registeredAt: new Date().toISOString(),
+      },
+    ],
+    cohorts: [
+      {
+        key: "au-food-pilot",
+        flagKey: "part5.requirement_ledger",
+        startsAt: Date.now() - 86400000,
+        expiresAt: Date.now() + 86400000 * 90,
+        killSwitch: false,
+        percentage: 100,
+        members: new Set(["platform-buyer", "buyer@demo.ratequip.com"]),
+      },
+    ],
+    usagePreviews: [],
+    usageLedger: [],
+    entitlementRemaining: 250,
   };
 }
 

@@ -46,7 +46,15 @@ export async function POST(req: NextRequest) {
       sourceText: body.sourceText,
       industryPack: body.industryPack ?? "pharma_capping",
       createdBy: body.createdBy ?? "api",
+      previewId: (body as { previewId?: string }).previewId,
+      confirmUsage: (body as { confirmUsage?: boolean }).confirmUsage,
     });
+    if (!res.ok) {
+      return apiResponse(
+        req,
+        err(res.message, 402, res.code),
+      );
+    }
     return apiResponse(req, ok(res));
   }
 

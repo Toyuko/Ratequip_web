@@ -1,6 +1,6 @@
 # Part 5 (V12.2 Add-On 02) Prioritised Backlog
 
-Delta Features 141–165 / migrations 0024–0029. Install after Part 3 (and Part 4 where present).
+Delta Features 161–185 / migrations 0024–0029. Install after Part 3 (and Part 4 where present).
 
 ## Release 5A — document intelligence & requirement ledger
 URS/RFQ upload → clause extraction → evidence-linked requirements → confirm/reject → gaps & questions.
@@ -19,4 +19,4 @@ Full RLS/outbox (`0028`), projections (`0029`), disclosure grants, workspace boo
 
 ## Known gaps from prior repositories
 - Part 3 migrations `0015`–`0023` (3B–3F) not product-landed — schema contracts deferred.
-- Part 4 / Add-On 01 package not found on disk; Part 5 numbering `0024+` kept as authoritative.
+- Part 4 landed (app `0030–0034`). Feature IDs for Part 5 product surface are **161–185**.

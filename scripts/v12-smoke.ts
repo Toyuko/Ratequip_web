@@ -19,11 +19,13 @@ import {
   completeWorkflowTask,
   confirmAIDraft,
   confirmRequirement,
+  confirmUsagePreview,
   createAIDraft,
   createDocument,
   createRequisition,
   createRfqRevision,
   issuePassport,
+  previewUrsAnalysisUsage,
   rejectRequirement,
   resolveActivationPack,
   runExplainableMatch,
@@ -252,7 +254,7 @@ async function main() {
     throw new Error("commercial-only must not enter published scope");
   }
 
-  const analysis = uploadAndAnalyzeUrs({
+  const analysisBlocked = uploadAndAnalyzeUrs({
     title: "Smoke capping URS",
     industryPack: "pharma_capping",
     createdBy: "buyer@demo.ratequip.com",
@@ -264,6 +266,32 @@ async function main() {
       Checkweigher outfeed and validation documentation are mandatory.
     `,
   });
+  if (analysisBlocked.ok || analysisBlocked.code !== "USAGE_PREVIEW_REQUIRED") {
+    throw new Error("URS analysis must require usage preview");
+  }
+
+  const preview = previewUrsAnalysisUsage();
+  const previewOk = confirmUsagePreview({
+    previewId: preview.id,
+    confirmedBy: "buyer@demo.ratequip.com",
+  });
+  if (!previewOk.ok) throw new Error(previewOk.message);
+
+  const analysis = uploadAndAnalyzeUrs({
+    title: "Smoke capping URS",
+    industryPack: "pharma_capping",
+    createdBy: "buyer@demo.ratequip.com",
+    previewId: preview.id,
+    confirmUsage: true,
+    sourceText: `
+      The machine shall be a single head capper capable of 20-60 containers/min.
+      It must accept screw and press-on caps.
+      Infeed after counting/filling shall be provided.
+      Foil presence and cap-height inspection are required with reject tray.
+      Checkweigher outfeed and validation documentation are mandatory.
+    `,
+  });
+  if (!analysis.ok) throw new Error(analysis.message);
   if (analysis.counts.requirements < 4) {
     throw new Error("expected multiple explicit requirements from fixture terms");
   }

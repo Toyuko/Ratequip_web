@@ -89,7 +89,8 @@ async function main() {
        FROM information_schema.tables
        WHERE table_schema IN (
          'rq','rq_audit','rq_outbox','workflow','documents',
-         'rq_intelligence','rq_ecosystem','rq_marketplace_ext'
+         'rq_intelligence','rq_ecosystem','rq_marketplace_ext',
+         'release_mgmt','entitlement','support_privacy','growth_governance','pilot_ops'
        )
        ORDER BY 1,2`,
     );

@@ -1,0 +1,20 @@
+BEGIN;
+-- High-volume partition registries and read-model views.
+CREATE SCHEMA IF NOT EXISTS projection;
+CREATE OR REPLACE VIEW projection.workflow_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM workflow.workflow_definitions WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.documents_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM documents.document_records WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.compliance_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM compliance.obligation_catalog WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.esg_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM esg.esg_frameworks WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.analytics_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM analytics.metric_definitions WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.partner_api_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM partner_api.api_products WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.erp_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM erp.erp_connector_types WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.cmms_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM cmms.cmms_connector_types WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.scada_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM scada.scada_gateway_types WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.plc_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM plc.plc_platforms WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.iot_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM iot.edge_agent_types WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.gateway_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM gateway.gateway_routes WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.sdk_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM sdk.sdk_packages WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.infra_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM infra.infrastructure_environments WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.deployment_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM deployment.release_trains WHERE archived_at IS NULL GROUP BY company_id,status;
+CREATE OR REPLACE VIEW projection.operations_active_summary AS SELECT company_id,status,count(*) AS record_count,max(updated_at) AS last_updated FROM operations.service_catalog WHERE archived_at IS NULL GROUP BY company_id,status;
+COMMIT;

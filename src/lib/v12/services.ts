@@ -14,6 +14,13 @@ import {
 } from "@/lib/v12/intelligence/classification";
 import type { AnalysisRun } from "@/lib/v12/intelligence/types";
 import {
+  CHARGEABLE_ACTIONS,
+  createUsagePreview,
+  hashLedgerPayload,
+} from "@/lib/v12/part4/entitlements";
+import { ReleaseRegistry } from "@/lib/v12/part4/releaseRegistry";
+import { isEnabled } from "@/lib/v12/part4/rollout";
+import {
   evaluateEligibility,
   scoreMatch,
 } from "@/lib/v12/matching/scorer";
@@ -832,8 +839,80 @@ export function uploadAndAnalyzeUrs(input: {
   createdBy: string;
   companyId?: string;
   filename?: string;
+  /** Part 4 ADR-0041 — required for chargeable analysis */
+  previewId?: string;
+  confirmUsage?: boolean;
 }) {
   const store = getV12Store();
+  const companyId = input.companyId ?? "platform-buyer";
+
+  // Feature 143 — cohort gate for requirement ledger
+  const cohort = store.cohorts.find(
+    (c) => c.flagKey === "part5.requirement_ledger",
+  );
+  if (
+    cohort &&
+    !isEnabled(cohort, companyId, cohort.flagKey, Date.now()) &&
+    !isEnabled(cohort, input.createdBy, cohort.flagKey, Date.now())
+  ) {
+    return {
+      ok: false as const,
+      code: "FEATURE_DISABLED",
+      message: "Requirement ledger disabled for this cohort (kill switch / expiry)",
+    };
+  }
+
+  // Feature 145 — usage preview before chargeable analysis
+  if (CHARGEABLE_ACTIONS.has("intelligence.urs_analysis")) {
+    if (!input.previewId || !input.confirmUsage) {
+      const preview = previewUrsAnalysisUsage({
+        companyId,
+        createdBy: input.createdBy,
+      });
+      return {
+        ok: false as const,
+        code: "USAGE_PREVIEW_REQUIRED",
+        message: "Confirm usage preview before running URS analysis",
+        preview,
+      };
+    }
+    const preview = store.usagePreviews.find((p) => p.id === input.previewId);
+    if (!preview) {
+      return { ok: false as const, code: "PREVIEW_NOT_FOUND", message: "Unknown preview" };
+    }
+    if (!preview.confirmed) {
+      return {
+        ok: false as const,
+        code: "PREVIEW_NOT_CONFIRMED",
+        message: "Confirm the usage preview first",
+      };
+    }
+    // Consume against ledger
+    const qty = preview.high;
+    if (qty > store.entitlementRemaining) {
+      return {
+        ok: false as const,
+        code: "INSUFFICIENT_ENTITLEMENT",
+        message: "Not enough remaining usage",
+      };
+    }
+    store.entitlementRemaining -= qty;
+    store.usageLedger.unshift({
+      id: id("ule"),
+      correlationId: id("corr"),
+      previewId: preview.id,
+      quantity: qty,
+      unit: preview.unit,
+      entryType: "consume",
+      immutableHash: hashLedgerPayload({
+        previewId: preview.id,
+        qty,
+        action: preview.actionClass,
+      }),
+      createdAt: new Date().toISOString(),
+      actionClass: preview.actionClass,
+    });
+  }
 
   // Reuse Domain 38 vault for evidence continuity
   const vault = createDocument({
@@ -846,7 +925,7 @@ export function uploadAndAnalyzeUrs(input: {
 
   const run: AnalysisRun = {
     id: id("arun"),
-    companyId: input.companyId ?? "platform-buyer",
+    companyId,
     title: input.title,
     industryPack: input.industryPack,
     status: "running",
@@ -881,6 +960,7 @@ export function uploadAndAnalyzeUrs(input: {
   run.policyVersion = result.policyVersion;
 
   return {
+    ok: true as const,
     run,
     vault,
     counts: {
@@ -898,6 +978,7 @@ export function uploadAndAnalyzeUrs(input: {
         (q) => q.blocksPublication && !q.answer,
       ).length,
     }),
+    entitlementRemaining: store.entitlementRemaining,
   };
 }
 
@@ -1019,4 +1100,102 @@ export function approveIntelligenceRecommendation(input: {
     };
   }
   return { ok: true as const, recommendation: rec, publishable: true as const };
+}
+
+/* ─── Release 4A: release registry + cohort + entitlement preview ─── */
+
+const releaseRegistrySingleton = new ReleaseRegistry();
+
+export function previewUrsAnalysisUsage(input?: {
+  companyId?: string;
+  createdBy?: string;
+}) {
+  const store = getV12Store();
+  const preview = createUsagePreview({
+    actionClass: "intelligence.urs_analysis",
+    unit: "credits",
+    low: 3,
+    high: 8,
+    remaining: store.entitlementRemaining,
+    resetAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+    policyVersion: "entitlement-v12.1-part4",
+  });
+  store.usagePreviews.unshift(preview);
+  void input;
+  return preview;
+}
+
+export function confirmUsagePreview(input: {
+  previewId: string;
+  confirmedBy: string;
+}) {
+  const preview = getV12Store().usagePreviews.find(
+    (p) => p.id === input.previewId,
+  );
+  if (!preview) return { ok: false as const, message: "Preview not found" };
+  preview.confirmed = true;
+  preview.confirmedAt = new Date().toISOString();
+  preview.confirmedBy = input.confirmedBy;
+  return { ok: true as const, preview };
+}
+
+export function registerAddonRelease(input: {
+  key: string;
+  predecessor: string;
+  minMigration: number;
+  maxMigration: number;
+  checksum: string;
+}) {
+  // Seed registry from store first
+  const store = getV12Store();
+  for (const r of store.releases) {
+    if (!releaseRegistrySingleton.get(r.key)) {
+      releaseRegistrySingleton.register(r);
+    }
+  }
+  const validation = releaseRegistrySingleton.validate(input, {
+    release: input.predecessor,
+    migration: input.minMigration - 1,
+  });
+  if (!validation.ok) return validation;
+  const registered = releaseRegistrySingleton.register(input);
+  if (registered.ok) {
+    store.releases.unshift(registered.value);
+  }
+  return registered;
+}
+
+export function listReleaseControl() {
+  const store = getV12Store();
+  return {
+    releases: store.releases,
+    cohorts: store.cohorts.map((c) => ({
+      key: c.key,
+      flagKey: c.flagKey,
+      killSwitch: c.killSwitch,
+      percentage: c.percentage,
+      startsAt: c.startsAt,
+      expiresAt: c.expiresAt,
+      memberCount: c.members.size,
+      enabledForDemo: isEnabled(
+        c,
+        "platform-buyer",
+        c.flagKey,
+        Date.now(),
+      ),
+    })),
+    entitlementRemaining: store.entitlementRemaining,
+    previews: store.usagePreviews.slice(0, 10),
+    ledger: store.usageLedger.slice(0, 20),
+  };
+}
+
+export function setCohortKillSwitch(input: {
+  cohortKey: string;
+  killSwitch: boolean;
+}) {
+  const cohort = getV12Store().cohorts.find((c) => c.key === input.cohortKey);
+  if (!cohort) return { ok: false as const, message: "Cohort not found" };
+  cohort.killSwitch = input.killSwitch;
+  return { ok: true as const, cohort };
 }

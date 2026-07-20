@@ -18,23 +18,24 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## V12 Enterprise Layer (Parts 1–3 + Part 5)
+## V12 Enterprise Layer (Consolidated Parts 1–5)
 
-Imported from RateQuip Enterprise Master Repository **V12 Parts 1–3** and **V12.2 Add-On 02 / Part 5** (19–20 Jul 2026).
+Imported from **RateQuip Enterprise Master Repository V12 CONSOLIDATED COMPLETE WITH PART4 FINAL** (20 Jul 2026).
 
 | Layer | What landed in this app |
 |-------|-------------------------|
-| Seeds | Taxonomy, packs, roles, workflow templates, Part 5 industry/classification packs → `src/data/v12/` |
-| Migrations | `0001–0014`, Part 5 `0024–0029`, platform bridge `0090` → `drizzle/v12/` |
-| Engines | DQE, matcher, ranker, AI confirmation, workflow, document vault, URS analyzer/ledger → `src/lib/v12/` |
-| UI | `/v12` hub + prior slices + **requirement ledger** |
-| API | `/api/v1/v12`, `/procurement`, `/workflow`, `/documents`, `/intelligence/ledger` |
-| Docs | `docs/v12/` charter, Part 1–3 & 5 READMEs/backlogs |
+| Seeds | Taxonomy, packs, roles, workflow, Part 5 industry/classification → `src/data/v12/` |
+| Migrations | `0001–0034` + bridge `0090` → `drizzle/v12/` (Part 4 app numbers **0030–0034**; Part 5 remains **0024–0029** on Neon) |
+| Engines | DQE, matcher, ranker, AI confirm, workflow, vault, URS ledger, release/entitlement → `src/lib/v12/` |
+| UI | `/v12` hub + prior slices + **requirement ledger** + **release control** |
+| API | `/api/v1/v12`, `/procurement`, `/workflow`, `/documents`, `/intelligence/ledger`, `/release-control` |
+| Docs | `docs/v12/` Parts 1–5, collision resolution, feature ledgers 141–160 / 161–185 |
 
-**Part 1:** activation → builders → explainable match → AI draft/confirm.  
+**Part 1:** activation → builders → match → AI draft/confirm.  
 **Part 2 2A/2B:** procurement/RFQ/award → asset + passport.  
-**Part 3 3A:** workflow + document vault.  
-**Part 5 5A:** URS/RFQ analysis → evidence-linked requirements → confirm/reject + gaps/questions.
+**Part 3 3A:** workflow + document vault (+ schema `0015–0023` for 3B–3F).  
+**Part 4 4A:** release registry, cohort kill switches, usage preview before charge.  
+**Part 5 5A:** URS analysis → requirement ledger (Features **161–163**).
 
 ```bash
 npm run db:migrate:v12
@@ -42,9 +43,7 @@ npm run db:seed:v12
 npm run smoke:v12
 ```
 
-Schemas: `rq` / `workflow` / `documents` / `rq_intelligence` / `rq_ecosystem` / `rq_marketplace_ext`.
-
-Deferred: Part 2 **2C–2F**, Part 3 **3B–3F** (`0015–0023`), Part 5 **5B–5D** product surface, Part 4 package (not found on disk).
+Deferred product surface: Part 2 **2C–2F**, Part 3 **3B–3F**, Part 4 **4B–4C**, Part 5 **5B–5D**, Module 68 catalogue factory.
 
 ## Phase 2 persistence (working MVP)
 

@@ -48,6 +48,11 @@ const cards = [
     body: "URS/RFQ analysis → evidence-linked clauses → confirm/reject + gaps.",
   },
   {
+    href: "/v12/release-control",
+    title: "Release control (4A)",
+    body: "Add-on registry, cohort kill switches, usage preview before charge.",
+  },
+  {
     href: "/v12/procurement",
     title: "Procurement (2A)",
     body: "Requisitions start workflow approval, then hand off into RFQ.",
@@ -94,16 +99,16 @@ export default function V12HubPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       <Badge variant="orange">
-        V12 Parts 1–3 + 5 · Releases 2A / 2B / 3A / 5A
+        V12 Parts 1–5 · Releases 2A / 2B / 3A / 4A / 5A
       </Badge>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         RateQuip V12 operating layer
       </h1>
       <p className="mt-3 max-w-3xl text-[var(--rq-slate)]">
-        From Enterprise Master Repository V12 Parts 1–3 and V12.2 Add-On 02 Part
-        5: activation, commercial spine, award→asset, workflow/evidence, plus
-        URS/RFQ requirement ledger with human confirm/reject. Later domains
-        remain as schema contracts until scheduled.
+        From the consolidated Enterprise Master (Parts 1–3 + Part 4 Final + Part
+        5): activation, commercial spine, assets, workflow/evidence, release
+        & entitlement control, and URS requirement ledger. Later domains remain
+        schema contracts until scheduled.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-4">
