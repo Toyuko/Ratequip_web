@@ -76,4 +76,5 @@ export const CHARGEABLE_ACTIONS = new Set([
   "intelligence.publish_scope",
   "matching.sponsored_boost",
   "rfq.publish",
+  "catalog.import_process",
 ]);

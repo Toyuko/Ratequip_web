@@ -34,6 +34,12 @@ import {
   upsertContractor,
   upsertOpportunity,
   confirmUsagePreview,
+  createCatalogImport,
+  previewCatalogImportUsage,
+  processCatalogImport,
+  reviewCatalogDraft,
+  publishCatalogJob,
+  listCatalogFactory,
 } from "@/lib/v12/services";
 
 export async function v12ResolveQuestions(input: {
@@ -189,6 +195,38 @@ export async function v12SetCohortKillSwitch(
   input: Parameters<typeof setCohortKillSwitch>[0],
 ) {
   return setCohortKillSwitch(input);
+}
+
+export async function v12CreateCatalogImport(
+  input: Parameters<typeof createCatalogImport>[0],
+) {
+  return createCatalogImport(input);
+}
+
+export async function v12PreviewCatalogImport(jobId: string) {
+  return previewCatalogImportUsage(jobId);
+}
+
+export async function v12ProcessCatalogImport(
+  input: Parameters<typeof processCatalogImport>[0],
+) {
+  return processCatalogImport(input);
+}
+
+export async function v12ReviewCatalogDraft(
+  input: Parameters<typeof reviewCatalogDraft>[0],
+) {
+  return reviewCatalogDraft(input);
+}
+
+export async function v12PublishCatalogJob(
+  input: Parameters<typeof publishCatalogJob>[0],
+) {
+  return publishCatalogJob(input);
+}
+
+export async function v12ListCatalogFactory() {
+  return listCatalogFactory();
 }
 
 export async function v12ListAnalysis(runId?: string) {

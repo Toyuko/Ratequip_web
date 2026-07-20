@@ -15,7 +15,8 @@ Industrial buying is often messy: wrong-fit suppliers, unclear why someone was s
 3. **See a shortlist** — Matches come with reasons, not a black box.  
 4. **Approve and quote** — Internal approval, then RFQ, comparison, and award with a trail.  
 5. **Keep the record** — Award can create an equipment record and store certificates safely.  
-6. **Optional: read a long specification** — Paste a URS/RFQ; accept or reject what the system found. You see the credit cost first. AI never publishes important decisions without a person confirming.
+6. **Optional: read a long specification** — Paste a URS/RFQ; accept or reject what the system found. You see the credit cost first.  
+7. **Optional (suppliers): turn a brochure into drafts** — Paste catalogue text, confirm the credit estimate, accept/reject product drafts. Nothing goes public until you publish.
 
 ## Promises we keep
 
@@ -26,9 +27,9 @@ Industrial buying is often messy: wrong-fit suppliers, unclear why someone was s
 
 ## Ready now vs coming later
 
-**Ready to try:** setup, matching, purchase → RFQ → award, asset record, approvals, documents, specification reading, credit preview.
+**Ready to try:** setup, matching, purchase → RFQ → award, asset record, approvals, documents, specification reading, credit preview, supplier catalogue drafts.
 
-**Later phases:** broader service marketplaces, finance/freight/labs, deep links into ERP/factory systems, richer pilots and analytics.
+**Later phases:** live OCR scanning of PDF brochures, broader marketplaces, finance/freight/labs, deep links into ERP/factory systems.
 
 ## Where to click
 

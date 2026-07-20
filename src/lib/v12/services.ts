@@ -14,6 +14,14 @@ import {
 } from "@/lib/v12/intelligence/classification";
 import type { AnalysisRun } from "@/lib/v12/intelligence/types";
 import {
+  estimateCredits,
+  isFieldPublishable,
+} from "@/lib/v12/catalogue-factory/domain";
+import {
+  extractDraftProducts,
+  preflightFromText,
+} from "@/lib/v12/catalogue-factory/extractor";
+import {
   CHARGEABLE_ACTIONS,
   createUsagePreview,
   hashLedgerPayload,
@@ -39,6 +47,7 @@ import {
   getV12Store,
   type AssetRecord,
   type AwardRecord,
+  type CatalogImportJob,
   type PassportRecord,
   type Requisition,
 } from "@/lib/v12/store";
@@ -1198,4 +1207,219 @@ export function setCohortKillSwitch(input: {
   if (!cohort) return { ok: false as const, message: "Cohort not found" };
   cohort.killSwitch = input.killSwitch;
   return { ok: true as const, cohort };
+}
+
+/* ─── Release 6A: catalogue product factory ─── */
+
+export function createCatalogImport(input: {
+  title: string;
+  sourceText: string;
+  createdBy: string;
+  rightsAttested: boolean;
+}) {
+  if (!input.rightsAttested) {
+    return {
+      ok: false as const,
+      message: "You must confirm you have rights to use this catalogue",
+    };
+  }
+  const store = getV12Store();
+  const vault = createDocument({
+    title: input.title,
+    docType: "supplier_catalogue",
+    body: input.sourceText,
+    createdBy: input.createdBy,
+    linkedType: "catalog_import",
+  });
+  const preflight = preflightFromText(input.sourceText);
+  const estimatedCredits = estimateCredits({
+    pages: preflight.pages,
+    scannedPages: preflight.scannedPages,
+    complexTables: preflight.complexTables,
+    products: preflight.products,
+    variants: preflight.variants,
+    images: preflight.images,
+  });
+  const job: CatalogImportJob = {
+    id: id("cjob"),
+    title: input.title,
+    status: "AWAITING_COST_APPROVAL",
+    rightsAttested: true,
+    sourceText: input.sourceText,
+    documentId: vault.document.id,
+    versionId: vault.version.id,
+    estimatedCredits,
+    preflight,
+    createdBy: input.createdBy,
+    createdAt: new Date().toISOString(),
+  };
+  store.catalogJobs.unshift(job);
+  return { ok: true as const, job, vault };
+}
+
+export function previewCatalogImportUsage(jobId: string) {
+  const store = getV12Store();
+  const job = store.catalogJobs.find((j) => j.id === jobId);
+  if (!job) return { ok: false as const, message: "Job not found" };
+  const preview = createUsagePreview({
+    actionClass: "catalog.import_process",
+    unit: "credits",
+    low: Math.max(1, Math.round((job.estimatedCredits ?? 10) * 0.8)),
+    high: job.estimatedCredits ?? 10,
+    remaining: store.entitlementRemaining,
+    resetAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+    policyVersion: "catalog-pricing-v12.6",
+  });
+  store.usagePreviews.unshift(preview);
+  job.previewId = preview.id;
+  job.status = "AWAITING_COST_APPROVAL";
+  return { ok: true as const, preview, job };
+}
+
+export function processCatalogImport(input: {
+  jobId: string;
+  previewId: string;
+  confirmUsage: boolean;
+  usePackagingFixture?: boolean;
+}) {
+  const store = getV12Store();
+  const job = store.catalogJobs.find((j) => j.id === input.jobId);
+  if (!job) return { ok: false as const, message: "Job not found" };
+  if (!job.rightsAttested) {
+    return { ok: false as const, message: "Rights not attested" };
+  }
+
+  if (!input.previewId || !input.confirmUsage) {
+    const preview = previewCatalogImportUsage(job.id);
+    if (!preview.ok) return preview;
+    return {
+      ok: false as const,
+      code: "USAGE_PREVIEW_REQUIRED" as const,
+      message: "Confirm the credit estimate before processing",
+      preview: preview.preview,
+    };
+  }
+
+  const preview = store.usagePreviews.find((p) => p.id === input.previewId);
+  if (!preview?.confirmed) {
+    return {
+      ok: false as const,
+      code: "PREVIEW_NOT_CONFIRMED" as const,
+      message: "Confirm the usage preview first",
+    };
+  }
+
+  const qty = preview.high;
+  if (qty > store.entitlementRemaining) {
+    return {
+      ok: false as const,
+      code: "INSUFFICIENT_ENTITLEMENT" as const,
+      message: "Not enough credits remaining",
+    };
+  }
+  store.entitlementRemaining -= qty;
+  store.usageLedger.unshift({
+    id: id("ule"),
+    correlationId: job.id,
+    previewId: preview.id,
+    quantity: qty,
+    unit: preview.unit,
+    entryType: "consume",
+    immutableHash: hashLedgerPayload({
+      jobId: job.id,
+      qty,
+      action: "catalog.import_process",
+    }),
+    createdAt: new Date().toISOString(),
+    actionClass: "catalog.import_process",
+  });
+
+  const { drafts, firewall } = extractDraftProducts({
+    jobId: job.id,
+    sourceText: job.sourceText,
+    documentId: job.documentId ?? "doc",
+    versionId: job.versionId ?? "ver",
+    usePackagingFixture: input.usePackagingFixture ?? true,
+  });
+
+  if (!firewall.safeForExtraction) {
+    job.status = "BLOCKED";
+    job.firewallBlocked = true;
+    return {
+      ok: false as const,
+      code: "CONTENT_FIREWALL" as const,
+      message:
+        "Catalogue text looks like prompt-injection content and was blocked",
+      firewall,
+    };
+  }
+
+  store.catalogDrafts = store.catalogDrafts.filter((d) => d.jobId !== job.id);
+  store.catalogDrafts.unshift(...drafts);
+  job.status = "NEEDS_REVIEW";
+  return {
+    ok: true as const,
+    job,
+    drafts,
+    entitlementRemaining: store.entitlementRemaining,
+  };
+}
+
+export function reviewCatalogDraft(input: {
+  draftId: string;
+  decision: "accepted" | "rejected";
+  reviewerId: string;
+}) {
+  const draft = getV12Store().catalogDrafts.find((d) => d.id === input.draftId);
+  if (!draft) return { ok: false as const, message: "Draft not found" };
+  if (draft.status !== "draft") {
+    return { ok: false as const, message: "Already reviewed" };
+  }
+  draft.status = input.decision;
+  if (input.decision === "accepted") {
+    // Supplier confirmation upgrades publishability of title field
+    for (const f of draft.fields) {
+      f.classification = "SUPPLIER_CONFIRMED";
+      f.confidence = Math.max(f.confidence, 0.95);
+    }
+    draft.publishable = draft.fields.every(isFieldPublishable);
+  } else {
+    draft.publishable = false;
+  }
+  void input.reviewerId;
+  return { ok: true as const, draft };
+}
+
+export function publishCatalogJob(input: {
+  jobId: string;
+  publisherId: string;
+}) {
+  const store = getV12Store();
+  const job = store.catalogJobs.find((j) => j.id === input.jobId);
+  if (!job) return { ok: false as const, message: "Job not found" };
+  const drafts = store.catalogDrafts.filter((d) => d.jobId === job.id);
+  const accepted = drafts.filter((d) => d.status === "accepted" && d.publishable);
+  if (accepted.length === 0) {
+    return {
+      ok: false as const,
+      message: "Accept at least one draft with confirmed evidence before publish",
+    };
+  }
+  job.status = "PUBLISHED";
+  void input.publisherId;
+  return {
+    ok: true as const,
+    job,
+    publishedCount: accepted.length,
+    heldCount: drafts.length - accepted.length,
+  };
+}
+
+export function listCatalogFactory() {
+  const store = getV12Store();
+  return {
+    jobs: store.catalogJobs,
+    drafts: store.catalogDrafts,
+    entitlementRemaining: store.entitlementRemaining,
+  };
 }

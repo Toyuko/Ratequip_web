@@ -1,0 +1,57 @@
+{
+  "name": "synthetic_bulk_handling",
+  "archetype": "bulk_material_handling_systems",
+  "synthetic": true,
+  "pages": [
+    {
+      "page": 1,
+      "class": "cover",
+      "title": "Automated Handling Solutions"
+    },
+    {
+      "page": 2,
+      "class": "contents",
+      "title": "System Families"
+    },
+    {
+      "page": 3,
+      "class": "company_profile",
+      "title": "Company and Test Capability"
+    },
+    {
+      "page": 4,
+      "class": "case_study",
+      "title": "Material Handling Case Study"
+    },
+    {
+      "page": 5,
+      "class": "workflow",
+      "title": "Complete Material Flow"
+    },
+    {
+      "page": 6,
+      "class": "products",
+      "title": "Unpacking and Feeding"
+    },
+    {
+      "page": 7,
+      "class": "table",
+      "title": "Tubular Conveyor Models"
+    },
+    {
+      "page": 8,
+      "class": "products",
+      "title": "Mixing and Screening"
+    },
+    {
+      "page": 9,
+      "class": "table",
+      "title": "Weighing and Batching"
+    },
+    {
+      "page": 10,
+      "class": "contact",
+      "title": "Supplier Contact"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "currency": "CREDITS",
+  "base": 10,
+  "digital_page": 0.25,
+  "scanned_page_surcharge": 0.75,
+  "complex_table": 2,
+  "product": 1.5,
+  "variant": 0.4,
+  "image": 0.2,
+  "translation_product_language": 0.8,
+  "priority_multiplier": 1.25
+}

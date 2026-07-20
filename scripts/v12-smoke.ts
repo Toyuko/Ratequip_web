@@ -21,13 +21,18 @@ import {
   confirmRequirement,
   confirmUsagePreview,
   createAIDraft,
+  createCatalogImport,
   createDocument,
   createRequisition,
   createRfqRevision,
   issuePassport,
+  previewCatalogImportUsage,
   previewUrsAnalysisUsage,
+  processCatalogImport,
+  publishCatalogJob,
   rejectRequirement,
   resolveActivationPack,
+  reviewCatalogDraft,
   runExplainableMatch,
   uploadAndAnalyzeUrs,
 } from "../src/lib/v12/services";
@@ -313,6 +318,60 @@ async function main() {
   });
   if (ledgerReject.ok) throw new Error("double review should fail");
 
+  // Part 6 / Release 6A — catalogue factory
+  const catBlocked = createCatalogImport({
+    title: "Smoke brochure",
+    sourceText: "Model: Capper-X\nCapacity: 40/min",
+    createdBy: "supplier@demo.ratequip.com",
+    rightsAttested: false,
+  });
+  if (catBlocked.ok) throw new Error("rights attestation required");
+
+  const cat = createCatalogImport({
+    title: "Smoke brochure",
+    sourceText: `Model: Capper-X single head
+Capacity: 40 containers/min
+Model: BagFill-200
+Capacity: 20-60 bags/min`,
+    createdBy: "supplier@demo.ratequip.com",
+    rightsAttested: true,
+  });
+  if (!cat.ok) throw new Error(cat.message);
+
+  const catPreview = previewCatalogImportUsage(cat.job.id);
+  if (!catPreview.ok) throw new Error(catPreview.message);
+  const catConfirm = confirmUsagePreview({
+    previewId: catPreview.preview.id,
+    confirmedBy: "supplier@demo.ratequip.com",
+  });
+  if (!catConfirm.ok) throw new Error(catConfirm.message);
+
+  const processed = processCatalogImport({
+    jobId: cat.job.id,
+    previewId: catPreview.preview.id,
+    confirmUsage: true,
+    usePackagingFixture: true,
+  });
+  if (!processed.ok) throw new Error(processed.message);
+  if (processed.drafts.length < 1) throw new Error("expected catalogue drafts");
+
+  const catalogDraft = processed.drafts[0]!;
+  const reviewed = reviewCatalogDraft({
+    draftId: catalogDraft.id,
+    decision: "accepted",
+    reviewerId: "supplier@demo.ratequip.com",
+  });
+  if (!reviewed.ok || !reviewed.draft.publishable) {
+    throw new Error("accepted draft should become publishable");
+  }
+  const published = publishCatalogJob({
+    jobId: cat.job.id,
+    publisherId: "supplier@demo.ratequip.com",
+  });
+  if (!published.ok || published.publishedCount < 1) {
+    throw new Error("publish failed");
+  }
+
   console.log("V12 smoke passed.", {
     questions: pack.questions.length,
     matchCount: match.results.length,
@@ -323,6 +382,8 @@ async function main() {
     analysisRunId: analysis.run.id,
     ledgerRequirements: analysis.counts.requirements,
     explicitRecall: analysis.explicitRecall,
+    catalogDrafts: processed.drafts.length,
+    catalogPublished: published.publishedCount,
     policy: scored.policyVersion,
   });
 }

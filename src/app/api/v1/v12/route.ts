@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
           "part3-3A",
           "part4-4A",
           "part5-5A",
+          "part6-6A",
         ],
         counts: {
           opportunities: store.opportunities.length,
@@ -40,6 +41,8 @@ export async function GET(req: NextRequest) {
           analysisRuns: store.analysisRuns.length,
           intelligenceRequirements: store.intelligenceRequirements.length,
           releases: store.releases.length,
+          catalogJobs: store.catalogJobs.length,
+          catalogDrafts: store.catalogDrafts.length,
           entitlementRemaining: store.entitlementRemaining,
           matchRuns: store.matchRuns.length,
           aiDrafts: store.aiDrafts.length,

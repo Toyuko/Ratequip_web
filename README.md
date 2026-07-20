@@ -25,17 +25,18 @@ Imported from **RateQuip Enterprise Master Repository V12 CONSOLIDATED COMPLETE 
 | Layer | What landed in this app |
 |-------|-------------------------|
 | Seeds | Taxonomy, packs, roles, workflow, Part 5 industry/classification → `src/data/v12/` |
-| Migrations | `0001–0034` + bridge `0090` → `drizzle/v12/` (Part 4 app numbers **0030–0034**; Part 5 remains **0024–0029** on Neon) |
-| Engines | DQE, matcher, ranker, AI confirm, workflow, vault, URS ledger, release/entitlement → `src/lib/v12/` |
-| UI | `/v12` hub + prior slices + **requirement ledger** + **release control** |
-| API | `/api/v1/v12`, `/procurement`, `/workflow`, `/documents`, `/intelligence/ledger`, `/release-control` |
-| Docs | `docs/v12/` Parts 1–5, collision resolution, feature ledgers 141–160 / 161–185 |
+| Migrations | `0001–0040` + bridge `0090` → `drizzle/v12/` (Part 4 = **0030–0034**; Part 5 = **0024–0029**; Part 6 = **0035–0040**) |
+| Engines | DQE, matcher, ranker, AI confirm, workflow, vault, URS ledger, release/entitlement, catalogue factory → `src/lib/v12/` |
+| UI | `/v12` guide + prior slices + **catalogue factory** |
+| API | `/api/v1/v12`, `/procurement`, `/workflow`, `/documents`, `/intelligence/ledger`, `/release-control`, `/catalogue-factory` |
+| Docs | `docs/v12/` Parts 1–6, client overview |
 
 **Part 1:** activation → builders → match → AI draft/confirm.  
 **Part 2 2A/2B:** procurement/RFQ/award → asset + passport.  
 **Part 3 3A:** workflow + document vault (+ schema `0015–0023` for 3B–3F).  
 **Part 4 4A:** release registry, cohort kill switches, usage preview before charge.  
-**Part 5 5A:** URS analysis → requirement ledger (Features **161–163**).
+**Part 5 5A:** URS analysis → requirement ledger (Features **161–163**).  
+**Part 6 6A:** supplier catalogue → credit estimate → product drafts → accept/reject → gated publish (migrations **`0035–0040`** / schema `catalog_factory`).
 
 ```bash
 npm run db:migrate:v12
@@ -43,7 +44,7 @@ npm run db:seed:v12
 npm run smoke:v12
 ```
 
-Deferred product surface: Part 2 **2C–2F**, Part 3 **3B–3F**, Part 4 **4B–4C**, Part 5 **5B–5D**, Module 68 catalogue factory.
+Deferred product surface: Part 2 **2C–2F**, Part 3 **3B–3F**, Part 4 **4B–4C**, Part 5 **5B–5D**, Part 6 **6B–6C** (live OCR/LLM, search, Ask Catalogue).
 
 ## Phase 2 persistence (working MVP)
 

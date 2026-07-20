@@ -47,6 +47,26 @@ const journey = [
 
 const tools = [
   {
+    group: "For suppliers",
+    items: [
+      {
+        href: "/v12/catalogue-factory",
+        title: "Turn my catalogue into drafts",
+        body: "Paste a product brochure. See the credit cost, then accept or reject draft products before anything goes public.",
+      },
+      {
+        href: "/v12/opportunity-builder",
+        title: "What I sell / want to win",
+        body: "Tell RateQuip your preferred markets and project types.",
+      },
+      {
+        href: "/v12/contractor-builder",
+        title: "Contractor profile",
+        body: "Trades, licences, coverage area, rates and availability.",
+      },
+    ],
+  },
+  {
     group: "Getting started",
     items: [
       {
@@ -58,16 +78,6 @@ const tools = [
         href: "/v12/taxonomy",
         title: "Equipment & industry categories",
         body: "A shared catalogue so buyers and suppliers use the same terms.",
-      },
-      {
-        href: "/v12/opportunity-builder",
-        title: "What I sell / want to win",
-        body: "Tell RateQuip your preferred markets and project types.",
-      },
-      {
-        href: "/v12/contractor-builder",
-        title: "Contractor profile",
-        body: "Trades, licences, coverage area, rates and availability.",
       },
     ],
   },
@@ -235,6 +245,7 @@ export default function V12HubPage() {
               <li>Approvals & document evidence</li>
               <li>Specification reading (accept / reject)</li>
               <li>Credit preview before AI analysis</li>
+              <li>Supplier catalogue → product drafts</li>
             </ul>
           </div>
           <div>
@@ -242,10 +253,10 @@ export default function V12HubPage() {
               Coming in later phases
             </div>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-[var(--rq-slate)]">
+              <li>Full OCR / automatic brochure scanning</li>
               <li>Full service / maintenance marketplaces</li>
               <li>Finance, freight, lab and workforce add-ons</li>
               <li>Deep ERP / factory system connections</li>
-              <li>Broader pilot packs and analytics</li>
             </ul>
           </div>
         </div>

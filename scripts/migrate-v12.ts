@@ -90,7 +90,8 @@ async function main() {
        WHERE table_schema IN (
          'rq','rq_audit','rq_outbox','workflow','documents',
          'rq_intelligence','rq_ecosystem','rq_marketplace_ext',
-         'release_mgmt','entitlement','support_privacy','growth_governance','pilot_ops'
+         'release_mgmt','entitlement','support_privacy','growth_governance','pilot_ops',
+         'catalog_factory'
        )
        ORDER BY 1,2`,
     );

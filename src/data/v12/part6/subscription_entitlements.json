@@ -1,0 +1,21 @@
+{
+  "starter": {
+    "products": 50,
+    "languages": 1
+  },
+  "growth": {
+    "products": 500,
+    "languages": 3
+  },
+  "professional": {
+    "products": 5000,
+    "languages": 10,
+    "api": true
+  },
+  "enterprise": {
+    "products": "custom",
+    "languages": "custom",
+    "sso": true,
+    "sla": true
+  }
+}

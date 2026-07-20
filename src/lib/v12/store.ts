@@ -14,11 +14,36 @@ import type {
 import type { LedgerEntry, UsagePreview } from "@/lib/v12/part4/entitlements";
 import type { Cohort } from "@/lib/v12/part4/rollout";
 import type { ReleaseContract } from "@/lib/v12/part4/releaseRegistry";
+import type { DraftProduct } from "@/lib/v12/catalogue-factory/extractor";
 import type { Ranked } from "@/lib/v12/recommendations/ranker";
 import type {
   WorkflowInstance,
   WorkflowTask,
 } from "@/lib/v12/workflow/runtime";
+
+export type CatalogImportJob = {
+  id: string;
+  title: string;
+  status:
+    | "CREATED"
+    | "AWAITING_RIGHTS"
+    | "PREFLIGHT_READY"
+    | "AWAITING_COST_APPROVAL"
+    | "NEEDS_REVIEW"
+    | "READY_TO_PUBLISH"
+    | "PUBLISHED"
+    | "BLOCKED";
+  rightsAttested: boolean;
+  sourceText: string;
+  documentId?: string;
+  versionId?: string;
+  estimatedCredits?: number;
+  preflight?: Record<string, number>;
+  previewId?: string;
+  createdBy: string;
+  createdAt: string;
+  firewallBlocked?: boolean;
+};
 
 export type OpportunityProfile = {
   id: string;
@@ -171,6 +196,8 @@ type V12Store = {
   usagePreviews: UsagePreview[];
   usageLedger: LedgerEntry[];
   entitlementRemaining: number;
+  catalogJobs: CatalogImportJob[];
+  catalogDrafts: DraftProduct[];
 };
 
 declare global {
@@ -274,6 +301,8 @@ function seedStore(): V12Store {
     usagePreviews: [],
     usageLedger: [],
     entitlementRemaining: 250,
+    catalogJobs: [],
+    catalogDrafts: [],
   };
 }
 

@@ -1,0 +1,57 @@
+{
+  "name": "synthetic_packaging_line",
+  "archetype": "complete_packaging_system",
+  "synthetic": true,
+  "pages": [
+    {
+      "page": 1,
+      "class": "cover",
+      "title": "Automatic Packaging Systems"
+    },
+    {
+      "page": 2,
+      "class": "company_profile",
+      "title": "Company Profile"
+    },
+    {
+      "page": 3,
+      "class": "certifications",
+      "title": "Qualifications"
+    },
+    {
+      "page": 4,
+      "class": "workflow",
+      "title": "Complete Packing Line Workflow"
+    },
+    {
+      "page": 5,
+      "class": "products",
+      "title": "Automatic Bagging Machines"
+    },
+    {
+      "page": 6,
+      "class": "table",
+      "title": "Bagging Model Parameters"
+    },
+    {
+      "page": 7,
+      "class": "products",
+      "title": "Sealing and Inspection"
+    },
+    {
+      "page": 8,
+      "class": "products",
+      "title": "Palletising Systems"
+    },
+    {
+      "page": 9,
+      "class": "workflow",
+      "title": "Supporting Equipment Relationships"
+    },
+    {
+      "page": 10,
+      "class": "contact",
+      "title": "Supplier Contact"
+    }
+  ]
+}
