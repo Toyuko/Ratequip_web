@@ -1,0 +1,73 @@
+{
+  "project": "RateQuip",
+  "tagline": "Rate. Compare. Connect. Grow.",
+  "liveUrl": "https://ratequip-web.vercel.app",
+  "githubUrl": "https://github.com/Toyuko/Ratequip_web",
+  "role": "Founder / Full-stack product engineer",
+  "year": 2026,
+  "oneLiner": "B2B trust and procurement platform for industrial equipment — supplier discovery, RFQs, verified reviews, and credit-based marketplace economics.",
+  "short": "RateQuip is a B2B marketplace that helps plant buyers rate, compare, and connect with industrial equipment suppliers. I designed and built the full web platform: Trust Score reputation, RFQ workflows, Stripe billing, Neon Postgres, and an organic growth engine for unclaimed supplier listings.",
+  "medium": "RateQuip is an independent B2B trust and procurement platform for industrial equipment buyers across ASEAN and beyond. Buyers search a structured supplier taxonomy, post RFQs, compare quotes, and leave evidence-backed reviews that feed a Trust Score. Suppliers claim profiles, respond to demand, and grow through subscription tiers and RateQuip credits.\n\nI built the product end-to-end on Next.js 16, TypeScript, Clerk, Neon (Drizzle), Stripe, and Vercel — including public directory UX, RFQ marketplace, SaaS billing, an organic “add company / claim invite” growth loop, and a V12 enterprise layer for procurement matching, document vaults, and catalogue factory workflows.",
+  "problem": "Industrial buyers still procure capital equipment through fragmented directories, WhatsApp threads, and word-of-mouth. Supplier quality is hard to verify, RFQs scatter across inboxes, and there is no shared reputation layer for plant-scale purchases.",
+  "solution": [
+    "Discover suppliers by category, location, and Trust Score",
+    "Post structured RFQs and collect comparable quotes",
+    "Verify purchases with review evidence that updates Trust Score",
+    "Grow the directory organically via contributor-added, claimable company profiles"
+  ],
+  "features": [
+    "Trust Score reputation from verified reviews",
+    "Industrial supplier directory + taxonomy search",
+    "Structured RFQ marketplace",
+    "Quote comparison workspaces",
+    "Company claim / organic growth invitations",
+    "Stripe billing + credit wallets",
+    "Multi-role dashboards",
+    "Enterprise V12 procurement modules",
+    "i18n + light/dark theme",
+    "Mobile-ready JSON API"
+  ],
+  "stack": [
+    "Next.js 16",
+    "React 19",
+    "TypeScript",
+    "Tailwind CSS",
+    "Clerk",
+    "Neon Postgres",
+    "Drizzle ORM",
+    "Stripe",
+    "Vercel Blob",
+    "Resend",
+    "Vercel AI SDK"
+  ],
+  "featuredScreenshots": [
+    {
+      "file": "screenshots/featured/01-hero.png",
+      "caption": "Marketing hero — brand-led landing"
+    },
+    {
+      "file": "screenshots/featured/02-supplier-directory.png",
+      "caption": "Supplier directory with Trust Score cards"
+    },
+    {
+      "file": "screenshots/featured/06-search-results.png",
+      "caption": "Search results for packaging suppliers"
+    },
+    {
+      "file": "screenshots/featured/03-rfq-marketplace.png",
+      "caption": "Open RFQ marketplace (ASEAN demand)"
+    },
+    {
+      "file": "screenshots/featured/04-rfq-detail.png",
+      "caption": "Structured RFQ with compliance and scope"
+    },
+    {
+      "file": "screenshots/featured/05-pricing.png",
+      "caption": "Buyer and supplier SaaS pricing"
+    },
+    {
+      "file": "screenshots/featured/07-enterprise-guide.png",
+      "caption": "Enterprise V12 product guide"
+    }
+  ]
+}
