@@ -152,6 +152,13 @@ JSON API for the RateQuip companion app (Expo). Envelope: `{ data, error }`. COR
 | GET/POST | `/api/v1/billing/enterprise` | required |
 | GET | `/api/v1/admin/queue` | admin |
 | POST | `/api/v1/admin/moderate` | admin |
+| POST | `/api/v1/organic-growth/search` | public |
+| POST | `/api/v1/organic-growth/submissions` | public |
+| GET/PATCH | `/api/v1/organic-growth/submissions/[id]` | public |
+| POST | `/api/v1/organic-growth/submissions/[id]/publish` | public |
+| POST | `/api/v1/rfq/assist` | public |
+| POST | `/api/v1/rfq/project-assist` | public |
+| GET/POST | `/api/v1/v12/*` | V12 builders (procurement, rfq, builders, assets, srm, crm, workflow, documents, intelligence, ledger, release-control, catalogue-factory, company-setup) |
 
 ## Spec source
 
