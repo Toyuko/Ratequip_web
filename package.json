@@ -19,6 +19,7 @@
     "db:import-global": "tsx scripts/import-global-enrichment.ts",
     "smoke": "tsx scripts/smoke.ts",
     "smoke:phase2": "tsx scripts/phase2-smoke.ts",
+    "smoke:phase2:acceptance": "tsx scripts/phase2-acceptance-counter.ts",
     "smoke:v12": "tsx scripts/v12-smoke.ts",
     "test:trust": "tsx scripts/trust-score-check.ts"
   },

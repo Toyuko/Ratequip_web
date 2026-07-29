@@ -12,6 +12,7 @@ import {
 import { findDuplicateCandidates } from "@/lib/organic-growth/search";
 import {
   createEmptySubmission,
+  ensureSubmission,
   getClaimByToken,
   getSubmission,
   getSubmissionByIdempotencyKey,
@@ -105,10 +106,8 @@ export async function startListingSubmission(input: {
 export async function updateListingSubmission(
   input: Partial<ListingSubmissionDraft> & { id: string },
 ) {
-  const existing = getSubmission(input.id);
-  if (!existing) {
-    return { ok: false as const, message: "Submission not found." };
-  }
+  // Upsert: recover drafts when the in-memory map was lost (serverless cold start).
+  const existing = ensureSubmission(input);
   if (existing.status === "published") {
     return {
       ok: true as const,
@@ -142,8 +141,11 @@ export async function publishListingSubmission(input: {
   id: string;
   declarationsAccepted: boolean;
   disclosurePreference?: ListingSubmissionDraft["disclosurePreference"];
+  draft?: Partial<ListingSubmissionDraft>;
 }) {
-  const existing = getSubmission(input.id);
+  const existing = input.draft
+    ? ensureSubmission({ ...input.draft, id: input.id })
+    : getSubmission(input.id);
   if (!existing) {
     return { ok: false as const, message: "Submission not found." };
   }

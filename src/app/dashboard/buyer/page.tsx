@@ -55,6 +55,45 @@ export default async function BuyerDashboardPage() {
         </div>
       </section>
 
+      <section className="mt-10" data-tour="buyer-rfqs">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-semibold text-[var(--rq-ink)]">Your RFQs</h2>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/requests">Browse marketplace</Link>
+          </Button>
+        </div>
+        <ul className="mt-3 space-y-2">
+          {requests.map((r) => (
+            <li key={r.id}>
+              <Link
+                href={`/requests/${r.id}`}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] px-4 py-3 hover:border-orange-300"
+              >
+                <div>
+                  <div className="font-medium text-[var(--rq-ink)]">{r.title}</div>
+                  <div className="text-sm text-[var(--rq-muted)]">
+                    {r.deliveryCountry || "No ship-to"} · {r.quoteCount} quote
+                    {r.quoteCount === 1 ? "" : "s"} · {r.createdAt}
+                  </div>
+                </div>
+                <Badge variant={r.status === "open" ? "success" : "muted"}>
+                  {r.status}
+                </Badge>
+              </Link>
+            </li>
+          ))}
+          {requests.length === 0 ? (
+            <li className="rounded-lg border border-dashed border-[var(--rq-border)] px-4 py-6 text-sm text-[var(--rq-muted)]">
+              No RFQs yet.{" "}
+              <Link href="/requests/new" className="text-orange-600 hover:underline">
+                Post your first request
+              </Link>
+              .
+            </li>
+          ) : null}
+        </ul>
+      </section>
+
       <section className="mt-10" data-tour="buyer-suppliers">
         <h2 className="font-semibold text-[var(--rq-ink)]">Saved suppliers</h2>
         <ul className="mt-3 space-y-2">

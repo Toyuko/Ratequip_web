@@ -21,46 +21,51 @@ export async function GET(req: NextRequest) {
   return apiResponse(req, ok({ requests, count: requests.length }));
 }
 
-const createSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1),
-  budgetMin: z.number().nonnegative().default(0),
-  budgetMax: z.number().nonnegative().default(0),
-  currency: z.string().length(3).default("USD"),
-  taxTreatment: z.enum(["inclusive", "exclusive"]).default("inclusive"),
-  quoteValidityDays: z.number().int().positive().default(30),
-  deliveryCountry: z.string().default(""),
-  deliveryCity: z.string().optional(),
-  deliveryAddress: z.string().optional(),
-  dueDate: z.string().optional(),
-  referenceModel: z.string().optional(),
-  complianceStandards: z.array(z.string()).optional(),
-  materialOfConstruction: z.string().optional(),
-  utilitiesNotes: z.string().optional(),
-  warrantyMonthsRequired: z.number().int().nonnegative().optional(),
-  deliveryWeeksRequired: z.number().int().positive().optional(),
-  scopeOfSupply: z.array(z.string()).optional(),
-  technicalRequirements: z
-    .array(
-      z.object({
-        text: z.string().min(1),
-        priority: z.enum(["must", "prefer", "optional"]).default("must"),
-      }),
-    )
-    .optional(),
-  items: z
-    .array(
-      z.object({
-        productName: z.string().min(1),
-        productCode: z.string().optional(),
-        quantity: z.number().positive().default(1),
-        unit: z.string().optional(),
-        oemOnly: z.boolean().optional(),
-        notes: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
+const createSchema = z
+  .object({
+    title: z.string().trim().min(8).max(200),
+    description: z.string().trim().min(40).max(10000),
+    budgetMin: z.number().nonnegative().max(1_000_000_000),
+    budgetMax: z.number().positive().max(1_000_000_000),
+    currency: z.string().length(3).default("USD"),
+    taxTreatment: z.enum(["inclusive", "exclusive"]).default("inclusive"),
+    quoteValidityDays: z.number().int().positive().default(30),
+    deliveryCountry: z.string().trim().min(2),
+    deliveryCity: z.string().optional(),
+    deliveryAddress: z.string().optional(),
+    dueDate: z.string().optional(),
+    referenceModel: z.string().optional(),
+    complianceStandards: z.array(z.string()).optional(),
+    materialOfConstruction: z.string().optional(),
+    utilitiesNotes: z.string().optional(),
+    warrantyMonthsRequired: z.number().int().nonnegative().optional(),
+    deliveryWeeksRequired: z.number().int().positive().optional(),
+    scopeOfSupply: z.array(z.string()).optional(),
+    technicalRequirements: z
+      .array(
+        z.object({
+          text: z.string().min(1),
+          priority: z.enum(["must", "prefer", "optional"]).default("must"),
+        }),
+      )
+      .optional(),
+    items: z
+      .array(
+        z.object({
+          productName: z.string().min(1),
+          productCode: z.string().optional(),
+          quantity: z.number().positive().default(1),
+          unit: z.string().optional(),
+          oemOnly: z.boolean().optional(),
+          notes: z.string().optional(),
+        }),
+      )
+      .optional(),
+  })
+  .refine((data) => data.budgetMin <= data.budgetMax, {
+    message: "budgetMin cannot exceed budgetMax",
+    path: ["budgetMin"],
+  });
 
 export async function POST(req: NextRequest) {
   const authResult = await requireApiUser(req);

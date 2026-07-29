@@ -78,6 +78,10 @@ export type DemoReview = {
   verifiedPurchase: boolean;
   status: "pending" | "approved" | "rejected";
   createdAt: string;
+  supplierResponse?: string;
+  supplierRespondedAt?: string;
+  appealReason?: string;
+  appealStatus?: "none" | "pending" | "upheld" | "dismissed";
 };
 
 export type DemoRequestItem = {

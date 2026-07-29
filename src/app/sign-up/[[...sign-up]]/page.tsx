@@ -1,9 +1,22 @@
 import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { hasClerkPublishableKey } from "@/lib/config";
 
 export const metadata = { title: "Sign up" };
+
+function ClerkLoading() {
+  return (
+    <div className="w-full max-w-md rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-8 text-center">
+      <p className="text-sm font-medium text-[var(--rq-ink)]">Loading sign-up…</p>
+      <p className="mt-2 text-xs text-[var(--rq-muted)]">
+        Secure registration is loading. If this stays blank, refresh or check
+        network access to Clerk.
+      </p>
+    </div>
+  );
+}
 
 export default function SignUpPage() {
   if (!hasClerkPublishableKey()) {
@@ -25,7 +38,9 @@ export default function SignUpPage() {
 
   return (
     <div className="flex justify-center px-4 py-16">
-      <SignUp />
+      <Suspense fallback={<ClerkLoading />}>
+        <SignUp />
+      </Suspense>
     </div>
   );
 }

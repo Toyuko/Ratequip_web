@@ -8,9 +8,11 @@ import {
   isPaidActivePlan,
   listCreditPacks,
 } from "@/lib/billing/catalog";
+import { applyDemoRefundAction } from "@/lib/actions/billing";
 import {
   countRfqsThisMonth,
   getEnterpriseAsync,
+  reconcileCreditLedger,
 } from "@/lib/billing/operations";
 import { getSubscriptionAsync, getWalletAsync } from "@/lib/db/phase2";
 import { formatCurrency } from "@/lib/utils";
@@ -33,12 +35,14 @@ export default async function BuyerBillingPage({
   }>;
 }) {
   const params = await searchParams;
-  const [wallet, subscription, rfqsThisMonth, enterprise] = await Promise.all([
-    getWalletAsync(),
-    getSubscriptionAsync(),
-    countRfqsThisMonth(),
-    getEnterpriseAsync(),
-  ]);
+  const [wallet, subscription, rfqsThisMonth, enterprise, reconciliation] =
+    await Promise.all([
+      getWalletAsync(),
+      getSubscriptionAsync(),
+      countRfqsThisMonth(),
+      getEnterpriseAsync(),
+      reconcileCreditLedger(),
+    ]);
   const plan =
     getPlanByCode(subscription?.planCode ?? "buyer-free") ??
     getPlanByCode("buyer-free")!;
@@ -139,6 +143,38 @@ export default async function BuyerBillingPage({
           </ul>
         </div>
       </div>
+
+      <section className="mt-8 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
+        <h2 className="font-semibold text-[var(--rq-ink)]">
+          Ledger reconciliation
+        </h2>
+        <p className="mt-2 text-sm text-[var(--rq-slate)]">
+          Wallet balance{" "}
+          <strong>
+            {reconciliation.ok ? reconciliation.balance : wallet.balance}
+          </strong>
+          {" · "}
+          Ledger sum{" "}
+          <strong>
+            {reconciliation.ok ? reconciliation.ledgerSum : "—"}
+          </strong>
+          {" · "}
+          {reconciliation.ok && reconciliation.balanced ? (
+            <span className="text-emerald-700">Balanced</span>
+          ) : (
+            <span className="text-amber-800">Needs review</span>
+          )}
+        </p>
+        <p className="mt-1 text-xs text-[var(--rq-muted)]">
+          API: <code>/api/v1/billing/reconcile</code> · Refund/adjust via{" "}
+          <code>/api/v1/billing/refund</code>
+        </p>
+        <form action={applyDemoRefundAction} className="mt-4">
+          <Button type="submit" variant="outline" size="sm">
+            Apply +25 credit refund (demo)
+          </Button>
+        </form>
+      </section>
 
       <section className="mt-8">
         <h2 className="font-semibold text-[var(--rq-ink)]">Buy credit packs</h2>

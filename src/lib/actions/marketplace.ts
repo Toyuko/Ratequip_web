@@ -8,7 +8,7 @@ import {
   uploadEvidence,
   type AccountMediaKind,
 } from "@/lib/blob";
-import { hasClerk } from "@/lib/config";
+import { hasClerk, isDemoMode } from "@/lib/config";
 import {
   deleteCompanyMedia,
   persistClaim,
@@ -18,9 +18,45 @@ import {
   persistQuote,
   persistRequest,
   persistReview,
+  persistReviewAppeal,
+  persistReviewResponse,
+  updateRequestFields,
   updateRequestStatus,
 } from "@/lib/db/phase2";
 import { sendTransactionalEmail } from "@/lib/email";
+import { validateRfqContent } from "@/lib/rfq/validation";
+
+async function requireMutationActor(): Promise<
+  { ok: true; actor: string } | { ok: false; message: string }
+> {
+  if (hasClerk()) {
+    try {
+      const session = await auth();
+      if (!session.userId) {
+        return {
+          ok: false,
+          message: "Sign in required to perform this action.",
+        };
+      }
+    } catch {
+      return { ok: false, message: "Sign in required to perform this action." };
+    }
+  } else if (!isDemoMode()) {
+    return { ok: false, message: "Sign in required to perform this action." };
+  } else {
+    const jar = await cookies();
+    if (
+      jar.get("rq_onboarded")?.value !== "1" &&
+      !jar.get("rq_email")?.value
+    ) {
+      return {
+        ok: false,
+        message: "Sign in or complete demo onboarding first.",
+      };
+    }
+  }
+  return { ok: true, actor: await actorFromCookies() };
+}
 
 async function actorFromCookies() {
   const jar = await cookies();
@@ -168,6 +204,16 @@ export async function createRequest(input: {
   }
   if (!input.deliveryCountry.trim()) {
     return { ok: false as const, message: "Delivery country is required." };
+  }
+
+  const contentError = validateRfqContent({
+    title: input.title,
+    description: input.description,
+    budgetMin: Number(input.budgetMin),
+    budgetMax: Number(input.budgetMax),
+  });
+  if (contentError) {
+    return { ok: false as const, message: contentError };
   }
 
   const currency = (input.currency ?? "USD").trim().toUpperCase();
@@ -332,11 +378,98 @@ export async function closeOrAwardRequest(input: {
   requestId: string;
   status: "closed" | "awarded";
 }) {
-  const actor = await actorFromCookies();
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
   return updateRequestStatus({
     requestId: input.requestId,
     status: input.status,
-    actor,
+    actor: gate.actor,
+  });
+}
+
+export async function reviseRequest(input: {
+  requestId: string;
+  title: string;
+  description: string;
+  budgetMin: number;
+  budgetMax: number;
+  currency?: string;
+  deliveryCountry: string;
+  deliveryCity?: string;
+  deliveryAddress?: string;
+  dueDate?: string;
+}) {
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+
+  const contentError = validateRfqContent({
+    title: input.title,
+    description: input.description,
+    budgetMin: Number(input.budgetMin),
+    budgetMax: Number(input.budgetMax),
+  });
+  if (contentError) {
+    return { ok: false as const, message: contentError };
+  }
+  if (!input.deliveryCountry.trim()) {
+    return { ok: false as const, message: "Delivery country is required." };
+  }
+
+  const currency = (input.currency ?? "USD").trim().toUpperCase();
+  if (!SUPPORTED_CURRENCIES.has(currency)) {
+    return { ok: false as const, message: "Select a supported currency." };
+  }
+
+  return updateRequestFields({
+    requestId: input.requestId,
+    title: input.title.trim(),
+    description: input.description.trim(),
+    budgetMin: Number(input.budgetMin),
+    budgetMax: Number(input.budgetMax),
+    currency,
+    deliveryCountry: input.deliveryCountry.trim(),
+    deliveryCity: input.deliveryCity?.trim(),
+    deliveryAddress: input.deliveryAddress?.trim(),
+    dueDate: input.dueDate?.trim(),
+    actor: gate.actor,
+  });
+}
+
+export async function respondToReview(input: {
+  reviewId: string;
+  body: string;
+}) {
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+  if (input.body.trim().length < 10) {
+    return {
+      ok: false as const,
+      message: "Response must be at least 10 characters.",
+    };
+  }
+  return persistReviewResponse({
+    reviewId: input.reviewId,
+    body: input.body.trim(),
+    actor: gate.actor,
+  });
+}
+
+export async function appealReview(input: {
+  reviewId: string;
+  reason: string;
+}) {
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+  if (input.reason.trim().length < 10) {
+    return {
+      ok: false as const,
+      message: "Appeal reason must be at least 10 characters.",
+    };
+  }
+  return persistReviewAppeal({
+    reviewId: input.reviewId,
+    reason: input.reason.trim(),
+    actor: gate.actor,
   });
 }
 

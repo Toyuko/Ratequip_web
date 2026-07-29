@@ -39,9 +39,9 @@ function claimTokens() {
 
 export function createEmptySubmission(partial?: Partial<ListingSubmissionDraft>) {
   const now = new Date().toISOString();
-  const id = `sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const id =
+    partial?.id ?? `sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const draft: StoredSubmission = {
-    id,
     idempotencyKey: partial?.idempotencyKey ?? `idem-${id}`,
     status: "draft",
     companyTypes: [],
@@ -57,9 +57,35 @@ export function createEmptySubmission(partial?: Partial<ListingSubmissionDraft>)
     createdAt: now,
     updatedAt: now,
     ...partial,
+    id,
   };
   submissions().set(id, draft);
   return draft;
+}
+
+/** Recover a draft lost to serverless cold-start using the client payload. */
+export function ensureSubmission(
+  input: Partial<ListingSubmissionDraft> & { id: string },
+): StoredSubmission {
+  const existing = getSubmission(input.id);
+  if (existing) return existing;
+  return createEmptySubmission({
+    ...input,
+    id: input.id,
+    idempotencyKey: input.idempotencyKey ?? `idem-${input.id}`,
+    status: input.status ?? "draft",
+    companyTypes: input.companyTypes ?? [],
+    categories: input.categories ?? [],
+    conflictDeclared: input.conflictDeclared ?? false,
+    disclosurePreference:
+      input.disclosurePreference ?? "anonymous_ratequip_user",
+    declarationsAccepted: input.declarationsAccepted ?? false,
+    skipContacts: input.skipContacts ?? false,
+    skipReview: input.skipReview ?? true,
+    contacts: input.contacts ?? [],
+    createdAt: input.createdAt ?? new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 export function getSubmission(id: string) {

@@ -1,9 +1,12 @@
+import { auth } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RfqProjectCompanion } from "@/components/marketplace/rfq-project-companion";
 import { RequestStatusActions } from "@/components/marketplace/request-status-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { hasClerk, isDemoMode } from "@/lib/config";
 import { getQuotesForRequest, getRequestById } from "@/lib/db/queries";
 import { formatCurrency } from "@/lib/utils";
 
@@ -47,11 +50,34 @@ export default async function RequestDetailPage({
   const quotes = await getQuotesForRequest(request.id);
   const items = request.items ?? [];
 
+  let canManage = false;
+  if (hasClerk()) {
+    try {
+      const session = await auth();
+      canManage = Boolean(session.userId);
+    } catch {
+      canManage = false;
+    }
+  } else if (isDemoMode()) {
+    const jar = await cookies();
+    canManage =
+      jar.get("rq_onboarded")?.value === "1" || Boolean(jar.get("rq_email")?.value);
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
       <div className="flex flex-wrap items-center gap-3">
         <Badge variant="success">{request.status}</Badge>
-        <RequestStatusActions requestId={request.id} status={request.status} />
+        <RequestStatusActions
+          requestId={request.id}
+          status={request.status}
+          canManage={canManage}
+        />
+        {canManage && request.status === "open" ? (
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/requests/${request.id}/edit`}>Edit / revise</Link>
+          </Button>
+        ) : null}
       </div>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         {request.title}

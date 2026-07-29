@@ -94,7 +94,7 @@ export default function AddContactsPage() {
         status: skip ? "contacts_skipped" : "contacts_complete",
       });
       if (!result.ok) {
-        setError(result.message);
+        setError(result.message ?? "Unable to save contacts.");
         return;
       }
       save(result.submission as never);
@@ -110,6 +110,12 @@ export default function AddContactsPage() {
       submissionId={draft.id}
     >
       <div className="space-y-6">
+        <p className="rounded-md border border-[var(--rq-border)] bg-[var(--rq-surface)] px-3 py-2 text-sm text-[var(--rq-slate)]">
+          A valid business email is required before a claim invitation is sent.
+          If you do not know an email, continue without contacts — the listing is
+          saved as an unclaimed draft for later verification. No invitation is
+          sent in that path.
+        </p>
         {contacts.map((contact, index) => (
           <div
             key={contact.id}
@@ -233,7 +239,7 @@ export default function AddContactsPage() {
             onClick={() => continueWithContacts(true)}
             disabled={pending}
           >
-            I don&apos;t know an email address
+            {pending ? "Saving draft…" : "Save unclaimed draft (no email)"}
           </Button>
         </div>
       </div>

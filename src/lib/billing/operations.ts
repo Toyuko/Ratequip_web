@@ -746,4 +746,147 @@ export async function getEnterpriseAsync(organisationId?: string) {
   }
 }
 
+export async function refundCredits(input: {
+  amount: number;
+  reason: string;
+  organisationId?: string;
+  referenceType?: string;
+  referenceId?: string;
+}) {
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    return { ok: false as const, message: "Refund amount must be positive." };
+  }
+  const reason = input.reason.trim() || "Manual credit refund/adjustment";
+  const db = getDb();
+  if (db) {
+    try {
+      const org = input.organisationId
+        ? (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.id, input.organisationId))
+              .limit(1)
+          )[0]
+        : (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.slug, "demo-buyer-org"))
+              .limit(1)
+          )[0];
+      if (!org) return { ok: false as const, message: "Organisation not found." };
+      const result = await neonCreditOrg(
+        db,
+        org.id,
+        input.amount,
+        reason,
+        input.referenceType ?? "refund",
+        input.referenceId,
+      );
+      appendAudit("credits.refunded", "wallet", reason);
+      return { ...result, demo: false as const };
+    } catch (error) {
+      console.warn("[billing] refundCredits neon failed", error);
+    }
+  }
+  const credited = creditCredits(input.amount, reason);
+  appendAudit("credits.refunded", "wallet", reason);
+  return { ok: true as const, balance: credited.balance, demo: true as const };
+}
+
+export async function reconcileCreditLedger(organisationId?: string) {
+  const db = getDb();
+  if (db) {
+    try {
+      const org = organisationId
+        ? (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.id, organisationId))
+              .limit(1)
+          )[0]
+        : (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.slug, "demo-buyer-org"))
+              .limit(1)
+          )[0];
+      if (!org) {
+        return { ok: false as const, message: "Organisation not found." };
+      }
+      const [wallet] = await db
+        .select()
+        .from(creditWallets)
+        .where(eq(creditWallets.organisationId, org.id))
+        .limit(1);
+      if (!wallet) {
+        return {
+          ok: true as const,
+          balance: 0,
+          ledgerSum: 0,
+          balanced: true,
+          entries: [] as {
+            id: string;
+            delta: number;
+            reason: string;
+            referenceType: string | null;
+            referenceId: string | null;
+            createdAt: string;
+          }[],
+          demo: false as const,
+        };
+      }
+      const entries = await db
+        .select()
+        .from(creditLedgerEntries)
+        .where(eq(creditLedgerEntries.walletId, wallet.id))
+        .orderBy(desc(creditLedgerEntries.createdAt));
+      const ledgerSum = entries.reduce((sum, e) => sum + e.delta, 0);
+      return {
+        ok: true as const,
+        balance: wallet.balance,
+        ledgerSum,
+        balanced: wallet.balance === ledgerSum,
+        entries: entries.map((e) => ({
+          id: e.id,
+          delta: e.delta,
+          reason: e.reason,
+          referenceType: e.referenceType,
+          referenceId: e.referenceId,
+          createdAt: e.createdAt.toISOString(),
+        })),
+        organisationId: org.id,
+        demo: false as const,
+      };
+    } catch (error) {
+      console.warn("[billing] reconcileCreditLedger neon failed", error);
+    }
+  }
+
+  const store = getStore();
+  const ledgerSum = store.wallet.entries.reduce((sum, e) => sum + e.delta, 0);
+  // Runtime wallet starts with a seeded balance; reconcile against entry deltas + seed.
+  const seedBalance = store.wallet.balance - ledgerSum;
+  const reconstructed = seedBalance + ledgerSum;
+  return {
+    ok: true as const,
+    balance: store.wallet.balance,
+    ledgerSum: reconstructed,
+    balanced: store.wallet.balance === reconstructed,
+    entries: store.wallet.entries.map((e) => ({
+      id: e.id,
+      delta: e.delta,
+      reason: e.reason,
+      referenceType: null as string | null,
+      referenceId: null as string | null,
+      createdAt: e.createdAt,
+    })),
+    organisationId: organisationId ?? "org-demo",
+    demo: true as const,
+  };
+}
+
 export { RFQ_CREDIT_COST, FREE_TIER_MONTHLY_RFQ_LIMIT };

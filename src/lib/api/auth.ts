@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import { hasClerk, isDemoMode } from "@/lib/config";
+import { getProfileByClerkId } from "@/lib/db/phase2";
 
 export type ApiRole = "buyer" | "supplier" | "contractor" | "admin";
 
@@ -70,11 +71,13 @@ export async function resolveApiUser(
 
     const user = await currentUser();
     const jar = await cookies();
+    const profile = await getProfileByClerkId(session.userId);
     const role =
       parseRole(jar.get("rq_role")?.value) ??
       parseRole(
         (user?.publicMetadata?.role as string | undefined) ?? undefined,
       ) ??
+      parseRole(profile?.role) ??
       "buyer";
 
     return {
@@ -84,14 +87,18 @@ export async function resolveApiUser(
         email:
           user?.primaryEmailAddress?.emailAddress ??
           jar.get("rq_email")?.value ??
+          profile?.email ??
           "",
         fullName:
           [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
           jar.get("rq_contact_name")?.value ||
+          profile?.fullName ||
           "RateQuip User",
         role,
-        orgName: jar.get("rq_org")?.value ?? null,
-        onboardingComplete: jar.get("rq_onboarded")?.value === "1",
+        orgName: jar.get("rq_org")?.value ?? profile?.orgName ?? null,
+        onboardingComplete:
+          jar.get("rq_onboarded")?.value === "1" ||
+          Boolean(profile?.onboardingComplete),
         isDemo: false,
       },
     };

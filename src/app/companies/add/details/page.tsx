@@ -113,7 +113,11 @@ export default function AddDetailsPage() {
       };
       const result = await updateListingSubmission(next);
       if (!result.ok) {
-        setError(result.message);
+        setError(
+          "message" in result && result.message
+            ? result.message
+            : "Unable to save company details.",
+        );
         return;
       }
       save(result.submission as never);

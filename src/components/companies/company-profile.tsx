@@ -1,7 +1,11 @@
+import { auth } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ReviewLifecycleActions } from "@/components/marketplace/review-lifecycle-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { hasClerk, isDemoMode } from "@/lib/config";
 import {
   getCategoryBySlug,
   getCompanyBySlug,
@@ -31,6 +35,22 @@ export async function CompanyProfile({ slug }: { slug: string }) {
       name: (await getCategoryBySlug(slugOrId))?.name ?? slugOrId,
     })),
   );
+
+  let signedIn = false;
+  if (hasClerk()) {
+    try {
+      const session = await auth();
+      signedIn = Boolean(session.userId);
+    } catch {
+      signedIn = false;
+    }
+  } else if (isDemoMode()) {
+    const jar = await cookies();
+    signedIn =
+      jar.get("rq_onboarded")?.value === "1" || Boolean(jar.get("rq_email")?.value);
+  }
+  const canRespond = signedIn && company.claimed;
+  const canAppeal = signedIn;
 
   return (
     <div>
@@ -239,6 +259,20 @@ export async function CompanyProfile({ slug }: { slug: string }) {
                     {r.author}
                     {r.verifiedPurchase ? " · Invoice verified" : ""}
                   </p>
+                  {r.supplierResponse ? (
+                    <p className="mt-3 rounded-md bg-[var(--rq-surface)] px-3 py-2 text-sm text-[var(--rq-slate)]">
+                      <span className="font-medium text-[var(--rq-ink)]">
+                        Supplier response:
+                      </span>{" "}
+                      {r.supplierResponse}
+                    </p>
+                  ) : null}
+                  <ReviewLifecycleActions
+                    reviewId={r.id}
+                    canRespond={canRespond}
+                    canAppeal={canAppeal}
+                    existingResponse={r.supplierResponse}
+                  />
                 </article>
               ))}
               {reviews.length === 0 ? (

@@ -49,6 +49,7 @@ import {
   requestItems,
   requests,
   reviewDocuments,
+  reviewResponses,
   reviews,
   subscriptionPlans,
   subscriptions,
@@ -506,20 +507,30 @@ export async function getCompanyReviewsAsync(slug: string): Promise<DemoReview[]
         .where(eq(reviews.companyId, company.id))
         .orderBy(desc(reviews.createdAt));
       if (rows.length > 0) {
-        return rows
-          .filter((r) => r.status === "approved")
-          .map((r) => ({
-            id: r.id,
-            companyId: r.companyId,
-            companySlug: slug,
-            rating: r.rating,
-            title: r.title,
-            body: r.body,
-            author: "User",
-            verifiedPurchase: r.verifiedPurchase,
-            status: r.status,
-            createdAt: r.createdAt.toISOString().slice(0, 10),
-          }));
+        const approved = rows.filter((r) => r.status === "approved");
+        const responseByReview = new Map<string, string>();
+        for (const review of approved) {
+          const [hit] = await db
+            .select()
+            .from(reviewResponses)
+            .where(eq(reviewResponses.reviewId, review.id))
+            .orderBy(desc(reviewResponses.createdAt))
+            .limit(1);
+          if (hit) responseByReview.set(review.id, hit.body);
+        }
+        return approved.map((r) => ({
+          id: r.id,
+          companyId: r.companyId,
+          companySlug: slug,
+          rating: r.rating,
+          title: r.title,
+          body: r.body,
+          author: "User",
+          verifiedPurchase: r.verifiedPurchase,
+          status: r.status,
+          createdAt: r.createdAt.toISOString().slice(0, 10),
+          supplierResponse: responseByReview.get(r.id),
+        }));
       }
     } catch (error) {
       console.warn("[phase2] Neon reviews failed", error);
@@ -716,6 +727,64 @@ export async function listPendingClaimsAsync(): Promise<DemoClaim[]> {
     }
   }
   return getStore().claims.filter((c) => c.status === "pending");
+}
+
+export async function getProfileByClerkId(clerkUserId: string): Promise<{
+  role: "buyer" | "supplier" | "contractor" | "admin";
+  orgName: string | null;
+  onboardingComplete: boolean;
+  email: string | null;
+  fullName: string | null;
+} | null> {
+  const db = getDb();
+  if (db) {
+    try {
+      const rows = await db
+        .select({
+          role: users.primaryRole,
+          onboardingComplete: users.onboardingComplete,
+          email: users.email,
+          fullName: users.fullName,
+          orgName: organisations.name,
+        })
+        .from(users)
+        .leftJoin(
+          organisationMembers,
+          eq(organisationMembers.userId, users.id),
+        )
+        .leftJoin(
+          organisations,
+          eq(organisations.id, organisationMembers.organisationId),
+        )
+        .where(eq(users.clerkUserId, clerkUserId))
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return {
+        role: row.role,
+        orgName: row.orgName ?? null,
+        onboardingComplete: row.onboardingComplete,
+        email: row.email ?? null,
+        fullName: row.fullName ?? null,
+      };
+    } catch (error) {
+      console.warn("[phase2] Neon getProfileByClerkId failed", error);
+    }
+  }
+
+  const store = getStore();
+  const user = store.users.find((u) => u.clerkUserId === clerkUserId);
+  if (!user) return null;
+  const org = user.orgId
+    ? store.orgs.find((o) => o.id === user.orgId)
+    : undefined;
+  return {
+    role: user.role,
+    orgName: org?.name ?? null,
+    onboardingComplete: user.onboardingComplete,
+    email: user.email,
+    fullName: user.fullName,
+  };
 }
 
 export async function upsertClerkUser(input: {
@@ -2006,6 +2075,233 @@ export async function persistProject(input: {
     ok: true as const,
     id,
     message: `Project “${input.name}” created.`,
+    demo: true,
+  };
+}
+
+export async function updateRequestFields(input: {
+  requestId: string;
+  title: string;
+  description: string;
+  budgetMin: number;
+  budgetMax: number;
+  currency: string;
+  deliveryCountry: string;
+  deliveryCity?: string;
+  deliveryAddress?: string;
+  dueDate?: string;
+  actor?: string;
+}) {
+  const store = getStore();
+  const db = getDb();
+  const dueDateValue = input.dueDate?.trim()
+    ? new Date(`${input.dueDate.trim()}T23:59:59.000Z`)
+    : null;
+
+  if (db) {
+    try {
+      const neonRequest = await getRequestByIdAsync(input.requestId);
+      if (neonRequest) {
+        if (neonRequest.status !== "open") {
+          return {
+            ok: false as const,
+            message: "Only open RFQs can be revised.",
+          };
+        }
+        await db
+          .update(requests)
+          .set({
+            title: input.title,
+            description: input.description,
+            budgetMin: input.budgetMin,
+            budgetMax: input.budgetMax,
+            currency: input.currency,
+            deliveryCountry: input.deliveryCountry,
+            deliveryCity: input.deliveryCity || null,
+            deliveryAddress: input.deliveryAddress || null,
+            dueDate:
+              dueDateValue && !Number.isNaN(dueDateValue.getTime())
+                ? dueDateValue
+                : null,
+            updatedAt: new Date(),
+          })
+          .where(eq(requests.id, neonRequest.id));
+
+        const runtime = store.requests.find(
+          (r) => r.id === neonRequest.id || r.slug === neonRequest.slug,
+        );
+        if (runtime) {
+          runtime.title = input.title;
+          runtime.description = input.description;
+          runtime.budgetMin = input.budgetMin;
+          runtime.budgetMax = input.budgetMax;
+          runtime.currency = input.currency;
+          runtime.deliveryCountry = input.deliveryCountry;
+          runtime.deliveryCity = input.deliveryCity;
+          runtime.deliveryAddress = input.deliveryAddress;
+          runtime.dueDate = input.dueDate;
+        }
+
+        appendAudit("request.revised", "request", input.actor ?? "buyer");
+        return {
+          ok: true as const,
+          id: neonRequest.id,
+          message: "RFQ revised.",
+          demo: false,
+        };
+      }
+    } catch (error) {
+      console.warn("[phase2] Neon request revise failed", error);
+    }
+  }
+
+  const request = store.requests.find(
+    (r) => r.id === input.requestId || r.slug === input.requestId,
+  );
+  if (!request) {
+    return { ok: false as const, message: "RFQ not found." };
+  }
+  if (request.status !== "open") {
+    return { ok: false as const, message: "Only open RFQs can be revised." };
+  }
+  request.title = input.title;
+  request.description = input.description;
+  request.budgetMin = input.budgetMin;
+  request.budgetMax = input.budgetMax;
+  request.currency = input.currency;
+  request.deliveryCountry = input.deliveryCountry;
+  request.deliveryCity = input.deliveryCity;
+  request.deliveryAddress = input.deliveryAddress;
+  request.dueDate = input.dueDate;
+  appendAudit("request.revised", "request", input.actor ?? "buyer");
+  return {
+    ok: true as const,
+    id: request.id,
+    message: "RFQ revised.",
+    demo: true,
+  };
+}
+
+export async function persistReviewResponse(input: {
+  reviewId: string;
+  body: string;
+  actor?: string;
+}) {
+  const store = getStore();
+  const db = getDb();
+
+  if (db && hasDatabase()) {
+    try {
+      const [review] = await db
+        .select()
+        .from(reviews)
+        .where(eq(reviews.id, input.reviewId))
+        .limit(1);
+      if (!review) {
+        return { ok: false as const, message: "Review not found." };
+      }
+      if (review.status !== "approved") {
+        return {
+          ok: false as const,
+          message: "Only approved reviews can receive a supplier response.",
+        };
+      }
+      const author = await upsertClerkUser({
+        clerkUserId: `local-${slugify(input.actor ?? "supplier") || "supplier"}`,
+        email: (input.actor ?? "supplier").includes("@")
+          ? (input.actor as string)
+          : "supplier@example.com",
+        fullName: input.actor ?? "Supplier",
+      });
+      await db.insert(reviewResponses).values({
+        reviewId: review.id,
+        authorUserId: author.id,
+        body: input.body,
+      });
+      appendAudit("review.response", "review", input.actor ?? "supplier");
+      return {
+        ok: true as const,
+        message: "Supplier response published.",
+        demo: false,
+      };
+    } catch (error) {
+      console.warn("[phase2] Neon review response failed", error);
+    }
+  }
+
+  const review = store.reviews.find((r) => r.id === input.reviewId);
+  if (!review) {
+    return { ok: false as const, message: "Review not found." };
+  }
+  if (review.status !== "approved") {
+    return {
+      ok: false as const,
+      message: "Only approved reviews can receive a supplier response.",
+    };
+  }
+  review.supplierResponse = input.body;
+  review.supplierRespondedAt = new Date().toISOString();
+  appendAudit("review.response", "review", input.actor ?? "supplier");
+  return {
+    ok: true as const,
+    message: "Supplier response published.",
+    demo: true,
+  };
+}
+
+export async function persistReviewAppeal(input: {
+  reviewId: string;
+  reason: string;
+  actor?: string;
+}) {
+  const store = getStore();
+  const db = getDb();
+
+  if (db && hasDatabase()) {
+    try {
+      const [review] = await db
+        .select()
+        .from(reviews)
+        .where(eq(reviews.id, input.reviewId))
+        .limit(1);
+      if (!review) {
+        return { ok: false as const, message: "Review not found." };
+      }
+      await db.insert(auditEvents).values({
+        action: "review.appeal",
+        entityType: "review",
+        entityId: review.id,
+        payload: { reason: input.reason, actor: input.actor ?? "user" },
+      });
+      // Re-queue for moderation when an appeal is filed.
+      if (review.status === "approved" || review.status === "rejected") {
+        await db
+          .update(reviews)
+          .set({ status: "pending", updatedAt: new Date() })
+          .where(eq(reviews.id, review.id));
+      }
+      appendAudit("review.appeal", "review", input.actor ?? "user");
+      return {
+        ok: true as const,
+        message: "Appeal submitted for moderation review.",
+        demo: false,
+      };
+    } catch (error) {
+      console.warn("[phase2] Neon review appeal failed", error);
+    }
+  }
+
+  const review = store.reviews.find((r) => r.id === input.reviewId);
+  if (!review) {
+    return { ok: false as const, message: "Review not found." };
+  }
+  review.appealReason = input.reason;
+  review.appealStatus = "pending";
+  review.status = "pending";
+  appendAudit("review.appeal", "review", input.actor ?? "user");
+  return {
+    ok: true as const,
+    message: "Appeal submitted for moderation review.",
     demo: true,
   };
 }

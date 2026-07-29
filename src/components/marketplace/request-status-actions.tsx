@@ -1,31 +1,42 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { closeOrAwardRequest } from "@/lib/actions/marketplace";
 
 export function RequestStatusActions({
   requestId,
   status,
+  canManage,
 }: {
   requestId: string;
   status: string;
+  /** Server-resolved: signed-in buyer/admin (or authenticated demo session). */
+  canManage: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
-  if (status !== "open") return null;
+  if (status !== "open" || !canManage) return null;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Button
         size="sm"
         variant="outline"
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
-            await closeOrAwardRequest({ requestId, status: "closed" });
+            const result = await closeOrAwardRequest({
+              requestId,
+              status: "closed",
+            });
+            if (!result.ok) {
+              setError(result.message);
+              return;
+            }
             router.refresh();
           })
         }
@@ -38,13 +49,21 @@ export function RequestStatusActions({
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
-            await closeOrAwardRequest({ requestId, status: "awarded" });
+            const result = await closeOrAwardRequest({
+              requestId,
+              status: "awarded",
+            });
+            if (!result.ok) {
+              setError(result.message);
+              return;
+            }
             router.refresh();
           })
         }
       >
         Mark awarded
       </Button>
+      {error ? <p className="w-full text-xs text-red-600">{error}</p> : null}
     </div>
   );
 }

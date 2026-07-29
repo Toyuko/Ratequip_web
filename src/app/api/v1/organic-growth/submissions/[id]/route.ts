@@ -41,7 +41,11 @@ export async function PATCH(
   } as Parameters<typeof updateListingSubmission>[0]);
 
   if (!result.ok) {
-    return apiResponse(req, err(result.message, 404));
+    const message =
+      "message" in result && typeof result.message === "string"
+        ? result.message
+        : "Submission not found";
+    return apiResponse(req, err(message, 404));
   }
   return apiResponse(req, ok({ submission: result.submission }));
 }
