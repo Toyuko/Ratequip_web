@@ -20,7 +20,9 @@
     "smoke": "tsx scripts/smoke.ts",
     "smoke:phase2": "tsx scripts/phase2-smoke.ts",
     "smoke:phase2:acceptance": "tsx scripts/phase2-acceptance-counter.ts",
-    "evidence:videos": "node scripts/record-phase2-evidence-videos.mjs",
+    "evidence:videos": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-phase2-evidence-videos.mjs",
+    "evidence:uat": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-uat-walkthrough.mjs",
+    "uat:db": "tsx scripts/uat-db-demo.ts",
     "smoke:v12": "tsx scripts/v12-smoke.ts",
     "test:trust": "tsx scripts/trust-score-check.ts"
   },

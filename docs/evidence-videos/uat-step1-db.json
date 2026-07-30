@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-07-30T00:39:23.093Z",
+  "result": "READY",
+  "results": [
+    {
+      "step": "1a Migrate inventory",
+      "ok": true,
+      "detail": "42 versions applied (latest: 0090_platform_bridge)"
+    },
+    {
+      "step": "1a Schema present",
+      "ok": true,
+      "detail": "276 tables in schema rq"
+    },
+    {
+      "step": "1b Seed verification",
+      "ok": true,
+      "detail": "companies=12986, requests=4, rq.schema_migrations=42"
+    },
+    {
+      "step": "1c Forward change (temp migrate)",
+      "ok": true,
+      "detail": "Created rq.uat_rollback_marker_1785371960513 with 1 row"
+    },
+    {
+      "step": "1d Rollback (drop temp change)",
+      "ok": true,
+      "detail": "Dropped rq.uat_rollback_marker_1785371960513; table no longer exists"
+    },
+    {
+      "step": "1e Production migrations intact",
+      "ok": true,
+      "detail": "schema_migrations still 42 rows"
+    }
+  ]
+}

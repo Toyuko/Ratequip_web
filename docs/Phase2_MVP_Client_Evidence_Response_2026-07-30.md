@@ -124,6 +124,8 @@ Latest result:
 
 ### Evidence videos (20 clips)
 
+Recorded on the **live website** [https://ratequip-web.vercel.app](https://ratequip-web.vercel.app) using real Clerk sign-in (not a local demo).
+
 | Video | What it shows |
 |-------|----------------|
 | `01-signed-out-rfq-controls.mp4` | Signed-out user does **not** see Close RFQ / Mark awarded |

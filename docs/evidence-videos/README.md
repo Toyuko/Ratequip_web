@@ -1,32 +1,47 @@
-# Phase 2 evidence videos
+# Phase 2 evidence videos (LIVE site)
 
-Short screen recordings showing Phase 2 MVP functions working.
-Play the `.mp4` files.
+Recorded against **https://ratequip-web.vercel.app** using real Clerk sign-in (not local demo mode).
+
+## Full UAT walkthrough (Robin’s 10 steps)
 
 | File | What it shows |
 |------|----------------|
-| 01-signed-out-rfq-controls | Signed-out user cannot see Close / Award |
-| 02-add-company-contacts | Add Company past Contacts + unclaimed draft |
-| 03-buyer-dashboard-rfqs | Buyer dashboard RFQ list + open |
-| 04-rfq-validation-and-edit | Bad RFQ rejected + Edit/Revise |
-| 05-billing-reconciliation | Wallet, reconcile, refund |
-| 06-reviews-lifecycle | Company reviews + write review |
-| 07-create-valid-rfq | Valid RFQ created end-to-end |
-| 08-signed-in-rfq-owner-controls | Signed-in owner controls visible |
-| 09-submit-review-with-evidence | Review + proof file submitted |
-| 10-admin-moderation-queue | Admin approve pending items |
-| 11-company-claim-submit | Company claim with evidence |
-| 12-supplier-quote-builder | Supplier leads + quote form |
-| 13-compare-quotes | Quote comparison |
-| 14-pricing-and-checkout | Pricing + checkout path |
-| 15-rfq-marketplace-list | Public RFQ marketplace |
-| 16-supplier-directory-profile | Directory + company profile |
-| 17-auth-signup-entry | Sign-up / sign-in entry |
-| 18-revise-rfq-save | RFQ revision saved |
-| 19-award-or-close-rfq | Award/close by signed-in buyer |
-| 20-onboarding-roles | Onboarding / role selection |
+| **uat-full-walkthrough** | Continuous User Acceptance Test covering all 10 Robin checklist steps (~5 min) |
 
-Generated files:
+See `UAT-README.md`, `uat-step1-db.json`, and `uat-acceptance-counter.txt`.
+
+Reproduce: `npm run evidence:uat`
+
+## Clip catalogue
+
+| File | What it shows |
+|------|----------------|
+| 01-signed-out-rfq-controls | Signed-out Close/Award hidden |
+| 02-add-company-contacts | Add Company Contacts on live site |
+| 03-buyer-dashboard-rfqs | Buyer dashboard |
+| 04-rfq-validation-and-edit | Validation + edit |
+| 05-billing-reconciliation | Billing / credits |
+| 06-reviews-lifecycle | Reviews |
+| 07-create-valid-rfq | Create RFQ |
+| 08-signed-in-rfq-owner-controls | Signed-in owner controls |
+| 09-submit-review-with-evidence | Review + proof |
+| 10-admin-moderation-queue | Admin moderation |
+| 11-company-claim-submit | Company claim |
+| 12-supplier-quote-builder | Supplier quotes |
+| 13-compare-quotes | Compare quotes |
+| 14-pricing-and-checkout | Pricing / checkout |
+| 15-rfq-marketplace-list | RFQ marketplace |
+| 16-supplier-directory-profile | Directory / profile |
+| 17-auth-signup-entry | Sign-up / sign-in |
+| 18-revise-rfq-save | Revise RFQ |
+| 19-award-or-close-rfq | Award / close |
+| 20-onboarding-roles | Onboarding |
+
+Files:
+- uat-full-walkthrough.mp4
+- UAT-README.md
+- uat-step1-db.json
+- uat-acceptance-counter.txt
 - 01-signed-out-rfq-controls.mp4
 - 02-add-company-contacts.mp4
 - 03-buyer-dashboard-rfqs.mp4
