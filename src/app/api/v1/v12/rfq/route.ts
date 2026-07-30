@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { gateApiUser } from "@/lib/api/guards";
 import { ok, err } from "@/lib/api/envelope";
 import { apiResponse, handleOptions } from "@/lib/api/respond";
 import { awardRfq, createRfqRevision } from "@/lib/v12/services";
@@ -9,6 +10,9 @@ export function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const gate = await gateApiUser(req);
+  if (gate.errorResponse) return gate.errorResponse;
+
   const store = getV12Store();
   return apiResponse(
     req,
@@ -20,6 +24,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const gate = await gateApiUser(req);
+  if (gate.errorResponse) return gate.errorResponse;
+
   const body = (await req.json().catch(() => ({}))) as {
     action?: string;
     rfqId?: string;

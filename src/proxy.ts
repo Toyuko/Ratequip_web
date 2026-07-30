@@ -12,12 +12,18 @@ const isProtectedRoute = createRouteMatcher([
   "/quotes(.*)",
   "/reviews/new(.*)",
   "/companies/claim(.*)",
+  "/companies/add(.*)",
   "/requests/new(.*)",
+  "/requests/(.*)/edit(.*)",
+  "/v12(.*)",
 ]);
 
 const clerkHandler = clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
-    await auth.protect();
+    // Prefer sign-in redirect over blank protect-rewrite 404 for guests.
+    await auth.protect({
+      unauthenticatedUrl: new URL("/sign-in", req.url).toString(),
+    });
   }
 });
 

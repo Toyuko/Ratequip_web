@@ -11,6 +11,7 @@ import {
 import { hasClerk, isDemoMode } from "@/lib/config";
 import {
   deleteCompanyMedia,
+  listRequestsAsync,
   persistClaim,
   persistCompanyMedia,
   persistCompanyProfile,
@@ -85,6 +86,9 @@ export async function submitQuote(input: {
   notes: string;
   companySlug?: string;
 }) {
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+
   if (!input.amount || input.amount <= 0) {
     return { ok: false as const, message: "Enter a valid quote amount." };
   }
@@ -108,7 +112,6 @@ export async function submitQuote(input: {
     };
   }
 
-  const actor = await actorFromCookies();
   const jar = await cookies();
   const result = await persistQuote({
     requestId: input.requestId,
@@ -121,7 +124,7 @@ export async function submitQuote(input: {
     notes: input.notes,
     companySlug:
       input.companySlug ?? jar.get("rq_org_slug")?.value ?? "nordicfill-systems",
-    actor,
+    actor: gate.actor,
   });
 
   if (result.ok) {
@@ -199,6 +202,9 @@ export async function createRequest(input: {
   }[];
   attachmentFile?: File | null;
 }) {
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+
   if (!input.title.trim() || !input.description.trim()) {
     return { ok: false as const, message: "Title and description are required." };
   }
@@ -270,7 +276,6 @@ export async function createRequest(input: {
     attachmentMimeType = input.attachmentFile.type || undefined;
   }
 
-  const actor = await actorFromCookies();
   const organisationId = await orgIdFromCookies();
   return persistRequest({
     title: input.title,
@@ -293,7 +298,7 @@ export async function createRequest(input: {
     scopeOfSupply: input.scopeOfSupply,
     technicalRequirements: input.technicalRequirements,
     items,
-    actor,
+    actor: gate.actor,
     organisationId,
     attachmentUrl,
     attachmentName,
@@ -309,11 +314,13 @@ export async function submitReview(input: {
   evidenceName?: string;
   evidenceFile?: File | null;
 }) {
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+
   if (input.rating < 1 || input.rating > 5) {
     return { ok: false as const, message: "Rating must be 1–5." };
   }
 
-  const actor = await actorFromCookies();
   let evidenceUrl: string | undefined;
   let evidenceName = input.evidenceName;
   if (input.evidenceFile && input.evidenceFile.size > 0) {
@@ -330,7 +337,7 @@ export async function submitReview(input: {
     rating: input.rating,
     title: input.title,
     body: input.body,
-    author: actor,
+    author: gate.actor,
     evidenceName,
     evidenceUrl,
   });
@@ -342,7 +349,9 @@ export async function submitClaim(input: {
   evidenceName?: string;
   evidenceFile?: File | null;
 }) {
-  const actor = await actorFromCookies();
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+
   let evidenceUrl: string | undefined;
   if (input.evidenceFile && input.evidenceFile.size > 0) {
     const uploaded = await uploadEvidence(
@@ -357,7 +366,7 @@ export async function submitClaim(input: {
   return persistClaim({
     companySlug: input.companySlug,
     notes: input.notes,
-    claimant: actor,
+    claimant: gate.actor,
     evidenceUrl,
   });
 }
@@ -366,12 +375,14 @@ export async function createProject(input: {
   name: string;
   summary: string;
 }) {
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+
   if (!input.name.trim()) {
     return { ok: false as const, message: "Project name is required." };
   }
-  const actor = await actorFromCookies();
   const organisationId = await orgIdFromCookies();
-  return persistProject({ ...input, actor, organisationId });
+  return persistProject({ ...input, actor: gate.actor, organisationId });
 }
 
 export async function closeOrAwardRequest(input: {
@@ -380,6 +391,25 @@ export async function closeOrAwardRequest(input: {
 }) {
   const gate = await requireMutationActor();
   if (!gate.ok) return { ok: false as const, message: gate.message };
+
+  const organisationId = await orgIdFromCookies();
+  const listed = await listRequestsAsync();
+  const target = listed.find((r) => r.id === input.requestId);
+  if (!target) {
+    return { ok: false as const, message: "RFQ not found." };
+  }
+  // When org cookie is present, only the owning org may close/award.
+  if (
+    organisationId &&
+    target.organisationId &&
+    target.organisationId !== organisationId
+  ) {
+    return {
+      ok: false as const,
+      message: "You can only manage RFQs for your organisation.",
+    };
+  }
+
   return updateRequestStatus({
     requestId: input.requestId,
     status: input.status,
@@ -481,11 +511,13 @@ export async function updateCompanyProfile(input: {
   city: string;
   country: string;
 }) {
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+
   if (!input.name.trim()) {
     return { ok: false as const, message: "Company name is required." };
   }
-  const actor = await actorFromCookies();
-  return persistCompanyProfile({ ...input, actor });
+  return persistCompanyProfile({ ...input, actor: gate.actor });
 }
 
 const ACCOUNT_MEDIA_MAX_BYTES: Record<AccountMediaKind, number> = {
@@ -515,6 +547,9 @@ export async function uploadCompanyMedia(input: {
   file: File | null;
   title?: string;
 }) {
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+
   if (!input.file || input.file.size <= 0) {
     return { ok: false as const, message: "Choose a file to upload." };
   }
@@ -546,7 +581,6 @@ export async function uploadCompanyMedia(input: {
     access: "public",
   });
 
-  const actor = await actorFromCookies();
   const organisationId = await orgIdFromCookies();
   return persistCompanyMedia({
     companySlug: input.companySlug,
@@ -557,7 +591,7 @@ export async function uploadCompanyMedia(input: {
     byteSize: input.file.size,
     title: input.title,
     organisationId,
-    actor,
+    actor: gate.actor,
   });
 }
 
@@ -565,8 +599,10 @@ export async function removeCompanyMedia(input: {
   mediaId: string;
   companySlug: string;
 }) {
-  const actor = await actorFromCookies();
-  const result = await deleteCompanyMedia({ ...input, actor });
+  const gate = await requireMutationActor();
+  if (!gate.ok) return { ok: false as const, message: gate.message };
+
+  const result = await deleteCompanyMedia({ ...input, actor: gate.actor });
   if (result.ok) {
     await deleteBlobUrl(result.blobUrl);
   }

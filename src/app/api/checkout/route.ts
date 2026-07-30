@@ -1,14 +1,47 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import {
   billingAudiencePath,
   getCreditPackByCode,
   getPlanByCode,
 } from "@/lib/billing/catalog";
 import { purchaseCreditPack } from "@/lib/billing/operations";
+import { hasClerk, isDemoMode } from "@/lib/config";
 import { creditPackPriceEnvMap, getStripe, planPriceEnvMap } from "@/lib/stripe";
 
+async function requireBillingSession() {
+  if (hasClerk()) {
+    try {
+      const session = await auth();
+      if (!session.userId) {
+        return { ok: false as const, message: "Sign in required." };
+      }
+      return { ok: true as const };
+    } catch {
+      return { ok: false as const, message: "Sign in required." };
+    }
+  }
+  if (!isDemoMode()) {
+    return { ok: false as const, message: "Sign in required." };
+  }
+  const jar = await cookies();
+  if (jar.get("rq_onboarded")?.value !== "1" && !jar.get("rq_email")?.value) {
+    return { ok: false as const, message: "Sign in or complete demo onboarding first." };
+  }
+  return { ok: true as const };
+}
+
 export async function GET(req: NextRequest) {
+  const gate = await requireBillingSession();
+  if (!gate.ok) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    return NextResponse.redirect(
+      new URL(`/sign-in?redirect_url=${encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)}`, appUrl),
+      303,
+    );
+  }
+
   const packCode = req.nextUrl.searchParams.get("pack");
   const planCode = req.nextUrl.searchParams.get("plan") ?? "buyer-premium";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -43,6 +76,13 @@ export async function GET(req: NextRequest) {
 
   const stripe = getStripe();
   if (!stripe) {
+    // Demo grants only when explicit demo mode — never mint in production.
+    if (!isDemoMode()) {
+      return NextResponse.json(
+        { error: "Stripe is not configured. Checkout unavailable." },
+        { status: 503 },
+      );
+    }
     const { persistSubscription } = await import("@/lib/db/phase2");
     await persistSubscription({
       planCode: plan.code,
@@ -107,6 +147,12 @@ async function checkoutCreditPack(
 
   const stripe = getStripe();
   if (!stripe) {
+    if (!isDemoMode()) {
+      return NextResponse.json(
+        { error: "Stripe is not configured. Checkout unavailable." },
+        { status: 503 },
+      );
+    }
     await purchaseCreditPack({ packCode: pack.code, orgId });
     return NextResponse.redirect(
       new URL(

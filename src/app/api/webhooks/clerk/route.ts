@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "svix";
+import { isDemoMode } from "@/lib/config";
 import { upsertClerkUser } from "@/lib/db/phase2";
 
 type ClerkWebhookEvent = {
@@ -17,6 +18,12 @@ type ClerkWebhookEvent = {
 export async function POST(req: NextRequest) {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
+    if (process.env.VERCEL_ENV === "production" || !isDemoMode()) {
+      return NextResponse.json(
+        { error: "Clerk webhook secret not configured" },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({
       ok: true,
       demo: true,

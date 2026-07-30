@@ -17,12 +17,24 @@ export function hasClerkPublishableKey() {
   return Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }
 
+/**
+ * Demo / dual-path mode.
+ * - Vercel production: only when DEMO_MODE=true (never auto-enable on missing env).
+ * - Local / preview: DEMO_MODE=true, or missing DATABASE_URL / Clerk publishable key (DX).
+ */
 export function isDemoMode() {
+  const explicit = process.env.DEMO_MODE === "true";
+  if (process.env.VERCEL_ENV === "production") {
+    return explicit;
+  }
   return (
-    process.env.DEMO_MODE === "true" ||
-    !process.env.DATABASE_URL ||
-    !hasClerkPublishableKey()
+    explicit || !process.env.DATABASE_URL || !hasClerkPublishableKey()
   );
+}
+
+/** Prefer Neon; allow in-memory runtime store only while demo mode is active. */
+export function mayUseRuntimeStore() {
+  return isDemoMode();
 }
 
 export function hasClerk() {

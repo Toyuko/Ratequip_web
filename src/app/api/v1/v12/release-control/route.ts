@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { gateAdmin, gateApiUser } from "@/lib/api/guards";
 import { ok, err } from "@/lib/api/envelope";
 import { apiResponse, handleOptions } from "@/lib/api/respond";
 import {
@@ -13,6 +14,9 @@ export function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const gate = await gateApiUser(req);
+  if (gate.errorResponse) return gate.errorResponse;
+
   return apiResponse(req, ok(listReleaseControl()));
 }
 
@@ -24,6 +28,12 @@ export async function POST(req: NextRequest) {
     cohortKey?: string;
     killSwitch?: boolean;
   };
+
+  const gate =
+    body.action === "kill_switch"
+      ? await gateAdmin(req)
+      : await gateApiUser(req);
+  if (gate.errorResponse) return gate.errorResponse;
 
   if (body.action === "preview") {
     return apiResponse(req, ok(previewUrsAnalysisUsage()));

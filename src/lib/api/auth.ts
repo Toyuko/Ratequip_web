@@ -76,10 +76,12 @@ function resolveTrustedRole(input: {
 }
 
 async function demoUserFromRequest(req: NextRequest): Promise<ApiUser> {
-  const headerRole = parseRole(req.headers.get("x-demo-role"));
+  // Headers cannot elevate to platform admin (CORS advertises X-Demo-Role).
+  // Cookies may still select admin for local demo UI moderation testing.
+  const headerRole = parseProductRole(req.headers.get("x-demo-role"));
   const jar = await cookies();
   const cookieRole = parseRole(jar.get("rq_role")?.value);
-  const role = headerRole ?? cookieRole ?? "buyer";
+  const role = cookieRole === "admin" ? "admin" : (headerRole ?? cookieRole ?? "buyer");
   const orgName =
     req.headers.get("x-demo-org") ?? jar.get("rq_org")?.value ?? "Demo Org";
   const onboarded =

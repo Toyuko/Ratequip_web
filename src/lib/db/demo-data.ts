@@ -125,6 +125,7 @@ export type DemoRequest = {
   status: "open" | "closed" | "awarded";
   quoteCount: number;
   createdAt: string;
+  organisationId?: string;
   items: DemoRequestItem[];
   attachmentUrl?: string;
   attachmentName?: string;

@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
-import { hasDatabase } from "@/lib/config";
+import { hasDatabase, mayUseRuntimeStore } from "@/lib/config";
 import { calculateTrustScore } from "@/lib/trust-score";
 import { slugify } from "@/lib/utils";
 import { RFQ_CREDIT_COST, getPlanByCode } from "@/lib/billing/catalog";
@@ -56,6 +56,13 @@ import {
   trustScores,
   users,
 } from "./schema";
+
+
+function runtimeWriteBlocked(context: string, error?: unknown) {
+  if (error) console.warn(context, error);
+  else console.warn(context);
+  return !mayUseRuntimeStore();
+}
 
 export type RequestItemInput = {
   productName: string;
@@ -596,6 +603,7 @@ export async function listRequestsAsync(): Promise<DemoRequest[]> {
           status: r.status as DemoRequest["status"],
           quoteCount: countByRequest.get(r.id) ?? 0,
           createdAt: r.createdAt.toISOString().slice(0, 10),
+          organisationId: r.organisationId ?? undefined,
           items: itemsByRequest.get(r.id) ?? [],
           attachmentUrl: r.attachmentUrl ?? undefined,
           attachmentName: r.attachmentName ?? undefined,
@@ -859,6 +867,10 @@ export async function persistOnboarding(input: {
   phone: string;
   address: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistOnboarding: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const orgSlug = slugify(input.orgName);
   const db = getDb();
 
@@ -956,6 +968,10 @@ export async function persistCompanyProfile(input: {
   country: string;
   actor?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistCompanyProfile: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const company = await getCompanyBySlugAsync(input.companySlug);
   if (!company) {
     return { ok: false as const, message: "Company not found." };
@@ -1039,6 +1055,10 @@ export async function persistCompanyMedia(input: {
   organisationId?: string;
   actor?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistCompanyMedia: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const company = await getCompanyBySlugAsync(input.companySlug);
   if (!company) {
     return { ok: false as const, message: "Company not found." };
@@ -1190,6 +1210,10 @@ export async function persistClaim(input: {
   claimant: string;
   evidenceUrl?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistClaim: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const company = await getCompanyBySlugAsync(input.companySlug);
   if (!company) {
     return { ok: false as const, message: "Company not found." };
@@ -1254,6 +1278,10 @@ export async function persistReview(input: {
   evidenceName?: string;
   evidenceUrl?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistReview: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const company = await getCompanyBySlugAsync(input.companySlug);
   if (!company) {
     return { ok: false as const, message: "Company not found." };
@@ -1456,6 +1484,10 @@ export async function persistModeration(input: {
   decision: "approved" | "rejected";
   actor?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistModeration: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const store = getStore();
   const actor = input.actor ?? "admin";
   const db = getDb();
@@ -1622,6 +1654,10 @@ export async function persistRequest(input: {
   attachmentName?: string;
   attachmentMimeType?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistRequest: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const slug = `${slugify(input.title)}-${Date.now().toString(36)}`;
   const currency = input.currency.trim().toUpperCase() || "USD";
   const quoteValidityDays = Math.max(1, Math.round(input.quoteValidityDays) || 30);
@@ -1881,6 +1917,10 @@ export async function persistQuote(input: {
   companyName?: string;
   actor?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistQuote: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const meetsRequirements = input.meetsRequirements !== false;
   const deviations = input.deviations?.trim() || undefined;
   if (!meetsRequirements && !deviations) {
@@ -2015,6 +2055,10 @@ export async function persistProject(input: {
   actor?: string;
   organisationId?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistProject: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const slug = `${slugify(input.name)}-${Date.now().toString(36)}`;
   const db = getDb();
 
@@ -2094,6 +2138,10 @@ export async function updateRequestFields(input: {
   dueDate?: string;
   actor?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("updateRequestFields: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const store = getStore();
   const db = getDb();
   const dueDateValue = input.dueDate?.trim()
@@ -2189,6 +2237,10 @@ export async function persistReviewResponse(input: {
   body: string;
   actor?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistReviewResponse: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const store = getStore();
   const db = getDb();
 
@@ -2256,6 +2308,10 @@ export async function persistReviewAppeal(input: {
   reason: string;
   actor?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistReviewAppeal: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const store = getStore();
   const db = getDb();
 
@@ -2313,6 +2369,10 @@ export async function updateRequestStatus(input: {
   status: "open" | "closed" | "awarded";
   actor?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("updateRequestStatus: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const store = getStore();
   const db = getDb();
 
@@ -2387,6 +2447,10 @@ export async function persistSubscription(input: {
   status: string;
   orgId?: string;
 }) {
+  if (!getDb() && runtimeWriteBlocked("persistSubscription: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
   const catalog = getPlanByCode(input.planCode);
   const monthlyCredits = catalog?.monthlyCredits ?? 0;
   const status = normalizeSubscriptionStatus(input.status);

@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { gateApiUser } from "@/lib/api/guards";
 import { ok, err } from "@/lib/api/envelope";
 import { apiResponse, handleOptions } from "@/lib/api/respond";
 import {
@@ -12,6 +13,9 @@ export function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const gate = await gateApiUser(req);
+  if (gate.errorResponse) return gate.errorResponse;
+
   return apiResponse(
     req,
     ok({ requisitions: getV12Store().requisitions }),
@@ -19,6 +23,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const gate = await gateApiUser(req);
+  if (gate.errorResponse) return gate.errorResponse;
+
   const body = (await req.json().catch(() => ({}))) as {
     action?: string;
     title?: string;

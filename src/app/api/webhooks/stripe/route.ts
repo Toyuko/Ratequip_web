@@ -3,6 +3,7 @@ import {
   grantSubscriptionRenewalCredits,
   purchaseCreditPack,
 } from "@/lib/billing/operations";
+import { isDemoMode } from "@/lib/config";
 import { persistSubscription } from "@/lib/db/phase2";
 import { getStripe } from "@/lib/stripe";
 
@@ -11,6 +12,12 @@ export async function POST(req: NextRequest) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!stripe || !secret) {
+    if (process.env.VERCEL_ENV === "production" || !isDemoMode()) {
+      return NextResponse.json(
+        { error: "Stripe webhook not configured" },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({
       ok: true,
       demo: true,

@@ -1,7 +1,13 @@
 import { createHash, createHmac, randomBytes } from "crypto";
 
-const DEMO_HMAC_SECRET =
-  process.env.OG_EMAIL_HMAC_SECRET ?? "ratequip-demo-og-hmac-v10.1";
+function hmacSecret() {
+  const configured = process.env.OG_EMAIL_HMAC_SECRET?.trim();
+  if (configured) return configured;
+  if (process.env.VERCEL_ENV === "production") {
+    throw new Error("OG_EMAIL_HMAC_SECRET is required in production");
+  }
+  return "ratequip-demo-og-hmac-v10.1";
+}
 
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -16,7 +22,7 @@ export function maskEmail(email: string) {
 }
 
 export function emailNormalizedHash(email: string) {
-  return createHmac("sha256", DEMO_HMAC_SECRET)
+  return createHmac("sha256", hmacSecret())
     .update(normalizeEmail(email))
     .digest("hex");
 }

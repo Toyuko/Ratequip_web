@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import {
+  allowAiRequest,
+  clientIp,
+  requireAssistAuth,
+} from "@/lib/ai/assist-guard";
 import { draftRfqFromPrompt } from "@/lib/ai/rfq-draft";
 
 const bodySchema = z.object({
@@ -7,6 +12,19 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  if (!(await requireAssistAuth(req))) {
+    return NextResponse.json(
+      { ok: false, message: "Authentication required" },
+      { status: 401 },
+    );
+  }
+  if (!allowAiRequest(`rfq-assist:${clientIp(req)}`)) {
+    return NextResponse.json(
+      { ok: false, message: "Rate limit exceeded. Try again shortly." },
+      { status: 429 },
+    );
+  }
+
   const json = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {

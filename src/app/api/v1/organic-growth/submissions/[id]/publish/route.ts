@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { publishListingSubmission } from "@/lib/actions/organic-growth";
+import { gateApiUser } from "@/lib/api/guards";
 import { ok, err } from "@/lib/api/envelope";
 import { apiResponse, handleOptions } from "@/lib/api/respond";
 import type { ListingSubmissionDraft } from "@/lib/organic-growth/types";
@@ -12,6 +13,9 @@ export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
+  const gate = await gateApiUser(req);
+  if (gate.errorResponse) return gate.errorResponse;
+
   const { id } = await ctx.params;
   const body = (await req.json().catch(() => null)) as {
     declarationsAccepted?: boolean;
