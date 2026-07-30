@@ -49,9 +49,10 @@ export default async function JoinReferralPage({
   params: Promise<{ code: string }>;
   searchParams: Promise<{ kind?: string }>;
 }) {
-  const { code } = await params;
+  const { code: rawCode } = await params;
   const sp = await searchParams;
-  const result = await resolveReferralCode(code);
+  // Path params are decoded once by Next; keep raw for signed tokens (case-sensitive).
+  const result = await resolveReferralCode(rawCode);
 
   if (!result.ok) {
     return (
@@ -113,9 +114,10 @@ export default async function JoinReferralPage({
       </div>
 
       <p className="mt-6 text-xs text-[var(--rq-muted)]">
-        Referral code <code>{invite.code}</code>. After you join, complete the
-        AI company questionnaire so RateQuip can suggest relevant suppliers and
-        partners.
+        Valid invite
+        {invite.emailMasked ? ` for ${invite.emailMasked}` : ""}. After you
+        join, complete the AI company questionnaire so RateQuip can suggest
+        relevant suppliers and partners.
       </p>
     </div>
   );

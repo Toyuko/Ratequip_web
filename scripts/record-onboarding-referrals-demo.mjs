@@ -294,7 +294,7 @@ async function main() {
     await sleep(1800);
 
     await page.getByRole("button", { name: /Refer a company/i }).click();
-    await sleep(800);
+    await sleep(1000);
     await page.locator("#ref-email").fill("partner@example.com");
     await page.locator("#ref-name").fill("Partner Contact");
     await page.locator("#ref-company").fill("Harbor Heavy Freight");
@@ -304,56 +304,63 @@ async function main() {
     await sleep(1000);
     await caption(page, "Sending email invite…");
     await page.getByRole("button", { name: /Send email invite/i }).click();
-    await sleep(2200);
+    await page
+      .getByText(/Invite sent to/i)
+      .waitFor({ timeout: 20_000 })
+      .catch(() => {});
+    await sleep(1200);
     await caption(page, "Email invite queued (Resend or demo-email)", true);
-    await sleep(1500);
-
-    await page.getByRole("button", { name: /Refer a contractor/i }).click();
-    await sleep(900);
-    await caption(page, "Share to join — LinkedIn, WhatsApp, X, Facebook, copy link");
     await sleep(1200);
 
+    // Capture the signed join URL from this invite BEFORE switching kinds.
     const joinUrlEl = page.locator("p.break-all").first();
-    let joinUrl = "";
-    if (await joinUrlEl.isVisible().catch(() => false)) {
-      joinUrl = (await joinUrlEl.textContent())?.trim() || "";
+    await joinUrlEl.waitFor({ state: "visible", timeout: 15_000 });
+    let joinUrl = (await joinUrlEl.textContent())?.trim() || "";
+    if (!joinUrl.includes("/join/")) {
+      throw new Error(`Expected join URL after email invite, got: ${joinUrl}`);
     }
-    await page.getByRole("button", { name: /Copy link/i }).click();
+
+    await caption(page, "Share to join — LinkedIn, WhatsApp, X, Facebook, copy link");
     await sleep(1000);
+    await page.getByRole("button", { name: /Copy link/i }).click();
+    await sleep(900);
     // Highlight social share buttons without opening an external popup (keeps one video track).
     await page.getByRole("button", { name: /^LinkedIn$/i }).hover();
-    await sleep(700);
+    await sleep(600);
     await page.getByRole("button", { name: /WhatsApp/i }).hover();
-    await sleep(700);
+    await sleep(600);
     await page.getByRole("button", { name: /X \/ Twitter/i }).hover();
-    await sleep(700);
+    await sleep(600);
     await page.getByRole("button", { name: /^Facebook$/i }).hover();
     await sleep(900);
 
-    if (joinUrl && joinUrl.includes("/join/")) {
-      await page.goto(joinUrl, { waitUntil: "networkidle" });
-    } else {
-      // Fallback: create share via UI refresh then scrape again
-      await page.goto(`${BASE}/referrals`, { waitUntil: "networkidle" });
-      await sleep(1000);
-      await page.getByRole("button", { name: /Invite to RateQuip/i }).click();
-      await sleep(800);
-      const urlText = (await page.locator("p.break-all").first().textContent())?.trim();
-      if (urlText?.includes("/join/")) {
-        await page.goto(urlText, { waitUntil: "networkidle" });
-      } else {
-        await page.goto(`${BASE}/join/demo-preview`, {
-          waitUntil: "networkidle",
-        });
-      }
+    await caption(page, "Opening the recipient join landing from the invite link…");
+    await page.goto(joinUrl, { waitUntil: "networkidle", timeout: 60_000 });
+    await sleep(1500);
+
+    const notFound = page.getByRole("heading", { name: /Invite not found/i });
+    if (await notFound.isVisible().catch(() => false)) {
+      throw new Error(`Join landing still shows Invite not found for ${joinUrl}`);
     }
-    await sleep(1200);
+
+    await page
+      .getByRole("heading", { name: /Claim Harbor Heavy Freight|Join me on RateQuip|Add your company/i })
+      .first()
+      .waitFor({ timeout: 15_000 });
     await caption(
       page,
-      "Join landing — recipient accepts invite and continues to sign-up / onboarding",
+      "Join landing — valid invite; recipient can claim / sign up",
       true,
     );
     await sleep(2800);
+
+    // Also show contractor referral type briefly on the hub.
+    await page.goto(`${BASE}/referrals`, { waitUntil: "networkidle" });
+    await sleep(900);
+    await page.getByRole("button", { name: /Refer a contractor/i }).click();
+    await sleep(1200);
+    await caption(page, "Contractor referral type also available", true);
+    await sleep(1600);
 
     // Dashboard entry points
     await page.goto(`${BASE}/dashboard/buyer`, { waitUntil: "networkidle" });

@@ -59,13 +59,16 @@ export function referralCopy(kind: ReferralKind, opts?: {
 
 export function buildShareBundle(input: {
   code: string;
+  /** Prefer signed token so /join works across serverless instances. */
+  token?: string;
   kind: ReferralKind;
   inviterName?: string;
   inviterOrg?: string;
   companyName?: string;
   personalNote?: string;
 }): ReferralShareBundle {
-  const joinUrl = buildJoinUrl(input.code, input.kind);
+  const joinKey = input.token || input.code;
+  const joinUrl = buildJoinUrl(joinKey, input.kind);
   const signUpUrl = buildSignUpUrl(input.code);
   const copy = referralCopy(input.kind, input);
   const note = input.personalNote?.trim()
@@ -76,6 +79,7 @@ export function buildShareBundle(input: {
 
   return {
     code: input.code,
+    token: input.token,
     joinUrl,
     signUpUrl,
     title: copy.title,

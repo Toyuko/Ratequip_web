@@ -30,7 +30,10 @@ export type ReferralInviteStatus =
 
 export type ReferralInvite = {
   id: string;
+  /** Short display code; join URLs use `token` when present. */
   code: string;
+  /** Signed self-contained token for /join across serverless instances. */
+  token: string;
   kind: ReferralKind;
   status: ReferralInviteStatus;
   emailMasked?: string;
@@ -46,6 +49,7 @@ export type ReferralInvite = {
 
 export type ReferralShareBundle = {
   code: string;
+  token?: string;
   joinUrl: string;
   signUpUrl: string;
   title: string;

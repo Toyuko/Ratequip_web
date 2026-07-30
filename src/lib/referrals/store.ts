@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import { maskEmail, normalizeEmail } from "@/lib/organic-growth/privacy";
+import { mintInviteToken, verifyInviteToken } from "./token";
 import type {
   ReferralChannel,
   ReferralInvite,
@@ -37,6 +38,11 @@ function newId() {
   return `ref-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function withToken(invite: StoredInvite): StoredInvite {
+  const token = mintInviteToken(invite);
+  return { ...invite, token, code: invite.code || token.slice(0, 10) };
+}
+
 export function createShareCode(input: {
   kind: ReferralKind;
   inviterName?: string;
@@ -45,10 +51,10 @@ export function createShareCode(input: {
   channel?: ReferralChannel;
 }): ReferralInvite {
   const now = new Date().toISOString();
-  const code = newCode();
-  const invite: StoredInvite = {
+  const draft: StoredInvite = {
     id: newId(),
-    code,
+    code: newCode(),
+    token: "",
     kind: input.kind,
     status: "queued",
     inviterName: input.inviterName,
@@ -58,8 +64,10 @@ export function createShareCode(input: {
     createdAt: now,
     updatedAt: now,
   };
+  const invite = withToken(draft);
   invites().set(invite.id, invite);
-  codes().set(code, invite.id);
+  codes().set(invite.code, invite.id);
+  codes().set(invite.token, invite.id);
   return publicInvite(invite);
 }
 
@@ -74,10 +82,10 @@ export function createEmailInvite(input: {
 }): StoredInvite {
   const now = new Date().toISOString();
   const email = normalizeEmail(input.email);
-  const code = newCode();
-  const invite: StoredInvite = {
+  const draft: StoredInvite = {
     id: newId(),
-    code,
+    code: newCode(),
+    token: "",
     kind: input.kind,
     status: "queued",
     email,
@@ -91,8 +99,10 @@ export function createEmailInvite(input: {
     createdAt: now,
     updatedAt: now,
   };
+  const invite = withToken(draft);
   invites().set(invite.id, invite);
-  codes().set(code, invite.id);
+  codes().set(invite.code, invite.id);
+  codes().set(invite.token, invite.id);
   return invite;
 }
 
@@ -101,15 +111,36 @@ export function markInviteSent(id: string) {
   if (!invite) return null;
   invite.status = "sent";
   invite.updatedAt = new Date().toISOString();
-  invites().set(id, invite);
-  return publicInvite(invite);
+  const refreshed = withToken(invite);
+  invites().set(id, refreshed);
+  codes().set(refreshed.token, id);
+  return publicInvite(refreshed);
 }
 
 export function getInviteByCode(code: string) {
-  const id = codes().get(code);
-  if (!id) return null;
-  const invite = invites().get(id);
-  return invite ? publicInvite(invite) : null;
+  const raw = code.trim();
+  if (!raw) return null;
+
+  const id = codes().get(raw) ?? codes().get(raw.toLowerCase());
+  if (id) {
+    const invite = invites().get(id);
+    if (invite) return publicInvite(invite);
+  }
+
+  // Self-contained signed token — works when memory store is cold on another instance.
+  const fromToken = verifyInviteToken(raw);
+  if (fromToken) {
+    // Hydrate local store so subsequent channel tracking can update status.
+    if (!invites().has(fromToken.id)) {
+      const stored: StoredInvite = { ...fromToken };
+      invites().set(fromToken.id, stored);
+      codes().set(fromToken.code, fromToken.id);
+      codes().set(fromToken.token, fromToken.id);
+    }
+    return fromToken;
+  }
+
+  return null;
 }
 
 export function listRecentInvites(limit = 20): ReferralInvite[] {
@@ -123,14 +154,27 @@ export function recordChannelOpen(code: string, channel: ReferralChannel) {
   const invite = getInviteByCode(code);
   if (!invite) return null;
   const stored = invites().get(invite.id);
-  if (!stored) return null;
+  if (!stored) {
+    // Token-only invite that wasn't hydrated — still acknowledge open.
+    return {
+      ...invite,
+      channel,
+      status:
+        invite.status === "queued" || invite.status === "sent"
+          ? ("opened" as const)
+          : invite.status,
+      updatedAt: new Date().toISOString(),
+    };
+  }
   stored.channel = channel;
   if (stored.status === "queued" || stored.status === "sent") {
     stored.status = "opened";
   }
   stored.updatedAt = new Date().toISOString();
-  invites().set(stored.id, stored);
-  return publicInvite(stored);
+  const refreshed = withToken(stored);
+  invites().set(stored.id, refreshed);
+  codes().set(refreshed.token, stored.id);
+  return publicInvite(refreshed);
 }
 
 function publicInvite(invite: StoredInvite): ReferralInvite {

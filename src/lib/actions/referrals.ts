@@ -62,6 +62,7 @@ export async function getOrCreateShareLink(input: {
 
   const share = buildShareBundle({
     code: invite.code,
+    token: invite.token,
     kind: input.kind,
     inviterName: ctx.inviterName,
     inviterOrg: ctx.inviterOrg,
@@ -106,8 +107,15 @@ export async function sendReferralInvite(input: {
     inviterOrg: ctx.inviterOrg,
     companyName: input.companyName,
   });
+  const sent = markInviteSent(invite.id) ?? {
+    ...invite,
+    status: "sent" as const,
+    updatedAt: new Date().toISOString(),
+  };
+
   const share = buildShareBundle({
-    code: invite.code,
+    code: sent.code,
+    token: sent.token,
     kind: input.kind,
     inviterName: ctx.inviterName,
     inviterOrg: ctx.inviterOrg,
@@ -134,25 +142,9 @@ export async function sendReferralInvite(input: {
     html: rendered.html,
   });
 
-  const sent = markInviteSent(invite.id);
-
   return {
     ok: true as const,
-    invite: sent ?? {
-      id: invite.id,
-      code: invite.code,
-      kind: invite.kind,
-      status: "sent" as const,
-      emailMasked: invite.emailMasked,
-      recipientName: invite.recipientName,
-      companyName: invite.companyName,
-      personalNote: invite.personalNote,
-      inviterName: invite.inviterName,
-      inviterOrg: invite.inviterOrg,
-      channel: invite.channel,
-      createdAt: invite.createdAt,
-      updatedAt: new Date().toISOString(),
-    },
+    invite: sent,
     share,
     message: `Invite sent to ${invite.emailMasked}.`,
   };
@@ -163,7 +155,11 @@ export async function listReferralInvites() {
 }
 
 export async function resolveReferralCode(code: string) {
-  const invite = getInviteByCode(code.trim().toLowerCase()) ?? getInviteByCode(code.trim());
+  // Tokens are case-sensitive (base64url); short codes are hex (case-insensitive).
+  const raw = decodeURIComponent(code.trim());
+  const invite =
+    getInviteByCode(raw) ??
+    (!raw.includes(".") ? getInviteByCode(raw.toLowerCase()) : null);
   if (!invite) {
     return { ok: false as const, message: "Invite not found or expired." };
   }

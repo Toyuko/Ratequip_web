@@ -128,8 +128,13 @@ export function ShareInvitePanel({
     });
   }
 
+  function trackingCode() {
+    return share?.token || share?.code || "";
+  }
+
   async function openShare(channel: "linkedin" | "x" | "whatsapp" | "facebook" | "native_share" | "copy_link" | "email") {
     if (!share) return;
+    const trackCode = trackingCode();
 
     if (channel === "copy_link") {
       try {
@@ -140,7 +145,9 @@ export function ShareInvitePanel({
       } catch {
         setMessage(share.joinUrl);
       }
-      await trackReferralShare({ code: share.code, channel: "copy_link" });
+      if (trackCode) {
+        await trackReferralShare({ code: trackCode, channel: "copy_link" });
+      }
       return;
     }
 
@@ -151,7 +158,9 @@ export function ShareInvitePanel({
           text: share.text,
           url: share.joinUrl,
         });
-        await trackReferralShare({ code: share.code, channel: "native_share" });
+        if (trackCode) {
+          await trackReferralShare({ code: trackCode, channel: "native_share" });
+        }
       } catch {
         /* user cancelled */
       }
@@ -169,10 +178,12 @@ export function ShareInvitePanel({
               ? share.facebookUrl
               : share.mailtoUrl;
 
-    await trackReferralShare({
-      code: share.code,
-      channel: channel === "email" ? "email" : channel,
-    });
+    if (trackCode) {
+      await trackReferralShare({
+        code: trackCode,
+        channel: channel === "email" ? "email" : channel,
+      });
+    }
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
