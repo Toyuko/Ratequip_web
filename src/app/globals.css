@@ -39,6 +39,10 @@
   --color-surface: var(--rq-surface);
   --color-brand: var(--rq-navy);
   --color-orange: var(--rq-orange);
+  /* Thai / SC: system stacks — next/font Google fetch for Noto SC/Thai is brittle offline/CI. */
+  --font-thai: "Noto Sans Thai", "Thonburi", "Leelawadee UI", sans-serif;
+  --font-chinese: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", sans-serif;
   --font-sans: var(--font-montserrat), var(--font-thai), var(--font-chinese);
   --font-display: var(--font-montserrat), var(--font-thai), var(--font-chinese);
 }

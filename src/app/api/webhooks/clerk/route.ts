@@ -16,7 +16,10 @@ type ClerkWebhookEvent = {
 };
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.CLERK_WEBHOOK_SECRET;
+  // Clerk docs use CLERK_WEBHOOK_SIGNING_SECRET; keep CLERK_WEBHOOK_SECRET for compatibility.
+  const secret =
+    process.env.CLERK_WEBHOOK_SIGNING_SECRET ??
+    process.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
     if (process.env.VERCEL_ENV === "production" || !isDemoMode()) {
       return NextResponse.json(
