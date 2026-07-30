@@ -1,43 +1,28 @@
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import {
   billingAudiencePath,
   getCreditPackByCode,
   getPlanByCode,
 } from "@/lib/billing/catalog";
+import { resolveBillingSession } from "@/lib/billing/session";
 import { purchaseCreditPack } from "@/lib/billing/operations";
-import { hasClerk, isDemoMode } from "@/lib/config";
+import { isDemoMode } from "@/lib/config";
 import { creditPackPriceEnvMap, getStripe, planPriceEnvMap } from "@/lib/stripe";
 
-async function requireBillingSession() {
-  if (hasClerk()) {
-    try {
-      const session = await auth();
-      if (!session.userId) {
-        return { ok: false as const, message: "Sign in required." };
-      }
-      return { ok: true as const };
-    } catch {
-      return { ok: false as const, message: "Sign in required." };
-    }
-  }
-  if (!isDemoMode()) {
-    return { ok: false as const, message: "Sign in required." };
-  }
-  const jar = await cookies();
-  if (jar.get("rq_onboarded")?.value !== "1" && !jar.get("rq_email")?.value) {
-    return { ok: false as const, message: "Sign in or complete demo onboarding first." };
-  }
-  return { ok: true as const };
+function integrationId(kind: "plan" | "pack") {
+  const suffix = Math.random().toString(36).slice(2, 10);
+  return `ratequip_${kind}_${suffix}`;
 }
 
 export async function GET(req: NextRequest) {
-  const gate = await requireBillingSession();
+  const gate = await resolveBillingSession();
   if (!gate.ok) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     return NextResponse.redirect(
-      new URL(`/sign-in?redirect_url=${encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)}`, appUrl),
+      new URL(
+        `/sign-in?redirect_url=${encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)}`,
+        appUrl,
+      ),
       303,
     );
   }
@@ -45,16 +30,14 @@ export async function GET(req: NextRequest) {
   const packCode = req.nextUrl.searchParams.get("pack");
   const planCode = req.nextUrl.searchParams.get("plan") ?? "buyer-premium";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const jar = await cookies();
-  const orgId = jar.get("rq_org_id")?.value;
-  const role = jar.get("rq_role")?.value;
+  const { orgId, email, role } = gate;
   const defaultBilling =
     role === "supplier"
       ? "/dashboard/supplier/billing"
       : "/dashboard/buyer/billing";
 
   if (packCode) {
-    return checkoutCreditPack(packCode, appUrl, orgId, defaultBilling);
+    return checkoutCreditPack(packCode, appUrl, orgId, email, defaultBilling);
   }
 
   const plan = getPlanByCode(planCode);
@@ -108,6 +91,9 @@ export async function GET(req: NextRequest) {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}${billingPath}?success=1`,
     cancel_url: `${appUrl}/pricing?canceled=1`,
+    ...(email ? { customer_email: email } : {}),
+    ...(orgId ? { client_reference_id: orgId } : {}),
+    integration_identifier: integrationId("plan"),
     metadata: {
       kind: "subscription",
       plan: plan.code,
@@ -135,6 +121,7 @@ async function checkoutCreditPack(
   packCode: string,
   appUrl: string,
   orgId: string | undefined,
+  email: string | undefined,
   billingPath: string,
 ) {
   const pack = getCreditPackByCode(packCode);
@@ -176,6 +163,9 @@ async function checkoutCreditPack(
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}${billingPath}?pack=success&credits=${pack.credits}`,
     cancel_url: `${appUrl}${billingPath}?pack=canceled`,
+    ...(email ? { customer_email: email } : {}),
+    ...(orgId ? { client_reference_id: orgId } : {}),
+    integration_identifier: integrationId("pack"),
     metadata: {
       kind: "credit_pack",
       pack: pack.code,

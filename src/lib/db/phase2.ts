@@ -740,6 +740,7 @@ export async function listPendingClaimsAsync(): Promise<DemoClaim[]> {
 export async function getProfileByClerkId(clerkUserId: string): Promise<{
   role: "buyer" | "supplier" | "contractor" | "admin";
   orgName: string | null;
+  organisationId: string | null;
   onboardingComplete: boolean;
   email: string | null;
   fullName: string | null;
@@ -754,6 +755,7 @@ export async function getProfileByClerkId(clerkUserId: string): Promise<{
           email: users.email,
           fullName: users.fullName,
           orgName: organisations.name,
+          organisationId: organisations.id,
         })
         .from(users)
         .leftJoin(
@@ -771,6 +773,7 @@ export async function getProfileByClerkId(clerkUserId: string): Promise<{
       return {
         role: row.role,
         orgName: row.orgName ?? null,
+        organisationId: row.organisationId ?? null,
         onboardingComplete: row.onboardingComplete,
         email: row.email ?? null,
         fullName: row.fullName ?? null,
@@ -789,6 +792,7 @@ export async function getProfileByClerkId(clerkUserId: string): Promise<{
   return {
     role: user.role,
     orgName: org?.name ?? null,
+    organisationId: user.orgId ?? null,
     onboardingComplete: user.onboardingComplete,
     email: user.email,
     fullName: user.fullName,

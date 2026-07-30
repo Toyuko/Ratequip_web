@@ -55,7 +55,7 @@ export default async function BuyerBillingPage({
         <p className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           {params.checkout === "demo"
             ? `Demo subscription activated${params.plan ? ` (${params.plan})` : ""}.`
-            : "Checkout completed. Credits appear when Stripe confirms payment."}
+            : "Checkout completed. If credits are not visible yet, refresh in a few seconds while Stripe confirms payment."}
         </p>
       ) : null}
       {params.pack === "demo" || params.pack === "success" ? (
