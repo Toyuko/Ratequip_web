@@ -5,7 +5,7 @@
 
 === Phase 2 MVP Acceptance Evidence Counter ===
 
-Runtime: runtime store · 2026-07-30T00:45:02.327Z
+Runtime: runtime store · 2026-07-30T06:20:54.820Z
 
 READY  Database  (1/1)
   ✓ DB-01 Dual-path store available (runtime + optional Neon)
@@ -19,15 +19,15 @@ READY  Accounts / authentication  (2/2)
 
 READY  Company profiles  (2/2)
   ✓ CO-01 Add Company draft recovers after store miss (fixes Submission not found)
-      evidence: Recovered submission sub-accept-1785372302322 status=contacts_skipped
+      evidence: Recovered submission sub-accept-1785392454817 status=contacts_skipped
   ✓ CO-02 Claim + admin approve marks company claimed/verified
       evidence: slug=harbor-heavy-freight verified=true
 
 READY  Reviews and evidence  (4/4)
   ✓ REV-01 Submit review with evidence filename
-      evidence: reviewId=rev-1785372302325
+      evidence: reviewId=rev-1785392454819
   ✓ REV-02 Admin moderation approve
-      evidence: Review rev-1785372302325 marked approved.
+      evidence: Review rev-1785392454819 marked approved.
   ✓ REV-03 Supplier response to approved review
       evidence: Supplier response published.
   ✓ REV-04 Reviewer appeal re-queues moderation
@@ -35,7 +35,7 @@ READY  Reviews and evidence  (4/4)
 
 READY  RFQ marketplace  (6/6)
   ✓ RFQ-01 Create RFQ persists and debits 25 credits
-      evidence: rfqId=req-1785372302324
+      evidence: rfqId=req-1785392454818
   ✓ RFQ-02 Rejects nonsensical title/description/budget
       evidence: Title must be at least 8 characters.
   ✓ RFQ-03 Edit / revise open RFQ
@@ -43,9 +43,9 @@ READY  RFQ marketplace  (6/6)
   ✓ RFQ-04 Created RFQ appears in request list (buyer dashboard source)
       evidence: listCount=4
   ✓ RFQ-05 Supplier quote submission
-      evidence: quoteId=q-1785372302325
+      evidence: quoteId=q-1785392454819
   ✓ RFQ-06 Close/award lifecycle with audit
-      evidence: RFQ req-1785372302324 marked awarded.
+      evidence: RFQ req-1785392454818 marked awarded.
 
 READY  Billing / credits  (4/4)
   ✓ BILL-01 RFQ debit reconciles against wallet (-25)

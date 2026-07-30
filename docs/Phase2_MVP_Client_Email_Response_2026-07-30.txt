@@ -1,0 +1,27 @@
+Hi Robin,
+
+Thank you for the Phase 2 audit. The problems you listed were real, and I have fixed them.
+
+Phase 2 MVP is now ready and working on the live site:
+
+https://ratequip-web.vercel.app
+
+What is fixed:
+- Add Company no longer fails with “Submission not found”
+- Owner RFQ buttons are hidden when signed out
+- RFQs are validated, listed on the buyer dashboard, and can be edited
+- Reviews support proof upload, moderation, supplier reply, and appeal
+- Credits can be granted, spent, refunded, and checked on a balanced ledger
+- Database migrate / seed / rollback has been demonstrated
+
+Proof in the evidence pack:
+- Full live UAT walkthrough video (about 6 minutes) covering your 10 acceptance steps
+- 20 short evidence videos
+- Automated checks: 6/6 areas ready · 19/19 checks passed
+- Database demo result: 6/6 ready
+- Written evidence response document
+
+Please run your new Phase 2 audit against the updated live build and this evidence. If everything looks good, please send written acceptance so Phase 2 payment can be released.
+
+Regards,
+Touy

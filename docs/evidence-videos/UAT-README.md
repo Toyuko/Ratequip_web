@@ -1,6 +1,6 @@
 # RateQuip Phase 2 — Full UAT Walkthrough
 
-**Recorded:** 2026-07-30T00:44:51.717Z  
+**Recorded:** 2026-07-30T06:20:47.122Z  
 **Target:** https://ratequip-web.vercel.app  
 **Video:** `uat-full-walkthrough.mp4`
 
