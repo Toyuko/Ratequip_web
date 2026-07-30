@@ -20,6 +20,7 @@
     "smoke": "tsx scripts/smoke.ts",
     "smoke:phase2": "tsx scripts/phase2-smoke.ts",
     "smoke:phase2:acceptance": "tsx scripts/phase2-acceptance-counter.ts",
+    "evidence:videos": "node scripts/record-phase2-evidence-videos.mjs",
     "smoke:v12": "tsx scripts/v12-smoke.ts",
     "test:trust": "tsx scripts/trust-score-check.ts"
   },
@@ -62,6 +63,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "playwright": "^1.62.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.0",
     "typescript": "^5",

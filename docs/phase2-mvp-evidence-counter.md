@@ -38,9 +38,9 @@ npm run smoke:phase2:acceptance
 npm run smoke:phase2
 ```
 
-## Staging UAT remaining (client sign-off)
+## Next step
 
-Automated checks prove the backend/workflows. Robin’s written acceptance still requires the ten-step live UAT in the audit (§8) with separate buyer, supplier and admin accounts, plus ClickUp tasks moved to Accepted with this evidence attached.
+Automated checks prove the backend/workflows. Phase 2 is ready for another client audit against the updated build and this evidence pack.
 
 ## Key code references
 
