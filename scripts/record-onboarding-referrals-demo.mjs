@@ -285,15 +285,26 @@ async function main() {
     }
 
     // --- Step 3: Referrals hub ---
-    await page.goto(`${BASE}/referrals`, { waitUntil: "networkidle" });
-    await sleep(1200);
+    await page.goto(`${BASE}/referrals`, { waitUntil: "domcontentloaded" });
+    await sleep(1500);
+    // Re-auth if Clerk bounced the protected route.
+    if (page.url().includes("/sign-in")) {
+      await signIn(page, "buyer");
+      await page.goto(`${BASE}/referrals`, { waitUntil: "domcontentloaded" });
+      await sleep(1500);
+    }
+    await page
+      .getByRole("heading", { name: /Company & contractor referrals/i })
+      .waitFor({ timeout: 30_000 });
     await caption(
       page,
       "Referrals — invite companies & contractors via email / LinkedIn / socials",
     );
     await sleep(1800);
 
-    await page.getByRole("button", { name: /Refer a company/i }).click();
+    const referCompany = page.getByRole("button", { name: /Refer a company/i });
+    await referCompany.waitFor({ state: "visible", timeout: 30_000 });
+    await referCompany.click();
     await sleep(1000);
     await page.locator("#ref-email").fill("partner@example.com");
     await page.locator("#ref-name").fill("Partner Contact");

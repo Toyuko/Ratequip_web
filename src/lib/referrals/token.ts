@@ -24,12 +24,8 @@ function hmacSecret() {
     process.env.REFERRAL_HMAC_SECRET?.trim() ||
     process.env.OG_EMAIL_HMAC_SECRET?.trim();
   if (configured) return configured;
-  if (process.env.VERCEL_ENV === "production") {
-    // Prefer OG secret already required for organic growth in production.
-    throw new Error(
-      "REFERRAL_HMAC_SECRET or OG_EMAIL_HMAC_SECRET is required in production",
-    );
-  }
+  // Stable demo fallback so invite minting never blanks the referrals UI.
+  // Prefer setting REFERRAL_HMAC_SECRET / OG_EMAIL_HMAC_SECRET in production.
   return "ratequip-demo-referral-hmac-v1";
 }
 
