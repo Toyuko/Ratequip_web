@@ -16,6 +16,12 @@ export default function ContractorDashboardPage() {
           <Link href="/requests">Browse RFQs</Link>
         </Button>
         <Button asChild variant="outline">
+          <Link href="/v12/activation?role=contractor">AI company questionnaire</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/referrals">Refer companies & contractors</Link>
+        </Button>
+        <Button asChild variant="outline">
           <Link href="/companies/claim">Claim company profile</Link>
         </Button>
         <Button asChild variant="outline">

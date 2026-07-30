@@ -98,7 +98,8 @@ Required env vars are listed in `.env.example`.
 |------|--------|
 | Public | `/`, `/suppliers`, `/companies/[slug]`, `/search`, `/categories/[slug]`, `/requests`, `/pricing` |
 | Organic Growth (v10.1 Phase 1) | `/companies/search` → `/companies/add/*`, `/companies/add/success/[id]`, `/claim/[token]`, `/email/preferences/[token]` |
-| Auth | `/sign-in`, `/sign-up`, `/onboarding` |
+| Auth | `/sign-in`, `/sign-up`, `/onboarding` → `/v12/activation` (AI questionnaire) |
+| Referrals & invites | `/referrals`, `/join/[code]` (email + LinkedIn / social share) |
 | App | `/dashboard/buyer`, `/dashboard/supplier`, `/dashboard/contractor`, `/dashboard/admin` |
 | Workflows | `/requests/new`, `/reviews/new`, `/companies/claim`, `/quotes/compare`, `/workspaces/[id]` |
 | Shells | `/modules/[slug]` (v10 modules — coming soon) |
@@ -136,6 +137,7 @@ JSON API for the RateQuip companion app (Expo). Envelope: `{ data, error }`. COR
 | GET | `/api/v1/health` | public |
 | GET | `/api/v1/me` | optional |
 | POST | `/api/v1/onboarding` | required |
+| POST | `/api/v1/referrals/invite` | optional (demo/session cookies) |
 | GET | `/api/v1/categories` | public |
 | GET | `/api/v1/companies` | public |
 | GET | `/api/v1/companies/[slug]` | public |

@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,12 +43,26 @@ export default function OnboardingPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">
+      <Badge variant="orange">Step 1 of 2</Badge>
+      <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         Welcome to RateQuip
       </h1>
       <p className="mt-2 text-[var(--rq-slate)]">
-        Choose your account type and create or join an organisation.
+        Choose your account type and create your organisation. Next, an AI
+        assistant will run a short questionnaire to build your operating profile
+        and suggest relevant companies.
       </p>
+
+      <ol className="mt-4 grid gap-2 text-sm text-[var(--rq-slate)] sm:grid-cols-2">
+        <li className="rounded-md border border-orange-200 bg-orange-50 px-3 py-2">
+          <span className="font-semibold text-orange-800">1. Account</span>
+          {" — "}role & organisation
+        </li>
+        <li className="rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 py-2">
+          <span className="font-semibold text-[var(--rq-ink)]">2. AI setup</span>
+          {" — "}profile suggestions & relevance
+        </li>
+      </ol>
 
       <div className="mt-8 grid gap-3">
         {roles.map((r) => (
@@ -145,27 +161,31 @@ export default function OnboardingPage() {
         <p className="mt-4 text-sm text-emerald-700">{message}</p>
       ) : null}
 
-      <Button
-        className="mt-6"
-        disabled={pending || !canContinue}
-        onClick={() => {
-          if (!canContinue) return;
-          startTransition(async () => {
-            const result = await completeOnboarding({
-              role,
-              orgName: orgName.trim(),
-              phone: phone.trim(),
-              email: email.trim(),
-              address: address.trim(),
-              contactName: contactName.trim(),
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <Button
+          disabled={pending || !canContinue}
+          onClick={() => {
+            if (!canContinue) return;
+            startTransition(async () => {
+              const result = await completeOnboarding({
+                role,
+                orgName: orgName.trim(),
+                phone: phone.trim(),
+                email: email.trim(),
+                address: address.trim(),
+                contactName: contactName.trim(),
+              });
+              setMessage(result.message);
+              router.push(result.redirectTo);
             });
-            setMessage(result.message);
-            router.push(result.redirectTo);
-          });
-        }}
-      >
-        {pending ? "Saving…" : "Continue to company setup"}
-      </Button>
+          }}
+        >
+          {pending ? "Saving…" : "Continue to AI company questionnaire"}
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/referrals">Invite a colleague instead</Link>
+        </Button>
+      </div>
     </div>
   );
 }

@@ -4,10 +4,14 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AddCompanyWizardShell } from "@/components/organic-growth/wizard-shell";
+import { ShareInvitePanel } from "@/components/referrals/share-invite-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getListingSubmission } from "@/lib/actions/organic-growth";
-import type { ListingSubmissionDraft, PublishedInvitation } from "@/lib/organic-growth/types";
+import type {
+  ListingSubmissionDraft,
+  PublishedInvitation,
+} from "@/lib/organic-growth/types";
 
 type SafeSubmission = ListingSubmissionDraft & {
   invitations?: PublishedInvitation[];
@@ -74,7 +78,9 @@ export default function AddSuccessPage() {
         </div>
 
         <section>
-          <h2 className="font-semibold text-[var(--rq-ink)]">Invitation status</h2>
+          <h2 className="font-semibold text-[var(--rq-ink)]">
+            Invitation status
+          </h2>
           {invitations.length === 0 ? (
             <p className="mt-2 text-sm text-[var(--rq-muted)]">
               No claim invitations were queued.
@@ -99,9 +105,20 @@ export default function AddSuccessPage() {
           )}
         </section>
 
+        <section className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4">
+          <ShareInvitePanel
+            compact
+            defaultKind="refer_company"
+            defaultCompanyName={submission.companyName ?? ""}
+            title="Share this company invite"
+            description="Email more contacts or share via LinkedIn and socials so authorised people can join and claim."
+          />
+        </section>
+
         <p className="text-sm text-[var(--rq-slate)]">
           Referral eligibility is recorded, but rewards stay pending until a
-          qualifying claim event is verified. No reward is promised at this step.
+          qualifying claim event is verified. No reward is promised at this
+          step.
         </p>
 
         <div className="flex flex-wrap gap-3">
@@ -126,6 +143,9 @@ export default function AddSuccessPage() {
             <Link href={`/companies/add/${submission.id}/invitations`}>
               Manage invitations
             </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/referrals">Open referrals hub</Link>
           </Button>
           <Button asChild variant="outline">
             <Link href="/companies/search">Add another company</Link>

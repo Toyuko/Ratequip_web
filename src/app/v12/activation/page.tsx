@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState, useTransition } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { ShareInvitePanel } from "@/components/referrals/share-invite-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +97,8 @@ function CompanySetupWizard() {
   const searchParams = useSearchParams();
   const presetName = searchParams.get("company") ?? "";
   const presetRole = (searchParams.get("role") as Role | null) ?? "buyer";
+  const fromOnboarding = searchParams.get("from") === "onboarding";
+  const autoStarted = useRef(false);
 
   const [phase, setPhase] = useState<"start" | "interview" | "review" | "done">(
     "start",
@@ -129,9 +132,12 @@ function CompanySetupWizard() {
         v12ListCompanySetup(),
       ]);
       setPacks(packList);
-      if (packList[0] && !packList.some((p) => p.id === industryPack)) {
-        setIndustryPack(packList[0].id);
-      }
+      const nextPack =
+        packList[0] && !packList.some((p) => p.id === industryPack)
+          ? packList[0].id
+          : industryPack;
+      if (nextPack !== industryPack) setIndustryPack(nextPack);
+
       if (existing.session && existing.session.status !== "completed") {
         setSession(existing.session as Session);
         setAnswers(existing.session.answers);
@@ -150,6 +156,29 @@ function CompanySetupWizard() {
           (existing.session as Session).companySuggestions,
         );
         setPhase("done");
+      } else if (
+        fromOnboarding &&
+        !autoStarted.current &&
+        (presetName || companyName).trim()
+      ) {
+        autoStarted.current = true;
+        const packId = nextPack || packList[0]?.id || "pet_food";
+        setIndustryPack(packId);
+        const res = await v12StartCompanySetup({
+          companyName: (presetName || companyName).trim(),
+          role,
+          industryPack: packId,
+        });
+        if (res.ok) {
+          setSession(res.session as Session);
+          setAnswers({});
+          setPhase("interview");
+          setMessage(
+            `AI questionnaire started · ${res.session.sections.length} sections · profile suggestions stay pending until you confirm.`,
+          );
+        } else {
+          setMessage(res.message);
+        }
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -282,14 +311,17 @@ function CompanySetupWizard() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <Badge variant="orange">Company setup</Badge>
+      <Badge variant="orange">
+        {fromOnboarding ? "Step 2 of 2 · AI questionnaire" : "Company setup"}
+      </Badge>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         Set up your company with AI
       </h1>
       <p className="mt-2 text-[var(--rq-slate)]">
         RateQuip asks a guided set of questions about your role, industry and
-        operating profile. Suggestions stay pending until you accept or reject
-        them — nothing is published from inference alone.
+        operating profile. The assistant builds profile suggestions and ranks
+        relevant companies — nothing is published until you accept or reject
+        each suggestion.
       </p>
 
       {session ? (
@@ -535,6 +567,9 @@ function CompanySetupWizard() {
                 <Link href="/v12/matching">Open matching</Link>
               </Button>
               <Button asChild variant="outline">
+                <Link href="/referrals">Refer companies & contractors</Link>
+              </Button>
+              <Button asChild variant="outline">
                 <Link
                   href={`/dashboard/${session.role === "contractor" ? "contractor" : session.role}`}
                 >
@@ -542,6 +577,20 @@ function CompanySetupWizard() {
                 </Link>
               </Button>
             </div>
+          </div>
+
+          <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
+            <ShareInvitePanel
+              compact
+              defaultKind={
+                session.role === "contractor"
+                  ? "refer_contractor"
+                  : "refer_company"
+              }
+              defaultCompanyName={session.companyName}
+              title="Invite partners to join"
+              description="Share your network — email invites or LinkedIn / social links so companies and contractors can join RateQuip."
+            />
           </div>
 
           <div>

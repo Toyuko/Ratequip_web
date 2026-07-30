@@ -41,6 +41,12 @@ export default async function SupplierDashboardPage() {
           <Link href="/dashboard/supplier/quotes">Quote builder</Link>
         </Button>
         <Button asChild variant="outline">
+          <Link href="/v12/activation">AI company questionnaire</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/referrals">Refer & invite</Link>
+        </Button>
+        <Button asChild variant="outline">
           <Link href="/dashboard/supplier/billing">Billing</Link>
         </Button>
       </div>

@@ -16,6 +16,7 @@ const isProtectedRoute = createRouteMatcher([
   "/requests/new(.*)",
   "/requests/(.*)/edit(.*)",
   "/v12(.*)",
+  "/referrals(.*)",
 ]);
 
 const clerkHandler = clerkMiddleware(async (auth, req) => {
