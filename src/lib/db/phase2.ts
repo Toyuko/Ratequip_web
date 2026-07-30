@@ -820,6 +820,8 @@ export async function upsertClerkUser(input: {
           email: input.email,
           fullName: input.fullName,
           avatarUrl: input.avatarUrl,
+          // New accounts are never platform admin — elevate only via Clerk/DB ops.
+          primaryRole: "buyer",
         })
         .returning({ id: users.id });
       return { id: created.id, demo: false };

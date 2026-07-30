@@ -1,14 +1,24 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-const links = [
+const baseLinks = [
   { href: "/dashboard/buyer", label: "Buyer" },
   { href: "/dashboard/supplier", label: "Supplier" },
   { href: "/dashboard/contractor", label: "Contractor" },
-  { href: "/dashboard/admin", label: "Admin" },
-];
+] as const;
 
-export function DashboardNav({ active }: { active: string }) {
+export function DashboardNav({
+  active,
+  showAdmin = false,
+}: {
+  active: string;
+  /** Platform admin only — never shown for newly onboarded product roles. */
+  showAdmin?: boolean;
+}) {
+  const links = showAdmin
+    ? [...baseLinks, { href: "/dashboard/admin", label: "Admin" }]
+    : [...baseLinks];
+
   return (
     <aside
       className="w-full shrink-0 border-b border-[var(--rq-border)] bg-[var(--rq-card)] md:w-56 md:border-b-0 md:border-r"

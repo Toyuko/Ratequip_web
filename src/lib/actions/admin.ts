@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { requireServerAdmin } from "@/lib/api/auth";
 import { persistModeration } from "@/lib/db/phase2";
 import { sendTransactionalEmail } from "@/lib/email";
 
@@ -9,8 +10,16 @@ export async function moderateEntity(input: {
   entityId: string;
   decision: "approved" | "rejected";
 }) {
+  const auth = await requireServerAdmin();
+  if (!auth.user) {
+    return { ok: false as const, message: auth.error ?? "Admin role required" };
+  }
+
   const jar = await cookies();
-  const actor = jar.get("rq_email")?.value ?? "admin@ratequip.com";
+  const actor =
+    auth.user.email ||
+    jar.get("rq_email")?.value ||
+    "admin@ratequip.com";
 
   const result = await persistModeration({
     ...input,

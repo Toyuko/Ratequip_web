@@ -14,6 +14,14 @@ export async function completeOnboarding(input: {
   address: string;
   contactName: string;
 }) {
+  // Platform admin is never assignable via onboarding — ops elevates existing accounts only.
+  if (input.role !== "buyer" && input.role !== "supplier" && input.role !== "contractor") {
+    return {
+      message: "Invalid account type.",
+      redirectTo: "/onboarding",
+    };
+  }
+
   const orgName = input.orgName.trim();
   const email = input.email.trim();
   const contactName = input.contactName.trim();
