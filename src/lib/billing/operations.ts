@@ -845,11 +845,28 @@ export async function reconcileCreditLedger(organisationId?: string) {
         .where(eq(creditLedgerEntries.walletId, wallet.id))
         .orderBy(desc(creditLedgerEntries.createdAt));
       const ledgerSum = entries.reduce((sum, e) => sum + e.delta, 0);
+      let balance = wallet.balance;
+      let repaired = false;
+      // Immutable ledger is source of truth — repair wallet drift when found.
+      if (balance !== ledgerSum) {
+        await db
+          .update(creditWallets)
+          .set({ balance: ledgerSum, updatedAt: new Date() })
+          .where(eq(creditWallets.id, wallet.id));
+        balance = ledgerSum;
+        repaired = true;
+        appendAudit(
+          "credits.reconcile_repair",
+          "wallet",
+          `drift=${wallet.balance - ledgerSum}`,
+        );
+      }
       return {
         ok: true as const,
-        balance: wallet.balance,
+        balance,
         ledgerSum,
-        balanced: wallet.balance === ledgerSum,
+        balanced: balance === ledgerSum,
+        repaired,
         entries: entries.map((e) => ({
           id: e.id,
           delta: e.delta,

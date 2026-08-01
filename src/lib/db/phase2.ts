@@ -15,6 +15,7 @@ import {
 } from "@/lib/rfq/types";
 import {
   demoCategories,
+  demoCompanies,
   type DemoClaim,
   type DemoCompany,
   type DemoCompanyMedia,
@@ -126,11 +127,39 @@ function normalizeSubscriptionStatus(status: string): SubscriptionStatus {
   return "active";
 }
 
-function subscriptionBonusReason(planCode: string) {
-  return `Subscription bonus: ${planCode}`;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string | null | undefined): value is string {
+  return Boolean(value && UUID_RE.test(value));
+}
+
+function subscriptionBonusReason(planCode: string, periodKey?: string) {
+  const period = periodKey ?? new Date().toISOString().slice(0, 7);
+  return `Subscription bonus: ${planCode} (${period})`;
 }
 
 type DbClient = NonNullable<ReturnType<typeof getDb>>;
+
+async function syncWalletToLedgerSum(
+  db: DbClient,
+  walletId: string,
+  currentBalance: number,
+) {
+  const entries = await db
+    .select({ delta: creditLedgerEntries.delta })
+    .from(creditLedgerEntries)
+    .where(eq(creditLedgerEntries.walletId, walletId));
+  const ledgerSum = entries.reduce((sum, e) => sum + e.delta, 0);
+  if (ledgerSum === currentBalance) {
+    return { balance: currentBalance, ledgerSum, repaired: false as const };
+  }
+  await db
+    .update(creditWallets)
+    .set({ balance: ledgerSum, updatedAt: new Date() })
+    .where(eq(creditWallets.id, walletId));
+  return { balance: ledgerSum, ledgerSum, repaired: true as const };
+}
 
 async function ensureDemoBuyerOrg(db: DbClient) {
   const ensureWallet = async (organisationId: string) => {
@@ -139,11 +168,24 @@ async function ensureDemoBuyerOrg(db: DbClient) {
       .from(creditWallets)
       .where(eq(creditWallets.organisationId, organisationId))
       .limit(1);
-    if (wallet) return;
+    if (wallet) {
+      // Keep immutable ledger as source of truth when historical drift exists.
+      await syncWalletToLedgerSum(db, wallet.id, wallet.balance);
+      return;
+    }
     try {
-      await db.insert(creditWallets).values({
-        organisationId,
-        balance: 250,
+      const [created] = await db
+        .insert(creditWallets)
+        .values({
+          organisationId,
+          balance: 250,
+        })
+        .returning();
+      await db.insert(creditLedgerEntries).values({
+        walletId: created.id,
+        delta: 250,
+        reason: "Opening balance",
+        referenceType: "seed",
       });
     } catch (error) {
       // Unique org wallet or transient Neon visibility — re-check.
@@ -153,6 +195,7 @@ async function ensureDemoBuyerOrg(db: DbClient) {
         .where(eq(creditWallets.organisationId, organisationId))
         .limit(1);
       if (!again) throw error;
+      await syncWalletToLedgerSum(db, again.id, again.balance);
     }
   };
 
@@ -445,29 +488,88 @@ function categoryMatchSlugsSync(slug: string): string[] {
   return [category.slug, ...children];
 }
 
+async function mapNeonCompanyWithCategories(
+  db: DbClient,
+  row: typeof companies.$inferSelect,
+  fallbackCategories: string[] = [],
+): Promise<DemoCompany> {
+  const links = await db
+    .select()
+    .from(companyCategories)
+    .where(eq(companyCategories.companyId, row.id));
+  if (links.length === 0) {
+    return mapCompanyRow(row, fallbackCategories);
+  }
+  const cats = await db.select().from(categories);
+  const slugByCatId = new Map(cats.map((c) => [c.id, c.slug]));
+  const catSlugs = links
+    .map((l) => slugByCatId.get(l.categoryId))
+    .filter((s): s is string => Boolean(s));
+  return mapCompanyRow(row, catSlugs.length > 0 ? catSlugs : fallbackCategories);
+}
+
+/**
+ * Resolve a company for Neon writes. Demo fixtures use non-UUID ids
+ * (`co-nordic-fill`); upsert them into Neon so FK columns stay valid.
+ */
+async function ensureNeonCompanyBySlug(
+  db: DbClient,
+  slug: string,
+): Promise<DemoCompany | null> {
+  const [existing] = await db
+    .select()
+    .from(companies)
+    .where(eq(companies.slug, slug))
+    .limit(1);
+  if (existing) {
+    return mapNeonCompanyWithCategories(db, existing);
+  }
+
+  const demo = demoCompanies.find((c) => c.slug === slug);
+  if (!demo) return null;
+
+  try {
+    const [created] = await db
+      .insert(companies)
+      .values({
+        name: demo.name,
+        slug: demo.slug,
+        headline: demo.headline || null,
+        description: demo.description || null,
+        country: demo.country || null,
+        city: demo.city || null,
+        website: demo.website || null,
+        verified: demo.verified,
+        claimed: demo.claimed,
+        trustScore: String(demo.trustScore),
+        reviewCount: demo.reviewCount,
+        employeeRange: demo.employeeRange || null,
+        yearFounded: demo.yearFounded || null,
+      })
+      .returning();
+    return mapCompanyRow(created, demo.categories);
+  } catch (error) {
+    // Concurrent insert — re-read.
+    const [again] = await db
+      .select()
+      .from(companies)
+      .where(eq(companies.slug, slug))
+      .limit(1);
+    if (again) {
+      return mapNeonCompanyWithCategories(db, again, demo.categories);
+    }
+    throw error;
+  }
+}
+
 export async function getCompanyBySlugAsync(
   slug: string,
 ): Promise<DemoCompany | null> {
   const db = getDb();
   if (db) {
     try {
-      const [row] = await db
-        .select()
-        .from(companies)
-        .where(eq(companies.slug, slug))
-        .limit(1);
-      if (row) {
-        const links = await db
-          .select()
-          .from(companyCategories)
-          .where(eq(companyCategories.companyId, row.id));
-        const cats = await db.select().from(categories);
-        const slugByCatId = new Map(cats.map((c) => [c.id, c.slug]));
-        const catSlugs = links
-          .map((l) => slugByCatId.get(l.categoryId))
-          .filter((s): s is string => Boolean(s));
-        return mapCompanyRow(row, catSlugs);
-      }
+      const neonCompany = await ensureNeonCompanyBySlug(db, slug);
+      if (neonCompany) return neonCompany;
     } catch (error) {
       console.warn("[phase2] Neon getCompany failed", error);
     }
@@ -2450,6 +2552,8 @@ export async function persistSubscription(input: {
   stripeSubscriptionId?: string;
   status: string;
   orgId?: string;
+  /** Idempotency period for activation credits (default: YYYY-MM). */
+  periodKey?: string;
 }) {
   if (!getDb() && runtimeWriteBlocked("persistSubscription: no database")) {
     return { ok: false as const, message: "Database unavailable." };
@@ -2459,7 +2563,7 @@ export async function persistSubscription(input: {
   const monthlyCredits = catalog?.monthlyCredits ?? 0;
   const status = normalizeSubscriptionStatus(input.status);
   const orgId = input.orgId ?? "org-demo";
-  const reason = subscriptionBonusReason(input.planCode);
+  const reason = subscriptionBonusReason(input.planCode, input.periodKey);
 
   const store = getStore();
   let runtime = store.subscriptions.find((s) => {
@@ -2534,6 +2638,8 @@ export async function persistSubscription(input: {
       let neonGranted = false;
 
       if (org && plan) {
+        // Prefer Stripe subscription id when present. Only fall back to the
+        // org's latest row when no Stripe id is supplied (demo/UAT path).
         let existing = input.stripeSubscriptionId
           ? (
               await db
@@ -2549,7 +2655,7 @@ export async function persistSubscription(input: {
             )[0]
           : undefined;
 
-        if (!existing) {
+        if (!existing && !input.stripeSubscriptionId) {
           [existing] = await db
             .select()
             .from(subscriptions)
@@ -2595,6 +2701,8 @@ export async function persistSubscription(input: {
             .where(eq(creditWallets.organisationId, org.id))
             .limit(1);
 
+          // Period-keyed reason keeps monthly activation grants idempotent
+          // while still allowing a fresh UAT period to credit again.
           const alreadyGranted = wallet
             ? (
                 await db
@@ -2604,7 +2712,6 @@ export async function persistSubscription(input: {
                     and(
                       eq(creditLedgerEntries.walletId, wallet.id),
                       eq(creditLedgerEntries.referenceType, "subscription"),
-                      eq(creditLedgerEntries.referenceId, subscriptionId),
                       eq(creditLedgerEntries.reason, reason),
                     ),
                   )
@@ -2619,7 +2726,7 @@ export async function persistSubscription(input: {
               grantAmount,
               reason,
               "subscription",
-              subscriptionId,
+              isUuid(subscriptionId) ? subscriptionId : undefined,
             );
             neonGranted = true;
             runtime.creditsGranted = true;
@@ -2630,11 +2737,7 @@ export async function persistSubscription(input: {
       await db.insert(auditEvents).values({
         action: "subscription.updated",
         entityType: "subscription",
-        entityId: subscriptionId.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-        )
-          ? subscriptionId
-          : undefined,
+        entityId: isUuid(subscriptionId) ? subscriptionId : undefined,
         organisationId: org?.id,
         payload: { ...input, monthlyCredits, neonGranted },
       });

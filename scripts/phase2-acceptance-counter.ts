@@ -1,8 +1,13 @@
 /**
  * Phase 2 MVP acceptance evidence counter.
  * Runs automated checks against the six invoice milestone areas and prints a scorecard.
+ *
+ * Loads `.env.local` first so Neon DATABASE_URL is used when available (audit bar).
  */
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+loadEnv({ path: ".env.local" });
+loadEnv();
+
 import {
   refundCredits,
   reconcileCreditLedger,
@@ -301,7 +306,13 @@ async function main() {
   const beforeSub = usingNeon
     ? await getWalletAsync()
     : { balance: getRuntimeWallet().balance };
-  await persistSubscription({ planCode: "buyer-premium", status: "active" });
+  const periodKey = `uat-${Date.now()}`;
+  await persistSubscription({
+    planCode: "buyer-premium",
+    status: "active",
+    stripeSubscriptionId: `sub_accept_${Date.now()}`,
+    periodKey,
+  });
   const afterSub = usingNeon
     ? await getWalletAsync()
     : { balance: getRuntimeWallet().balance };
@@ -310,7 +321,7 @@ async function main() {
     "BILL-02",
     "Subscription activation grants credits",
     afterSub.balance === beforeSub.balance + 100,
-    `delta=${afterSub.balance - beforeSub.balance}`,
+    `delta=${afterSub.balance - beforeSub.balance} period=${periodKey}`,
   );
 
   const beforeRefund = afterSub.balance;

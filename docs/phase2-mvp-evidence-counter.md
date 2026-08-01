@@ -15,7 +15,8 @@
 | 5 | Basic RFQ marketplace | FAIL | READY | RFQ-01…06 |
 | 6 | Billing / credit framework | NOT DEMONSTRATED | READY | BILL-01…04 |
 
-**Score: 6 / 6 areas ready · 19 / 19 automated checks passed**
+**Score: 6 / 6 areas ready · 19 / 19 automated checks passed**  
+**Neon-backed re-run (2026-08-01):** `DATABASE_URL` via `.env.local` · real UUID RFQ/review/quote rows · BILL-02/04 balanced after ledger repair + period-keyed subscription grants.
 
 \*Clerk-hosted verification, password reset and MFA remain platform-provided (Clerk Dashboard / hosted UI). App evidence covers session gating, role resolution, and mutation protection.
 

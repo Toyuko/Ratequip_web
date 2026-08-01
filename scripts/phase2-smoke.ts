@@ -1,7 +1,9 @@
 /**
  * Phase 2 mutation smoke — runtime store always; Neon path when DATABASE_URL is set.
  */
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+loadEnv({ path: ".env.local" });
+loadEnv();
 import {
   cancelSubscription,
   purchaseCreditPack,
@@ -130,9 +132,12 @@ async function main() {
   const beforeSub = usingNeon
     ? await getWalletAsync()
     : { balance: getRuntimeWallet().balance };
+  const subPeriod = `smoke-${Date.now()}`;
   await persistSubscription({
     planCode: "buyer-premium",
     status: "active",
+    stripeSubscriptionId: `sub_smoke_${Date.now()}`,
+    periodKey: subPeriod,
   });
   const afterSub = usingNeon
     ? await getWalletAsync()
@@ -146,6 +151,7 @@ async function main() {
   await persistSubscription({
     planCode: "buyer-premium",
     status: "active",
+    periodKey: subPeriod,
   });
   const afterSecond = usingNeon
     ? await getWalletAsync()
