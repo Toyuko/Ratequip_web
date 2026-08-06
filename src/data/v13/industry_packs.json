@@ -1,0 +1,53 @@
+{
+  "version": "v13.part7.1",
+  "packs": [
+    {
+      "id": "food",
+      "label": "Food",
+      "adjacent": ["packaging", "cold_chain", "utilities", "laboratories"],
+      "taxonomyKeys": ["tax:rq:industry.food_beverage", "tax:rq:industry.food_beverage.snack_foods"],
+      "processHints": ["mixing", "filling", "packaging", "cleaning_cip"],
+      "complianceTags": ["food_safety", "hygienic_design"]
+    },
+    {
+      "id": "pet_food",
+      "label": "Pet food",
+      "adjacent": ["food", "packaging", "ingredients"],
+      "taxonomyKeys": ["tax:rq:industry.food_beverage", "tax:rq:industry.food_beverage.pet_food"],
+      "processHints": ["extrusion", "drying", "coating", "packaging"],
+      "complianceTags": ["food_safety", "allergen_control"]
+    },
+    {
+      "id": "pharmaceutical",
+      "label": "Pharmaceutical",
+      "adjacent": ["laboratories", "packaging", "utilities"],
+      "taxonomyKeys": ["tax:rq:industry.life_sciences.pharma"],
+      "processHints": ["granulation", "tableting", "sterile_fill", "packaging"],
+      "complianceTags": ["gmp", "validation", "serialization"]
+    },
+    {
+      "id": "chemical",
+      "label": "Chemical",
+      "adjacent": ["utilities", "freight", "waste_management"],
+      "taxonomyKeys": ["tax:rq:industry.chemicals"],
+      "processHints": ["batch_reaction", "distillation", "blending"],
+      "complianceTags": ["hazmat", "environmental"]
+    },
+    {
+      "id": "packaging",
+      "label": "Packaging",
+      "adjacent": ["food", "pharmaceutical", "logistics"],
+      "taxonomyKeys": ["tax:rq:industry.packaging"],
+      "processHints": ["forming", "filling", "labelling", "case_packing"],
+      "complianceTags": ["materials_contact"]
+    },
+    {
+      "id": "automotive",
+      "label": "Automotive",
+      "adjacent": ["electronics", "robotics", "logistics"],
+      "taxonomyKeys": ["tax:rq:industry.automotive"],
+      "processHints": ["stamping", "welding", "assembly", "paint"],
+      "complianceTags": ["iatf", "traceability"]
+    }
+  ]
+}

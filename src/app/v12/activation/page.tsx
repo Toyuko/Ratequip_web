@@ -13,6 +13,7 @@ import {
   v12ConfirmCompanySetup,
   v12ListCompanySetup,
   v12ListSetupIndustryPacks,
+  v12Part7ConfirmFact,
   v12ReviewCompanySetupSuggestions,
   v12ReviewProfileCompanySuggestion,
   v12SaveCompanySetupSection,
@@ -75,6 +76,26 @@ type Session = {
   profileId?: string;
 };
 
+type DnaFact = {
+  id: string;
+  predicate: string;
+  objectJson: Record<string, unknown>;
+  confidence: number;
+  confirmationStatus:
+    | "observed"
+    | "inferred"
+    | "confirmed"
+    | "rejected"
+    | "superseded";
+  sourceType: string;
+};
+
+type DnaState = {
+  enabled: boolean;
+  profile: { id: string; profileStatus: string; legalName: string } | null;
+  facts: DnaFact[];
+};
+
 const roles: Array<{ id: Role; title: string; body: string }> = [
   {
     id: "buyer",
@@ -118,8 +139,15 @@ function CompanySetupWizard() {
   const [companySuggestions, setCompanySuggestions] = useState<
     CompanySuggestion[]
   >([]);
+  const [dna, setDna] = useState<DnaState | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  function applyDna(next: unknown) {
+    if (!next || typeof next !== "object") return;
+    const d = next as DnaState;
+    if (typeof d.enabled === "boolean") setDna(d);
+  }
 
   useEffect(() => {
     if (presetName) setCompanyName(presetName);
@@ -137,6 +165,8 @@ function CompanySetupWizard() {
           ? packList[0].id
           : industryPack;
       if (nextPack !== industryPack) setIndustryPack(nextPack);
+
+      applyDna(existing.dna);
 
       if (existing.session && existing.session.status !== "completed") {
         setSession(existing.session as Session);
@@ -173,6 +203,7 @@ function CompanySetupWizard() {
           setSession(res.session as Session);
           setAnswers({});
           setPhase("interview");
+          applyDna(res.dna);
           setMessage(
             `AI questionnaire started · ${res.session.sections.length} sections · profile suggestions stay pending until you confirm.`,
           );
@@ -212,6 +243,7 @@ function CompanySetupWizard() {
       setSession(res.session as Session);
       setAnswers({});
       setPhase("interview");
+      applyDna(res.dna);
       setMessage(
         `AI interview started · ${res.session.sections.length} sections · ${res.policyVersion}`,
       );
@@ -239,14 +271,32 @@ function CompanySetupWizard() {
       }
       setSession(res.session as Session);
       setAnswers(res.session.answers);
+      applyDna(res.dna);
       if (res.session.status === "review") {
         setPhase("review");
         setMessage(
-          "Interview complete. Review AI suggestions before confirming the company profile.",
+          "Interview complete. Review AI suggestions and Business DNA facts before confirming the company profile.",
         );
       } else {
         setMessage(`Saved. Next: ${res.currentSection?.label ?? "review"}`);
       }
+    });
+  }
+
+  function setDnaFact(factId: string, status: "confirmed" | "rejected") {
+    if (!session) return;
+    startTransition(async () => {
+      const res = await v12Part7ConfirmFact({
+        sessionId: session.id,
+        factId,
+        status,
+        actorId: "company-admin@demo.ratequip.com",
+      });
+      if (!res.ok) {
+        setMessage(res.message);
+        return;
+      }
+      applyDna(res.dna);
     });
   }
 
@@ -278,6 +328,7 @@ function CompanySetupWizard() {
       }
       setSession(res.session as Session);
       setCompanySuggestions(res.companySuggestions ?? []);
+      applyDna(res.dna);
       setPhase("done");
       setMessage(
         `Company profile confirmed. ${res.acceptedSuggestions} suggestion(s) accepted · ${res.companySuggestions?.length ?? 0} companies matched.`,
@@ -314,6 +365,11 @@ function CompanySetupWizard() {
       <Badge variant="orange">
         {fromOnboarding ? "Step 2 of 2 · AI questionnaire" : "Company setup"}
       </Badge>
+      {dna?.enabled ? (
+        <Badge className="ml-2" variant="muted">
+          Part 7 Business DNA
+        </Badge>
+      ) : null}
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         Set up your company with AI
       </h1>
@@ -322,6 +378,9 @@ function CompanySetupWizard() {
         operating profile. The assistant builds profile suggestions and ranks
         relevant companies — nothing is published until you accept or reject
         each suggestion.
+        {dna?.enabled
+          ? " Inferred Business DNA facts stay draft until you confirm them."
+          : ""}
       </p>
 
       {session ? (
@@ -539,6 +598,85 @@ function CompanySetupWizard() {
               </div>
             </div>
           ))}
+
+          {dna?.enabled && dna.facts.length > 0 ? (
+            <div className="rounded-lg border border-dashed border-orange-300 bg-orange-50/40 p-5">
+              <h3 className="text-lg font-semibold text-[var(--rq-ink)]">
+                Business DNA facts
+              </h3>
+              <p className="mt-1 text-sm text-[var(--rq-slate)]">
+                Inferred facts come from industry packs. Observed facts are your
+                answers. Confirm or reject before the profile is final.
+              </p>
+              <ul className="mt-4 space-y-3">
+                {dna.facts.map((f) => {
+                  const value = f.objectJson?.value;
+                  const display =
+                    typeof value === "string"
+                      ? value
+                      : Array.isArray(value)
+                        ? value.join(", ")
+                        : JSON.stringify(value);
+                  return (
+                    <li
+                      key={f.id}
+                      className="rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] p-3"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <div className="text-sm font-medium text-[var(--rq-ink)]">
+                            {f.predicate}
+                          </div>
+                          <p className="mt-1 text-sm text-[var(--rq-slate)]">
+                            {display}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Badge
+                              variant={
+                                f.confirmationStatus === "confirmed" ||
+                                f.confirmationStatus === "observed"
+                                  ? "success"
+                                  : f.confirmationStatus === "rejected"
+                                    ? "muted"
+                                    : "warning"
+                              }
+                            >
+                              {f.confirmationStatus}
+                            </Badge>
+                            <Badge variant="muted">
+                              conf {Math.round(f.confidence * 100)}%
+                            </Badge>
+                            <Badge variant="muted">{f.sourceType}</Badge>
+                          </div>
+                        </div>
+                        {f.confirmationStatus === "inferred" ? (
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={pending}
+                              onClick={() => setDnaFact(f.id, "confirmed")}
+                            >
+                              Confirm
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={pending}
+                              onClick={() => setDnaFact(f.id, "rejected")}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
 
           <Button type="button" disabled={pending} onClick={confirmProfile}>
             {pending ? "Confirming…" : "Confirm company operating profile"}

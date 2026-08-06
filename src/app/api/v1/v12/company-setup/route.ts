@@ -5,6 +5,9 @@ import { apiResponse, handleOptions } from "@/lib/api/respond";
 import {
   confirmCompanySetup,
   listCompanySetup,
+  part7ConfirmFact,
+  part7IngestFact,
+  part7ResumeSession,
   reviewCompanySetupSuggestions,
   reviewProfileCompanySuggestion,
   refreshCompanySuggestionsForProfile,
@@ -141,6 +144,69 @@ export async function POST(req: NextRequest) {
       return apiResponse(req, err("Invalid refresh payload"));
     }
     const res = refreshCompanySuggestionsForProfile(profileId);
+    if (!res.ok) return apiResponse(req, err(res.message, 400));
+    return apiResponse(req, ok(res));
+  }
+
+  if (action === "ingest_fact") {
+    const sessionId =
+      typeof body?.sessionId === "string" ? body.sessionId : "";
+    const predicate =
+      typeof body?.predicate === "string" ? body.predicate : "";
+    if (!sessionId || !predicate || body?.value === undefined) {
+      return apiResponse(req, err("Invalid ingest_fact payload"));
+    }
+    const res = part7IngestFact({
+      sessionId,
+      predicate,
+      value: body.value,
+      confidence:
+        typeof body.confidence === "number" ? body.confidence : undefined,
+      sourceType:
+        typeof body.sourceType === "string" ? body.sourceType : undefined,
+      createdBy: gate.user?.id ?? "api",
+      idempotencyKey:
+        typeof body.idempotencyKey === "string"
+          ? body.idempotencyKey
+          : req.headers.get("idempotency-key") ?? undefined,
+    });
+    if (!res.ok) return apiResponse(req, err(res.message, 400));
+    return apiResponse(req, ok(res));
+  }
+
+  if (action === "confirm_fact") {
+    const sessionId =
+      typeof body?.sessionId === "string" ? body.sessionId : "";
+    const factId = typeof body?.factId === "string" ? body.factId : "";
+    const status = body?.status;
+    if (
+      !sessionId ||
+      !factId ||
+      (status !== "confirmed" && status !== "rejected")
+    ) {
+      return apiResponse(req, err("Invalid confirm_fact payload"));
+    }
+    const res = part7ConfirmFact({
+      sessionId,
+      factId,
+      status,
+      actorId: gate.user?.id ?? "api",
+    });
+    if (!res.ok) return apiResponse(req, err(res.message, 400));
+    return apiResponse(req, ok(res));
+  }
+
+  if (action === "resume_session") {
+    const sessionId =
+      typeof body?.sessionId === "string" ? body.sessionId : "";
+    if (!sessionId) {
+      return apiResponse(req, err("Invalid resume_session payload"));
+    }
+    const res = part7ResumeSession({
+      sessionId,
+      companyId:
+        typeof body?.companyId === "string" ? body.companyId : undefined,
+    });
     if (!res.ok) return apiResponse(req, err(res.message, 400));
     return apiResponse(req, ok(res));
   }

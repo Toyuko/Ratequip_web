@@ -1,24 +1,31 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { v12SaveContractor } from "@/lib/actions/v12";
 
 export default function ContractorBuilderPage() {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [hints, setHints] = useState<{
+    capabilityCount: number;
+    explanation: string;
+  } | null>(null);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">
+      <Badge variant="muted">V13 Domain 10</Badge>
+      <h1 className="mt-2 text-3xl font-bold text-[var(--rq-ink)]">
         Contractor Builder
       </h1>
       <p className="mt-2 text-[var(--rq-slate)]">
-        V12 Domain 10 — trades, licences, coverage and availability for service
-        matching.
+        Trades, licences, coverage and availability for service matching.
+        Capability keys are derived for explainable shortlists.
       </p>
       <form
         className="mt-8 space-y-4 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5"
@@ -41,9 +48,18 @@ export default function ContractorBuilderPage() {
               emergencyAvailable: fd.get("emergency") === "on",
               rateSummary: String(fd.get("rates") || ""),
               notes: String(fd.get("notes") || ""),
+              coverageRegions: String(fd.get("regions") || "")
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
               publish: true,
+              actorId: "contractor-ui",
+              idempotencyKey: `ctr-${Date.now()}`,
             });
-            setMessage(`Contractor profile ${profile.id} published.`);
+            setHints(profile.matchHints ?? null);
+            setMessage(
+              `Contractor profile ${profile.id} published · request ${profile.requestId ?? "n/a"}.`,
+            );
           });
         }}
       >
@@ -76,6 +92,15 @@ export default function ContractorBuilderPage() {
           />
         </div>
         <div>
+          <Label htmlFor="regions">Coverage regions</Label>
+          <Input
+            id="regions"
+            name="regions"
+            defaultValue="Australia, ASEAN"
+            className="mt-1"
+          />
+        </div>
+        <div>
           <Label htmlFor="radius">Service radius (km)</Label>
           <Input id="radius" name="radius" type="number" defaultValue={500} className="mt-1" />
         </div>
@@ -92,9 +117,19 @@ export default function ContractorBuilderPage() {
           <Textarea id="notes" name="notes" className="mt-1" />
         </div>
         {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Publish contractor profile"}
-        </Button>
+        {hints ? (
+          <p className="text-xs text-[var(--rq-muted)]">
+            {hints.explanation} · {hints.capabilityCount} capability keys
+          </p>
+        ) : null}
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" disabled={pending}>
+            {pending ? "Saving…" : "Publish contractor profile"}
+          </Button>
+          <Button asChild type="button" variant="outline">
+            <Link href="/v12/matching">See matching</Link>
+          </Button>
+        </div>
       </form>
     </div>
   );

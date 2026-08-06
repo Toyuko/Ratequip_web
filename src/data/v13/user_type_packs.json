@@ -1,0 +1,73 @@
+{
+  "version": "v13.part7.1",
+  "packs": [
+    {
+      "id": "buyer",
+      "label": "Buyer / Manufacturer",
+      "discovery": [
+        "legal_identity",
+        "primary_industry",
+        "facilities_processes",
+        "procurement_categories",
+        "compliance",
+        "workforce",
+        "projects_priorities",
+        "publication_consent"
+      ],
+      "seedPredicates": [
+        { "predicate": "role.primary", "value": "buyer", "confidence": 0.95 },
+        { "predicate": "intent.sourcing", "value": true, "confidence": 0.85 }
+      ]
+    },
+    {
+      "id": "supplier",
+      "label": "Supplier / OEM / Distributor",
+      "discovery": [
+        "legal_identity",
+        "primary_industry",
+        "products_services",
+        "service_regions",
+        "compliance",
+        "catalogue_readiness",
+        "publication_consent"
+      ],
+      "seedPredicates": [
+        { "predicate": "role.primary", "value": "supplier", "confidence": 0.95 },
+        { "predicate": "intent.selling", "value": true, "confidence": 0.85 }
+      ]
+    },
+    {
+      "id": "contractor",
+      "label": "Contractor / Service Provider",
+      "discovery": [
+        "legal_identity",
+        "trades_licences",
+        "coverage_radius",
+        "compliance",
+        "availability",
+        "publication_consent"
+      ],
+      "seedPredicates": [
+        { "predicate": "role.primary", "value": "contractor", "confidence": 0.95 },
+        { "predicate": "intent.services", "value": true, "confidence": 0.85 }
+      ]
+    },
+    {
+      "id": "manufacturer",
+      "label": "Manufacturer",
+      "discovery": [
+        "legal_identity",
+        "primary_industry",
+        "facilities_processes",
+        "equipment_capacity",
+        "procurement_categories",
+        "compliance",
+        "workforce",
+        "publication_consent"
+      ],
+      "seedPredicates": [
+        { "predicate": "org.archetype", "value": "manufacturer", "confidence": 0.8 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+name: Phase 2 Acceptance Gate
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  phase2-acceptance:
+    name: Phase 2 smoke + Playwright audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Phase 2 acceptance smoke
+        run: npm run smoke:phase2:acceptance
+        env:
+          # Enterprise flags must remain off for Phase 2 gate
+          ENTERPRISE_PART7_ENABLED: "false"
+          ENTERPRISE_GRAPH_MATCH_ENABLED: "false"
+          ENTERPRISE_CATALOGUE_LEDGER_ENABLED: "false"
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright acceptance audit
+        run: npx playwright test e2e/acceptance-audit.spec.ts
+        env:
+          ENTERPRISE_PART7_ENABLED: "false"
+          ENTERPRISE_GRAPH_MATCH_ENABLED: "false"
+          ENTERPRISE_CATALOGUE_LEDGER_ENABLED: "false"
+
+      - name: Part 7 smoke (isolated, flag on)
+        run: npm run smoke:part7
+        env:
+          ENTERPRISE_PART7_ENABLED: "true"
+          ENTERPRISE_GRAPH_MATCH_ENABLED: "true"
+
+      - name: Catalogue ledger smoke (isolated, flag on)
+        run: npm run smoke:catalogue-ledger
+        env:
+          ENTERPRISE_CATALOGUE_LEDGER_ENABLED: "true"

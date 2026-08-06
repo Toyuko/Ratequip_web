@@ -1,4 +1,10 @@
 import pricingRules from "@/data/v12/part6/pricing_rules.json";
+import { isCatalogueLedgerEnabled } from "@/lib/v13/flags";
+import {
+  reconcileCredits,
+  reserveCredits,
+  type ReservationEntry,
+} from "@/lib/v12/catalogue-factory/credit-ledger";
 
 export type FieldClassification =
   | "SUPPLIER_PROVIDED"
@@ -50,6 +56,7 @@ const rules = {
   priorityMultiplier: Number(pricingRules.priority_multiplier),
 };
 
+/** Module 68 PricingEngine.estimate — same formula as Python reference. */
 export function estimateCredits(x: PricingInputs): number {
   let total =
     rules.base +
@@ -64,12 +71,63 @@ export function estimateCredits(x: PricingInputs): number {
   return Math.round(total * 100) / 100;
 }
 
+/**
+ * Module 68 ExtractedField.publishable — supplier-confirmed or high-confidence
+ * with evidence. AI_SUGGESTED alone is never publishable.
+ */
 export function isFieldPublishable(f: ExtractedField): boolean {
+  if (f.classification === "AI_SUGGESTED") return false;
   return (
     f.classification === "SUPPLIER_PROVIDED" ||
     f.classification === "SUPPLIER_CONFIRMED" ||
     (f.confidence >= 0.9 && f.evidence.length > 0)
   );
+}
+
+export function productPublishability(fields: ExtractedField[]): {
+  publishable: boolean;
+  blockedFields: string[];
+  reasons: string[];
+} {
+  const blocked = fields.filter((f) => !isFieldPublishable(f));
+  const reasons: string[] = [];
+  if (blocked.some((f) => f.classification === "AI_SUGGESTED")) {
+    reasons.push("ai_suggested_requires_human_confirm");
+  }
+  if (blocked.some((f) => f.confidence < 0.9)) {
+    reasons.push("low_confidence_without_supplier_confirm");
+  }
+  if (blocked.some((f) => f.evidence.length === 0)) {
+    reasons.push("missing_evidence");
+  }
+  return {
+    publishable: blocked.length === 0 && fields.length > 0,
+    blockedFields: blocked.map((f) => f.name),
+    reasons,
+  };
+}
+
+/** Reserve catalogue credits (idempotent). No-op path when flag off returns estimate only. */
+export function reserveCatalogueCredits(
+  jobKey: string,
+  estimate: number,
+): { reservation: ReservationEntry | null; estimate: number; ledgerEnabled: boolean } {
+  const ledgerEnabled = isCatalogueLedgerEnabled();
+  if (!ledgerEnabled) {
+    return { reservation: null, estimate, ledgerEnabled: false };
+  }
+  return {
+    reservation: reserveCredits(jobKey, estimate),
+    estimate,
+    ledgerEnabled: true,
+  };
+}
+
+export function reconcileCatalogueCredits(
+  jobKey: string,
+  actual: number,
+): ReservationEntry {
+  return reconcileCredits(jobKey, actual);
 }
 
 const SUSPICIOUS = [

@@ -62,6 +62,10 @@ export type OpportunityProfile = {
   preferredRequirementTypes: string[];
   notes: string;
   updatedAt: string;
+  taxonomyKeys?: string[];
+  capabilityKeys?: string[];
+  requestId?: string;
+  idempotencyKey?: string;
 };
 
 export type ContractorProfile = {
@@ -76,6 +80,10 @@ export type ContractorProfile = {
   rateSummary: string;
   notes: string;
   updatedAt: string;
+  coverageRegions?: string[];
+  capabilityKeys?: string[];
+  requestId?: string;
+  idempotencyKey?: string;
 };
 
 export type Requisition = {

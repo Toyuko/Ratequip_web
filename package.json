@@ -24,6 +24,8 @@
     "evidence:uat": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-uat-walkthrough.mjs",
     "uat:db": "tsx scripts/uat-db-demo.ts",
     "smoke:v12": "tsx scripts/v12-smoke.ts",
+    "smoke:part7": "ENTERPRISE_PART7_ENABLED=true ENTERPRISE_GRAPH_MATCH_ENABLED=true tsx scripts/part7-smoke.ts",
+    "smoke:catalogue-ledger": "ENTERPRISE_CATALOGUE_LEDGER_ENABLED=true tsx scripts/catalogue-ledger-smoke.ts",
     "test:trust": "tsx scripts/trust-score-check.ts",
     "stripe:setup": "tsx scripts/stripe-setup-local.ts",
     "stripe:listen": "stripe listen --forward-to https://ratequip-web.vercel.app/api/webhooks/stripe --events checkout.session.completed,customer.subscription.updated,customer.subscription.deleted,invoice.paid",

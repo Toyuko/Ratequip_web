@@ -49,6 +49,9 @@ import {
   listSetupIndustryPacks,
   reviewProfileCompanySuggestion,
   refreshCompanySuggestionsForProfile,
+  part7ConfirmFact,
+  part7IngestFact,
+  part7ResumeSession,
 } from "@/lib/v12/services";
 
 
@@ -364,6 +367,33 @@ export async function v12RefreshCompanySuggestions(profileId: string) {
   await requireServerV12Session();
 
   return refreshCompanySuggestionsForProfile(profileId);
+}
+
+export async function v12Part7IngestFact(
+  input: Parameters<typeof part7IngestFact>[0],
+) {
+  const user = await requireServerV12Session();
+  return part7IngestFact({
+    ...input,
+    createdBy: input.createdBy ?? user.id,
+  });
+}
+
+export async function v12Part7ConfirmFact(
+  input: Parameters<typeof part7ConfirmFact>[0],
+) {
+  const user = await requireServerV12Session();
+  return part7ConfirmFact({
+    ...input,
+    actorId: input.actorId || user.id,
+  });
+}
+
+export async function v12Part7ResumeSession(
+  input: Parameters<typeof part7ResumeSession>[0],
+) {
+  await requireServerV12Session();
+  return part7ResumeSession(input);
 }
 
 export async function v12ListAnalysis(runId?: string) {

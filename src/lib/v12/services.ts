@@ -16,7 +16,12 @@ import type { AnalysisRun } from "@/lib/v12/intelligence/types";
 import {
   estimateCredits,
   isFieldPublishable,
+  productPublishability,
+  reconcileCatalogueCredits,
+  reserveCatalogueCredits,
 } from "@/lib/v12/catalogue-factory/domain";
+import { capabilityKeysForIndustry } from "@/lib/v13/part7/graph";
+import { buildCommandEnvelope } from "@/lib/v13/command-envelope";
 import {
   extractDraftProducts,
   preflightFromText,
@@ -55,6 +60,18 @@ import type {
   CompanyRole,
   SetupSuggestion,
 } from "@/lib/v12/operating-profile/types";
+import { isPart7Enabled } from "@/lib/v13/flags";
+import {
+  checkpointSession,
+  confirmOrRejectFact,
+  factsToAnswerEnrichment,
+  ingestFact,
+  listDnaForSession,
+  markProfileConfirmed,
+  resumeSession,
+  seedFactsFromSetup,
+} from "@/lib/v13/part7/facts";
+import { graphProximityScore } from "@/lib/v13/part7/graph";
 import {
   getV12Store,
   type AssetRecord,
@@ -128,9 +145,28 @@ export function upsertOpportunity(input: {
   preferredRequirementTypes: string[];
   notes: string;
   publish?: boolean;
+  currency?: string;
+  taxonomyKeys?: string[];
+  capabilityKeys?: string[];
+  industryPack?: string;
+  idempotencyKey?: string;
+  actorId?: string;
 }) {
   const store = getV12Store();
   const existing = store.opportunities.find((o) => o.companyId === input.companyId);
+  const industryPack = input.industryPack ?? "pet_food";
+  const capabilityKeys =
+    input.capabilityKeys ?? capabilityKeysForIndustry(industryPack);
+  const taxonomyKeys =
+    input.taxonomyKeys ??
+    input.targetIndustries.map(
+      (t) => `tax:rq:industry.${t.toLowerCase().replace(/\s+/g, "_")}`,
+    );
+  const envelope = buildCommandEnvelope({
+    tenantId: input.companyId,
+    actorId: input.actorId ?? "opportunity-builder",
+    idempotencyKey: input.idempotencyKey,
+  });
   const profile = {
     id: existing?.id ?? id("opp"),
     companyId: input.companyId,
@@ -140,10 +176,14 @@ export function upsertOpportunity(input: {
     targetRegions: input.targetRegions,
     projectValueMin: input.projectValueMin,
     projectValueMax: input.projectValueMax,
-    currency: "USD",
+    currency: input.currency ?? "USD",
     preferredRequirementTypes: input.preferredRequirementTypes,
     notes: input.notes,
-    updatedAt: new Date().toISOString(),
+    updatedAt: envelope.occurredAt,
+    taxonomyKeys,
+    capabilityKeys,
+    requestId: envelope.requestId,
+    idempotencyKey: envelope.idempotencyKey,
   };
   if (existing) {
     Object.assign(existing, profile);
@@ -164,7 +204,15 @@ export function upsertOpportunity(input: {
       notes: profile.notes,
     }),
   );
-  return profile;
+  return {
+    ...profile,
+    matchHints: {
+      capabilityCount: capabilityKeys.length,
+      taxonomyCount: taxonomyKeys.length,
+      explanation:
+        "Matching uses target industries, regions, and capability graph keys with reason codes.",
+    },
+  };
 }
 
 export function upsertContractor(input: {
@@ -177,9 +225,23 @@ export function upsertContractor(input: {
   rateSummary: string;
   notes: string;
   publish?: boolean;
+  coverageRegions?: string[];
+  capabilityKeys?: string[];
+  idempotencyKey?: string;
+  actorId?: string;
 }) {
   const store = getV12Store();
   const existing = store.contractors.find((c) => c.companyId === input.companyId);
+  const envelope = buildCommandEnvelope({
+    tenantId: input.companyId,
+    actorId: input.actorId ?? "contractor-builder",
+    idempotencyKey: input.idempotencyKey,
+  });
+  const capabilityKeys =
+    input.capabilityKeys ??
+    input.trades.map(
+      (t) => `cap.service.${t.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`,
+    );
   const profile = {
     id: existing?.id ?? id("ctr"),
     companyId: input.companyId,
@@ -191,7 +253,11 @@ export function upsertContractor(input: {
     emergencyAvailable: input.emergencyAvailable,
     rateSummary: input.rateSummary,
     notes: input.notes,
-    updatedAt: new Date().toISOString(),
+    updatedAt: envelope.occurredAt,
+    coverageRegions: input.coverageRegions ?? [],
+    capabilityKeys,
+    requestId: envelope.requestId,
+    idempotencyKey: envelope.idempotencyKey,
   };
   if (existing) Object.assign(existing, profile);
   else store.contractors.push(profile);
@@ -209,7 +275,14 @@ export function upsertContractor(input: {
       notes: profile.notes,
     }),
   );
-  return profile;
+  return {
+    ...profile,
+    matchHints: {
+      capabilityCount: capabilityKeys.length,
+      explanation:
+        "Contractor matching uses trades, licences, radius and capability keys with exclusion codes.",
+    },
+  };
 }
 
 export async function runExplainableMatch(input: {
@@ -238,16 +311,26 @@ export async function runExplainableMatch(input: {
       serviceable: true,
       deadlineOk: true,
     });
+    const reqKeys = input.requiredCategory
+      ? [`tax:rq:industry.${input.requiredCategory}`]
+      : [];
+    const candKeys = c.categories.map(
+      (cat) => `tax:rq:industry.${cat.toLowerCase().replace(/\s+/g, "_")}`,
+    );
+    const graph = graphProximityScore({
+      requirementKeys: reqKeys.length ? reqKeys : candKeys.slice(0, 1),
+      candidateKeys: candKeys,
+    });
     const features: MatchFeature[] = [
       {
         key: "capability",
-        value: Math.min(1, c.trustScore / 100 + 0.1),
+        value: Math.min(1, c.trustScore / 100 + 0.1 + graph.score * 0.15),
         weight: 0.22,
-        reasonCode: "capability_coverage",
+        reasonCode: graph.reasons[0] ?? "capability_coverage",
       },
       {
         key: "industry",
-        value: c.categories.length ? 0.85 : 0.4,
+        value: Math.min(1, (c.categories.length ? 0.85 : 0.4) + graph.score * 0.1),
         weight: 0.12,
         reasonCode: "industry_alignment",
       },
@@ -1252,8 +1335,10 @@ export function createCatalogImport(input: {
     variants: preflight.variants,
     images: preflight.images,
   });
+  const jobId = id("cjob");
+  const reservation = reserveCatalogueCredits(jobId, estimatedCredits);
   const job: CatalogImportJob = {
-    id: id("cjob"),
+    id: jobId,
     title: input.title,
     status: "AWAITING_COST_APPROVAL",
     rightsAttested: true,
@@ -1266,7 +1351,7 @@ export function createCatalogImport(input: {
     createdAt: new Date().toISOString(),
   };
   store.catalogJobs.unshift(job);
-  return { ok: true as const, job, vault };
+  return { ok: true as const, job, vault, reservation };
 }
 
 export function previewCatalogImportUsage(jobId: string) {
@@ -1330,6 +1415,11 @@ export function processCatalogImport(input: {
     };
   }
   store.entitlementRemaining -= qty;
+  try {
+    reconcileCatalogueCredits(job.id, qty);
+  } catch {
+    // Flag-off or missing reservation — entitlement ledger above remains SoR
+  }
   store.usageLedger.unshift({
     id: id("ule"),
     correlationId: job.id,
@@ -1417,6 +1507,21 @@ export function publishCatalogJob(input: {
       message: "Accept at least one draft with confirmed evidence before publish",
     };
   }
+  // Module 68 publishability gate on field classifications when drafts expose fields
+  for (const d of accepted) {
+    const fields = (d as { fields?: Parameters<typeof productPublishability>[0] })
+      .fields;
+    if (fields?.length) {
+      const gate = productPublishability(fields);
+      if (!gate.publishable) {
+        return {
+          ok: false as const,
+          message: `Draft ${d.id} blocked: ${gate.reasons.join(", ") || "not publishable"}`,
+          blockedFields: gate.blockedFields,
+        };
+      }
+    }
+  }
   job.status = "PUBLISHED";
   void input.publisherId;
   return {
@@ -1479,11 +1584,31 @@ export function startCompanySetup(input: {
     updatedAt: now,
   };
   store.companySetupSessions.unshift(session);
+
+  let dna = null as ReturnType<typeof seedFactsFromSetup> | null;
+  if (isPart7Enabled()) {
+    dna = seedFactsFromSetup({
+      companyId,
+      legalName: companyName,
+      role: input.role,
+      industryPack: input.industryPack,
+      setupSessionId: session.id,
+      createdBy: "company-setup",
+    });
+  }
+
   return {
     ok: true as const,
     session,
     policyVersion: COMPANY_SETUP_POLICY,
     industryPacks: packs,
+    dna: dna
+      ? {
+          profile: dna.profile,
+          facts: dna.facts,
+          enabled: true,
+        }
+      : { enabled: isPart7Enabled(), profile: null, facts: [] },
   };
 }
 
@@ -1501,6 +1626,36 @@ export function saveCompanySetupSection(input: {
 
   session.answers = { ...session.answers, ...input.answers };
   session.updatedAt = new Date().toISOString();
+
+  if (isPart7Enabled()) {
+    const dna = listDnaForSession(session.id);
+    if (dna.profile) {
+      for (const [key, value] of Object.entries(input.answers)) {
+        if (!value.trim()) continue;
+        ingestFact({
+          companyId: session.companyId,
+          businessProfileId: dna.profile.id,
+          predicate: `answer.${key}`,
+          objectJson: { value },
+          sourceType: "user_input",
+          confidence: 1,
+          confirmationStatus: "observed",
+          createdBy: "company-setup",
+          idempotencyKey: `${session.id}:answer.${key}:${value.slice(0, 40)}`,
+        });
+      }
+      checkpointSession({
+        companyId: session.companyId,
+        setupSessionId: session.id,
+        businessProfileId: dna.profile.id,
+        payload: {
+          sectionIndex: session.sectionIndex,
+          answers: session.answers,
+          status: session.status,
+        },
+      });
+    }
+  }
 
   if (input.advance !== false) {
     const next = session.sectionIndex + 1;
@@ -1522,6 +1677,7 @@ export function saveCompanySetupSection(input: {
     ok: true as const,
     session,
     currentSection: session.sections[session.sectionIndex] ?? null,
+    dna: listDnaForSession(session.id),
   };
 }
 
@@ -1571,6 +1727,8 @@ export function confirmCompanySetup(input: {
   }
 
   const now = new Date().toISOString();
+  const dna = listDnaForSession(session.id);
+  const dnaAnswers = factsToAnswerEnrichment(dna.facts);
   const draftProfile = {
     id: id("oprof"),
     companyId: session.companyId,
@@ -1579,7 +1737,7 @@ export function confirmCompanySetup(input: {
     industryPack: session.industryPack,
     status: "confirmed" as const,
     policyVersion: COMPANY_SETUP_POLICY,
-    answers: { ...session.answers },
+    answers: { ...session.answers, ...dnaAnswers },
     sections: summariseAnswers(session.sections, session.answers),
     suggestions: session.suggestions.map((s) => ({ ...s })),
     companySuggestions: [] as ReturnType<
@@ -1594,6 +1752,24 @@ export function confirmCompanySetup(input: {
     draftProfile,
     { limit: 6 },
   );
+
+  if (dna.profile) {
+    markProfileConfirmed({
+      businessProfileId: dna.profile.id,
+      operatingProfileId: draftProfile.id,
+      companyId: session.companyId,
+    });
+    checkpointSession({
+      companyId: session.companyId,
+      setupSessionId: session.id,
+      businessProfileId: dna.profile.id,
+      payload: {
+        status: "completed",
+        operatingProfileId: draftProfile.id,
+        confirmedAt: now,
+      },
+    });
+  }
 
   const existingIdx = store.operatingProfiles.findIndex(
     (p) => p.companyId === session.companyId,
@@ -1615,6 +1791,7 @@ export function confirmCompanySetup(input: {
     acceptedSuggestions: draftProfile.suggestions.filter(
       (s) => s.status === "accepted",
     ).length,
+    dna: listDnaForSession(session.id),
   };
 }
 
@@ -1676,5 +1853,92 @@ export function listCompanySetup(sessionId?: string) {
     profiles: store.operatingProfiles,
     industryPacks: listSetupIndustryPacks(),
     policyVersion: COMPANY_SETUP_POLICY,
+    dna: session
+      ? listDnaForSession(session.id)
+      : { enabled: isPart7Enabled(), profile: null, facts: [] },
+  };
+}
+
+export function part7IngestFact(input: {
+  sessionId: string;
+  predicate: string;
+  value: unknown;
+  confidence?: number;
+  sourceType?: string;
+  createdBy?: string;
+  idempotencyKey?: string;
+}) {
+  const store = getV12Store();
+  const session = store.companySetupSessions.find((s) => s.id === input.sessionId);
+  if (!session) return { ok: false as const, message: "Setup session not found" };
+  let dna = listDnaForSession(session.id);
+  if (!dna.profile) {
+    const seeded = seedFactsFromSetup({
+      companyId: session.companyId,
+      legalName: session.companyName,
+      role: session.role,
+      industryPack: session.industryPack,
+      setupSessionId: session.id,
+      createdBy: input.createdBy,
+    });
+    dna = { enabled: true, profile: seeded.profile, facts: seeded.facts };
+  }
+  const res = ingestFact({
+    companyId: session.companyId,
+    businessProfileId: dna.profile!.id,
+    predicate: input.predicate,
+    objectJson: { value: input.value },
+    sourceType: input.sourceType ?? "user_input",
+    confidence: input.confidence ?? 0.8,
+    confirmationStatus: "inferred",
+    createdBy: input.createdBy,
+    idempotencyKey: input.idempotencyKey,
+  });
+  if (!res.ok) return res;
+  return { ...res, dna: listDnaForSession(session.id) };
+}
+
+export function part7ConfirmFact(input: {
+  sessionId: string;
+  factId: string;
+  status: "confirmed" | "rejected";
+  actorId: string;
+}) {
+  const store = getV12Store();
+  const session = store.companySetupSessions.find((s) => s.id === input.sessionId);
+  if (!session) return { ok: false as const, message: "Setup session not found" };
+  const res = confirmOrRejectFact({
+    factId: input.factId,
+    companyId: session.companyId,
+    status: input.status,
+    actorId: input.actorId,
+  });
+  if (!res.ok) return res;
+  return { ok: true as const, fact: res.fact, dna: listDnaForSession(session.id) };
+}
+
+export function part7ResumeSession(input: {
+  sessionId: string;
+  companyId?: string;
+}) {
+  const store = getV12Store();
+  const session = store.companySetupSessions.find((s) => s.id === input.sessionId);
+  if (!session) {
+    return { ok: false as const, message: "Setup session not found" };
+  }
+  const resumed = resumeSession({
+    companyId: input.companyId ?? session.companyId,
+    setupSessionId: session.id,
+  });
+  if (!resumed.ok) return resumed;
+  return {
+    ok: true as const,
+    session,
+    dna: {
+      enabled: true,
+      profile: resumed.profile,
+      facts: resumed.facts,
+    },
+    checkpoint: resumed.checkpoint,
   };
 }
