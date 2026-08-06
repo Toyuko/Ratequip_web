@@ -116,9 +116,60 @@ async function signIn(page, role = "buyer") {
 }
 
 async function ensureSignedIn(page, role = "buyer") {
-  if (page.url().includes("/sign-in")) {
+  if (page.url().includes("/sign-in") || page.url().includes("accounts.dev")) {
     await signIn(page, role);
   }
+}
+
+async function isBrokenPage(page) {
+  const body = ((await page.locator("body").innerText().catch(() => "")) || "")
+    .toLowerCase();
+  return (
+    body.includes("this page couldn't load") ||
+    body.includes("this page couldnt load") ||
+    body.includes("this site can't be reached") ||
+    body.includes("err_connection") ||
+    body.includes("err_timed_out") ||
+    body.includes("aw snap")
+  );
+}
+
+/** Navigate with retries; avoid flaky networkidle + recover load-error screens. */
+async function safeGoto(page, path, { role = "buyer", expectText } = {}) {
+  const url = path.startsWith("http") ? path : `${BASE}${path}`;
+  let lastErr;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+      await sleep(900);
+      await ensureSignedIn(page, role);
+      if (!page.url().includes(path.replace(BASE, "")) && path.startsWith("/")) {
+        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+        await sleep(900);
+      }
+      if (await isBrokenPage(page)) {
+        throw new Error(`Broken page UI at ${page.url()}`);
+      }
+      if (expectText) {
+        await page
+          .getByText(expectText)
+          .first()
+          .waitFor({ state: "visible", timeout: 20_000 });
+      }
+      return;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`safeGoto attempt ${attempt} failed for ${url}: ${err}`);
+      await sleep(1200);
+      // Re-auth and retry — Clerk ticket / role flips often cause blank load errors
+      try {
+        await signIn(page, role);
+      } catch {
+        /* continue */
+      }
+    }
+  }
+  throw lastErr ?? new Error(`Failed to open ${url}`);
 }
 
 async function fillVisibleAnswers(page) {
@@ -209,8 +260,14 @@ async function main() {
     });
 
     // --- Open: V13 index + flags ---
-    await page.goto(`${BASE}/v13`, { waitUntil: "networkidle" });
+    await page.goto(`${BASE}/v13`, {
+      waitUntil: "domcontentloaded",
+      timeout: 60_000,
+    });
     await sleep(1200);
+    if (await isBrokenPage(page)) {
+      throw new Error("Opening /v13 failed to load");
+    }
     await caption(
       page,
       "RateQuip V13 — enterprise overlay on the Phase 2 MVP",
@@ -229,16 +286,9 @@ async function main() {
     await sleep(1200);
 
     // --- Part 7 Business DNA ---
-    await page.goto(`${BASE}/v12/activation`, {
-      waitUntil: "domcontentloaded",
-      timeout: 60_000,
+    await safeGoto(page, "/v12/activation", {
+      expectText: /Set up your company with AI/i,
     });
-    await sleep(1500);
-    await ensureSignedIn(page, "buyer");
-    if (!page.url().includes("/v12/activation")) {
-      await page.goto(`${BASE}/v12/activation`, { waitUntil: "networkidle" });
-      await sleep(1200);
-    }
 
     await caption(
       page,
@@ -319,14 +369,13 @@ async function main() {
       await sleep(1600);
     }
 
+    // Stay as buyer for the rest — mid-demo Clerk role flips caused blank
+    // "This page couldn't load" screens in the previous recording.
+
     // --- Graph matching ---
-    await page.goto(`${BASE}/v12/matching`, { waitUntil: "networkidle" });
-    await sleep(1200);
-    await ensureSignedIn(page, "buyer");
-    if (!page.url().includes("/v12/matching")) {
-      await page.goto(`${BASE}/v12/matching`, { waitUntil: "networkidle" });
-      await sleep(1000);
-    }
+    await safeGoto(page, "/v12/matching", {
+      expectText: /Explainable Matching Engine/i,
+    });
     await caption(
       page,
       "Wave 2 — Explainable matching with taxonomy graph proximity",
@@ -344,23 +393,21 @@ async function main() {
     if (await region.isVisible().catch(() => false)) {
       await region.fill("Australia");
     }
-    await page.getByRole("button", { name: /Run match|Match|Find/i }).first().click().catch(async () => {
-      await page.locator('form button[type="submit"]').first().click();
-    });
+    await page
+      .locator('form button[type="submit"]')
+      .first()
+      .click({ timeout: 10_000 });
     await sleep(2200);
+    if (await isBrokenPage(page)) {
+      throw new Error("Matching page broke after submit");
+    }
     await caption(page, "Shortlist with reason codes — not a black box", true);
     await sleep(2200);
 
     // --- Opportunity builder ---
-    await page.goto(`${BASE}/v12/opportunity-builder`, {
-      waitUntil: "networkidle",
+    await safeGoto(page, "/v12/opportunity-builder", {
+      expectText: /Opportunity Builder/i,
     });
-    await sleep(1200);
-    await ensureSignedIn(page, "supplier");
-    await page.goto(`${BASE}/v12/opportunity-builder`, {
-      waitUntil: "networkidle",
-    });
-    await sleep(1000);
     await caption(
       page,
       "Wave 2 — Opportunity Builder attaches capability & taxonomy keys",
@@ -374,6 +421,9 @@ async function main() {
       .getByRole("button", { name: /Publish opportunity profile/i })
       .click();
     await sleep(2000);
+    if (await isBrokenPage(page)) {
+      throw new Error("Opportunity builder page broke after publish");
+    }
     await caption(
       page,
       "Published — capability and taxonomy counts feed explainable matching",
@@ -382,15 +432,9 @@ async function main() {
     await sleep(2000);
 
     // --- Contractor builder ---
-    await page.goto(`${BASE}/v12/contractor-builder`, {
-      waitUntil: "networkidle",
+    await safeGoto(page, "/v12/contractor-builder", {
+      expectText: /Contractor Builder/i,
     });
-    await sleep(1200);
-    await ensureSignedIn(page, "contractor");
-    await page.goto(`${BASE}/v12/contractor-builder`, {
-      waitUntil: "networkidle",
-    });
-    await sleep(1000);
     await caption(
       page,
       "Wave 2 — Contractor Builder: trades, licences, coverage, capability keys",
@@ -400,70 +444,55 @@ async function main() {
       .getByRole("button", { name: /Publish contractor profile/i })
       .click();
     await sleep(2000);
+    if (await isBrokenPage(page)) {
+      throw new Error("Contractor builder page broke after publish");
+    }
     await caption(page, "Contractor profile published for service matching", true);
     await sleep(1800);
 
     // --- Catalogue factory ---
-    await signIn(page, "supplier");
-    await page.goto(`${BASE}/v12/catalogue-factory`, {
-      waitUntil: "networkidle",
+    await safeGoto(page, "/v12/catalogue-factory", {
+      expectText: /Turn my catalogue into product drafts/i,
     });
-    await sleep(1400);
     await caption(
       page,
       "Wave 3 — Catalogue factory: paste brochure → credit preview → drafts",
     );
     await sleep(1800);
 
-    const title = page.locator("#title, input[name='title']").first();
-    if (await title.isVisible().catch(() => false)) {
-      await title.fill("V13 Demo Packaging Catalogue");
-    }
-    const sampleBtn = page.getByRole("button", {
-      name: /Use sample|Load sample|Sample/i,
-    });
-    if (await sampleBtn.isVisible().catch(() => false)) {
-      await sampleBtn.click();
-      await sleep(800);
-    } else {
-      const body = page.locator("textarea").first();
-      if (await body.isVisible().catch(() => false)) {
-        await body.fill(
-          "Automatic Packaging Systems — Product Catalogue\n\nModel: AutoBag-1200 bagging machine\nCapacity: 20-60 bags/min\n\nModel: SealGuard-V vertical sealer\nCapacity: up to 40 packs/min",
-        );
-      }
+    await page.locator("#title").fill("V13 Demo Packaging Catalogue");
+    await page.locator("#body").fill(
+      "Automatic Packaging Systems — Product Catalogue\n\nModel: AutoBag-1200 bagging machine\nCapacity: 20-60 bags/min\n\nModel: SealGuard-V vertical sealer\nCapacity: up to 40 packs/min\n\nModel: InspectEye vision inspection system\nChecks: foil presence, seal integrity",
+    );
+    await page.locator('input[name="rights"]').check();
+    await sleep(800);
+    await caption(page, "Credit estimate runs only after rights attestation");
+    await sleep(1200);
+
+    await page
+      .getByRole("button", { name: /Estimate cost.*create drafts/i })
+      .click();
+    await sleep(4000);
+    if (await isBrokenPage(page)) {
+      throw new Error("Catalogue factory broke after create drafts");
     }
 
-    const rights = page.locator('input[type="checkbox"]').first();
-    if (await rights.isVisible().catch(() => false)) {
-      await rights.check().catch(() => {});
+    // If the server action bounced auth, recover onto a healthy catalogue UI
+    // instead of waiting forever for drafts that never rendered.
+    let onCatalogue = await page
+      .getByRole("heading", { name: /Turn my catalogue into product drafts/i })
+      .isVisible()
+      .catch(() => false);
+    if (!onCatalogue) {
+      console.warn("Catalogue UI lost after submit — recovering");
+      await safeGoto(page, "/v12/catalogue-factory", {
+        expectText: /Turn my catalogue into product drafts/i,
+      });
+      onCatalogue = true;
     }
 
-    const createBtn = page.getByRole("button", {
-      name: /Create import|Start import|Estimate|Upload|Create/i,
-    });
-    if (await createBtn.first().isVisible().catch(() => false)) {
-      await createBtn.first().click();
-      await sleep(2000);
-    }
-
-    const previewBtn = page.getByRole("button", {
-      name: /Preview|credit|Confirm usage|Approve cost/i,
-    });
-    if (await previewBtn.first().isVisible().catch(() => false)) {
-      await caption(page, "Credit estimate shown before processing — no silent charges");
-      await sleep(1600);
-      await previewBtn.first().click();
-      await sleep(1600);
-    }
-
-    const confirmUsage = page.getByRole("button", {
-      name: /Confirm.*usage|Confirm.*credit|Process|Continue/i,
-    });
-    if (await confirmUsage.first().isVisible().catch(() => false)) {
-      await confirmUsage.first().click();
-      await sleep(2200);
-    }
+    await page.evaluate(() => window.scrollBy(0, 360));
+    await sleep(1000);
 
     const acceptDraft = page.getByRole("button", { name: /^Accept$/i });
     if (await acceptDraft.first().isVisible().catch(() => false)) {
@@ -473,19 +502,39 @@ async function main() {
         true,
       );
       await acceptDraft.first().click();
-      await sleep(1500);
-    } else {
+      await sleep(1600);
       await caption(
         page,
-        "Catalogue path ready — publish blocked until drafts are confirmed",
+        "Publish stays blocked until accepted drafts are confirmed",
         true,
       );
       await sleep(1800);
+    } else {
+      const msg = page.locator("p.text-sm.text-emerald-700");
+      if (await msg.first().isVisible().catch(() => false)) {
+        await caption(
+          page,
+          "Drafts created with credit estimate — publish requires human confirm",
+          true,
+        );
+      } else {
+        await caption(
+          page,
+          "Catalogue factory — rights, credit estimate, human draft review before publish",
+          true,
+        );
+      }
+      await sleep(2200);
+    }
+
+    if (await isBrokenPage(page)) {
+      throw new Error("Broken page still visible before closing segment");
     }
 
     // --- Close ---
-    await page.goto(`${BASE}/v13`, { waitUntil: "networkidle" });
-    await sleep(1200);
+    await safeGoto(page, "/v13", {
+      expectText: /Enterprise archive integration/i,
+    });
     await caption(
       page,
       "V13 overlays are additive — Phase 2 MVP auth, RFQ, reviews & billing stay intact",
