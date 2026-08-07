@@ -16,7 +16,6 @@
     "db:import-leads": "tsx scripts/import-leads.ts",
     "db:rematch-categories": "tsx scripts/rematch-categories.ts",
     "db:enrich-descriptions": "tsx scripts/enrich-descriptions.ts",
-    "db:import-global": "tsx scripts/import-global-enrichment.ts",
     "smoke": "tsx scripts/smoke.ts",
     "smoke:phase2": "tsx scripts/phase2-smoke.ts",
     "smoke:phase2:acceptance": "tsx scripts/phase2-acceptance-counter.ts",
