@@ -1,0 +1,75 @@
+
+> ratequip-web@0.1.0 smoke:phase2:acceptance
+> tsx scripts/phase2-acceptance-counter.ts
+
+persistRequest: no database
+updateRequestFields: no database
+persistQuote: no database
+updateRequestStatus: no database
+persistReview: no database
+persistModeration: no database
+persistReviewResponse: no database
+persistReviewAppeal: no database
+persistClaim: no database
+persistModeration: no database
+persistSubscription: no database
+
+=== Phase 2 MVP Acceptance Evidence Counter ===
+
+Runtime: runtime store · 2026-07-30T10:36:14.567Z
+
+READY  Database  (1/1)
+  ✓ DB-01 Dual-path store available (runtime + optional Neon)
+      evidence: Runtime store active (demo dual-path)
+
+READY  Accounts / authentication  (2/2)
+  ✓ AUTH-01 Clerk sign-up/sign-in routes + loading state present
+      evidence: src/app/sign-up and sign-in; Suspense loading state added
+  ✓ AUTH-02 Close/Award gated server-side (requireMutationActor)
+      evidence: closeOrAwardRequest requires signed-in/demo session; UI hidden when canManage=false
+
+READY  Company profiles  (2/2)
+  ✓ CO-01 Add Company draft recovers after store miss (fixes Submission not found)
+      evidence: Recovered submission sub-accept-1785407774561 status=contacts_skipped
+  ✓ CO-02 Claim + admin approve marks company claimed/verified
+      evidence: slug=harbor-heavy-freight verified=true
+
+READY  Reviews and evidence  (4/4)
+  ✓ REV-01 Submit review with evidence filename
+      evidence: reviewId=rev-1785407774564
+  ✓ REV-02 Admin moderation approve
+      evidence: Review rev-1785407774564 marked approved.
+  ✓ REV-03 Supplier response to approved review
+      evidence: Supplier response published.
+  ✓ REV-04 Reviewer appeal re-queues moderation
+      evidence: Appeal submitted for moderation review.
+
+READY  RFQ marketplace  (6/6)
+  ✓ RFQ-01 Create RFQ persists and debits 25 credits
+      evidence: rfqId=req-1785407774563
+  ✓ RFQ-02 Rejects nonsensical title/description/budget
+      evidence: Title must be at least 8 characters.
+  ✓ RFQ-03 Edit / revise open RFQ
+      evidence: RFQ revised.
+  ✓ RFQ-04 Created RFQ appears in request list (buyer dashboard source)
+      evidence: listCount=4
+  ✓ RFQ-05 Supplier quote submission
+      evidence: quoteId=q-1785407774564
+  ✓ RFQ-06 Close/award lifecycle with audit
+      evidence: RFQ req-1785407774563 marked awarded.
+
+READY  Billing / credits  (4/4)
+  ✓ BILL-01 RFQ debit reconciles against wallet (-25)
+      evidence: start=250 after=225
+  ✓ BILL-02 Subscription activation grants credits
+      evidence: delta=100
+  ✓ BILL-03 Refund/adjustment credits ledger
+      evidence: balance=350
+  ✓ BILL-04 Ledger reconciliation report balanced
+      evidence: balance=350 ledgerSum=350
+
+----------------------------------------------
+MILESTONE COUNTER: 6/6 areas ready · 19/19 automated checks passed
+RESULT: Automated evidence pack READY for UAT demonstration
+----------------------------------------------
+

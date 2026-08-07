@@ -1,0 +1,116 @@
+{
+  "name": "RateQuip Phase 2 MVP Core \u2014 Milestone 1",
+  "releaseId": "phase2-mvp-m1-2026-07-30",
+  "commit": "0f0280d9d8b8ca95f539b09b41f6e960a1b0b42e",
+  "commitShort": "0f0280d",
+  "deploymentUrl": "https://ratequip-web.vercel.app",
+  "generatedAt": "2026-07-30T11:00:53.075420+00:00",
+  "acceptanceStatus": "READY FOR CLIENT UAT",
+  "scores": {
+    "p0Pass": 9,
+    "p0Total": 9,
+    "acceptanceChecks": "19/19",
+    "playwright": "31/31",
+    "databaseUat": "6/6",
+    "stripeUat": "PASS_WITH_WARN"
+  },
+  "p0": [
+    {
+      "id": "P0-01",
+      "title": "Company submission flow",
+      "status": "PASS"
+    },
+    {
+      "id": "P0-02",
+      "title": "Continue / Back / Recovery",
+      "status": "PASS"
+    },
+    {
+      "id": "P0-03",
+      "title": "Own company vs Claim company",
+      "status": "PASS"
+    },
+    {
+      "id": "P0-04",
+      "title": "Review lifecycle",
+      "status": "PASS"
+    },
+    {
+      "id": "P0-05",
+      "title": "RFQ lifecycle",
+      "status": "PASS"
+    },
+    {
+      "id": "P0-06",
+      "title": "RBAC",
+      "status": "PASS"
+    },
+    {
+      "id": "P0-07",
+      "title": "Database",
+      "status": "PASS"
+    },
+    {
+      "id": "P0-08",
+      "title": "Billing",
+      "status": "PASS"
+    },
+    {
+      "id": "P0-09",
+      "title": "Evidence pack",
+      "status": "PASS"
+    }
+  ],
+  "health": {
+    "url": "https://ratequip-web.vercel.app/api/v1/health",
+    "demoMode": false,
+    "database": true
+  },
+  "evidenceRoot": "docs/acceptance-phase2/",
+  "lighthouse": {
+    "01-homepage": {
+      "performance": 94,
+      "accessibility": 96,
+      "best-practices": 79,
+      "seo": 100
+    },
+    "02-dashboard": {
+      "performance": 68,
+      "accessibility": 94,
+      "best-practices": 79,
+      "seo": 100
+    },
+    "03-rfq": {
+      "performance": 96,
+      "accessibility": 96,
+      "best-practices": 79,
+      "seo": 100
+    },
+    "04-company": {
+      "performance": 64,
+      "accessibility": 94,
+      "best-practices": 79,
+      "seo": 100
+    },
+    "05-profile": {
+      "performance": 71,
+      "accessibility": 94,
+      "best-practices": 79,
+      "seo": 100
+    },
+    "06-pricing": {
+      "performance": 85,
+      "accessibility": 96,
+      "best-practices": 79,
+      "seo": 100
+    }
+  },
+  "videos": {
+    "narratedAcceptance": "videos/phase2-acceptance-narrated.mp4",
+    "resolution": "1920x1080",
+    "fps": 60,
+    "durationSeconds": 979.46,
+    "durationMinutes": 16.3,
+    "uatWalkthrough": "videos/uat-full-walkthrough.mp4"
+  }
+}

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-08-01T13:41:01.078Z",
+  "generatedAt": "2026-08-07T03:45:59.015Z",
   "result": "READY",
   "results": [
     {
       "step": "1a Migrate inventory",
       "ok": true,
-      "detail": "42 versions applied (latest: 0090_platform_bridge)"
+      "detail": "43 versions applied (latest: 0090_platform_bridge)"
     },
     {
       "step": "1a Schema present",
@@ -15,22 +15,22 @@
     {
       "step": "1b Seed verification",
       "ok": true,
-      "detail": "companies=12988, requests=26, rq.schema_migrations=42"
+      "detail": "companies=12998, requests=34, rq.schema_migrations=43"
     },
     {
       "step": "1c Forward change (temp migrate)",
       "ok": true,
-      "detail": "Created rq.uat_rollback_marker_1785591657821 with 1 row"
+      "detail": "Created rq.uat_rollback_marker_1786074356748 with 1 row"
     },
     {
       "step": "1d Rollback (drop temp change)",
       "ok": true,
-      "detail": "Dropped rq.uat_rollback_marker_1785591657821; table no longer exists"
+      "detail": "Dropped rq.uat_rollback_marker_1786074356748; table no longer exists"
     },
     {
       "step": "1e Production migrations intact",
       "ok": true,
-      "detail": "schema_migrations still 42 rows"
+      "detail": "schema_migrations still 43 rows"
     }
   ]
 }

@@ -1,0 +1,38 @@
+{
+  "01-homepage": {
+    "performance": 94,
+    "accessibility": 96,
+    "best-practices": 79,
+    "seo": 100
+  },
+  "02-dashboard": {
+    "performance": 68,
+    "accessibility": 94,
+    "best-practices": 79,
+    "seo": 100
+  },
+  "03-rfq": {
+    "performance": 96,
+    "accessibility": 96,
+    "best-practices": 79,
+    "seo": 100
+  },
+  "04-company": {
+    "performance": 64,
+    "accessibility": 94,
+    "best-practices": 79,
+    "seo": 100
+  },
+  "05-profile": {
+    "performance": 71,
+    "accessibility": 94,
+    "best-practices": 79,
+    "seo": 100
+  },
+  "06-pricing": {
+    "performance": 85,
+    "accessibility": 96,
+    "best-practices": 79,
+    "seo": 100
+  }
+}
