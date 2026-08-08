@@ -63,6 +63,39 @@ export function emailMeta(html: string) {
   return `<p style="margin:0 0 12px;font-family:Montserrat,Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:${COLORS.muted}">${html}</p>`;
 }
 
+/** Highlight callout — for “why you were invited” and similar context. */
+export function emailCallout(opts: { label: string; bodyHtml: string }) {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px">
+      <tr>
+        <td style="padding:16px 18px;background-color:${COLORS.surface};border:1px solid ${COLORS.border};border-left:4px solid ${COLORS.orangeDeep};border-radius:10px">
+          <p style="margin:0 0 6px;font-family:Montserrat,Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;line-height:1.4;letter-spacing:0.06em;text-transform:uppercase;color:${COLORS.orangeDeep}">${opts.label}</p>
+          <div style="font-family:Montserrat,Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:${COLORS.navy}">${opts.bodyHtml}</div>
+        </td>
+      </tr>
+    </table>
+  `.trim();
+}
+
+/** Simple benefit list for incentive-led emails. */
+export function emailBenefits(items: string[]) {
+  const rows = items
+    .map(
+      (item) => `
+      <tr>
+        <td width="22" valign="top" style="padding:0 0 10px;font-family:Montserrat,Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:${COLORS.orangeDeep};font-weight:700">✓</td>
+        <td valign="top" style="padding:0 0 10px;font-family:Montserrat,Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:${COLORS.slate}">${item}</td>
+      </tr>`,
+    )
+    .join("");
+
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 8px">
+      ${rows}
+    </table>
+  `.trim();
+}
+
 /**
  * Wrap transactional email content in the RateQuip branded layout.
  * Uses nested tables for broad client support (Gmail, Outlook, Apple Mail).

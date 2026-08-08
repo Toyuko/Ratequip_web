@@ -22,7 +22,7 @@ const KINDS: Array<{ id: ReferralKind; title: string; body: string }> = [
   {
     id: "join_platform",
     title: "Invite to RateQuip",
-    body: "Ask a colleague or partner to create an account.",
+    body: "Invite a partner and tell them why — so the email feels like an opportunity, not a mystery.",
   },
   {
     id: "join_company",
@@ -239,7 +239,9 @@ export function ShareInvitePanel({
             />
           </div>
         </div>
-        {(kind === "refer_company" || kind === "join_company") && (
+        {(kind === "refer_company" ||
+          kind === "join_company" ||
+          kind === "join_platform") && (
           <div>
             <Label htmlFor="ref-company">Company name</Label>
             <Input
@@ -252,14 +254,17 @@ export function ShareInvitePanel({
           </div>
         )}
         <div>
-          <Label htmlFor="ref-note">Personal note</Label>
+          <Label htmlFor="ref-note">Why you’re inviting them</Label>
           <Textarea
             id="ref-note"
             className="mt-1 min-h-20"
             value={personalNote}
             onChange={(e) => setPersonalNote(e.target.value)}
-            placeholder="Optional message included in the invite"
+            placeholder="e.g. We’d like you on RateQuip so we can compare suppliers together and introduce you to buyers in our network."
           />
+          <p className="mt-1 text-xs text-[var(--rq-muted)]">
+            Shown prominently in the email so they know exactly why you sent it.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button

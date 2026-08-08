@@ -96,14 +96,17 @@ function cases(): Case[] {
   const signUpUrl = `${baseUrl}/sign-up?ref=${encodeURIComponent(sentInvite.token)}`;
 
   const referral = renderJoinInviteEmail({
-    kindLabel: "Platform invite",
+    kindLabel: "Partner invite",
     title: `${companyName} invited you to RateQuip`,
-    body: "Join RateQuip to claim your company profile and respond to RFQs.",
+    body: `${companyName} invited you to RateQuip — claim your free company profile, get discovered by industrial buyers, rate and compare suppliers, and grow real opportunities with partners who already trust the network.`,
     joinUrl,
     signUpUrl,
     inviterName: "RateQuip Ops",
+    inviterOrg: companyName,
     companyName,
-    personalNote: "Platform email test — referral invite with a live join link.",
+    personalNote:
+      "We’d love you on RateQuip so we can compare suppliers together and open warm introductions in our network.",
+    recipientName: "Email Tester",
     supportUrl: `${baseUrl}/contact`,
   });
 

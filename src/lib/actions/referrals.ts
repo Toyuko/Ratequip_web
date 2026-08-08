@@ -37,7 +37,7 @@ async function inviterContext() {
 }
 
 const KIND_LABELS: Record<ReferralKind, string> = {
-  join_platform: "Join RateQuip",
+  join_platform: "Partner invite",
   join_company: "Join organisation",
   refer_company: "Company referral",
   refer_contractor: "Contractor referral",
@@ -127,13 +127,15 @@ export async function sendReferralInvite(input: {
   const baseUrl = publicAppUrl();
   const rendered = renderJoinInviteEmail({
     kindLabel: KIND_LABELS[input.kind],
-    title: copy.emailSubject,
+    title: copy.title,
     body: copy.text,
     joinUrl: share.joinUrl,
     signUpUrl: share.signUpUrl,
     inviterName: ctx.inviterName,
-    companyName: input.companyName,
+    inviterOrg: ctx.inviterOrg,
+    companyName: input.companyName || ctx.inviterOrg,
     personalNote: input.personalNote,
+    recipientName: input.recipientName,
     supportUrl: `${baseUrl}/contact`,
   });
 

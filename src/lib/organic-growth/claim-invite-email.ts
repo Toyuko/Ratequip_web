@@ -30,20 +30,20 @@ export function renderClaimInviteEmail(vars: {
       )
     : "";
 
-  const subject = `${vars.companyName} has been added to RateQuip`;
+  const subject = `${vars.companyName} was added to RateQuip — claim your free profile`;
   const html = renderEmailDocument({
-    preheader: `${vars.companyName} was added to RateQuip. Claim the company profile if you represent this business.`,
-    heading: `${vars.companyName} has been added to RateQuip`,
+    preheader: `${vars.companyName} was added to RateQuip so buyers can find you. Claim the free profile if you represent this business.`,
+    heading: `${vars.companyName} was added to RateQuip`,
     bodyHtml: `
       ${emailParagraph(greeting)}
       ${emailParagraph(
-        `A RateQuip user has added <strong style="color:#0F172A">${vars.companyName}</strong> to RateQuip.`,
+        `A RateQuip user added <strong style="color:#0F172A">${vars.companyName}</strong> so industrial buyers can discover the company, compare suppliers, and open opportunities — this is a growth invite, not a random listing.`,
       )}
       ${emailParagraph(`Company: ${vars.companyContext}`)}
       ${inviter}
       ${note}
       ${emailParagraph(
-        "The profile is currently marked <strong style=\"color:#0F172A\">Unclaimed</strong>. If you are authorised to represent this company, you can claim the profile free of charge. RateQuip will ask you to verify your email and your authority before granting company access.",
+        "The profile is currently <strong style=\"color:#0F172A\">Unclaimed</strong>. If you are authorised to represent this company, claim it free, control how you appear, and start getting discovered. RateQuip will verify your email and authority before granting access.",
       )}
       ${emailParagraph(emailLink(vars.profileUrl, "View the public profile"))}
       ${emailMeta(
@@ -54,8 +54,8 @@ export function renderClaimInviteEmail(vars: {
         `${emailLink(vars.emailPreferencesUrl, "Manage invitation emails")} · ${emailLink(vars.supportUrl, "Support")}`,
       )}
     `.trim(),
-    cta: { label: "Claim the company profile", href: vars.claimUrl },
-    footerNote: "Template v10.1-en-1",
+    cta: { label: "Claim free profile — get discovered", href: vars.claimUrl },
+    footerNote: "Template v10.2-en-1",
   });
 
   return { subject, html };

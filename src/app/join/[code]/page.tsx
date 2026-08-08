@@ -18,7 +18,7 @@ const KIND_CTAS: Record<
 > = {
   join_platform: {
     primaryHref: (code) => `/sign-up?ref=${code}`,
-    primaryLabel: "Create account",
+    primaryLabel: "Accept invite — join free",
     secondaryHref: "/sign-in",
     secondaryLabel: "Sign in",
   },
@@ -84,19 +84,39 @@ export default async function JoinReferralPage({
   });
   const cta = KIND_CTAS[kind];
 
+  const fromOrg = invite.companyName || invite.inviterOrg;
+
   return (
     <div className="mx-auto max-w-lg px-4 py-16">
-      <Badge variant="orange">Invite</Badge>
+      <Badge variant="orange">Partner invite</Badge>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         {copy.title}
       </h1>
       <p className="mt-3 text-[var(--rq-slate)]">{copy.text}</p>
 
-      {invite.personalNote ? (
-        <blockquote className="mt-4 rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-4 py-3 text-sm italic text-[var(--rq-slate)]">
-          “{invite.personalNote}”
-        </blockquote>
-      ) : null}
+      <div className="mt-5 rounded-lg border border-[var(--rq-border)] border-l-4 border-l-[var(--rq-orange)] bg-[var(--rq-card)] px-4 py-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-[var(--rq-orange)]">
+          Why {fromOrg || "they"} invited you
+        </p>
+        {invite.personalNote ? (
+          <p className="mt-2 text-sm italic text-[var(--rq-ink)]">
+            “{invite.personalNote}”
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-[var(--rq-slate)]">
+            This is a deliberate invite to connect on RateQuip — claim your free
+            profile, get discovered by industrial buyers, and grow opportunities
+            with partners who already trust the network.
+          </p>
+        )}
+      </div>
+
+      <ul className="mt-5 space-y-2 text-sm text-[var(--rq-slate)]">
+        <li>✓ Free company profile you control</li>
+        <li>✓ Get discovered by verified buyers and partners</li>
+        <li>✓ Rate, compare and connect with trusted suppliers</li>
+        <li>✓ Win more work through introductions and RFQs</li>
+      </ul>
 
       <div className="mt-4 flex flex-wrap gap-2 text-sm text-[var(--rq-muted)]">
         {invite.inviterName ? <span>From {invite.inviterName}</span> : null}

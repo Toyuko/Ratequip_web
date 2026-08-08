@@ -19,41 +19,49 @@ export function referralCopy(kind: ReferralKind, opts?: {
   inviterOrg?: string;
   companyName?: string;
 }) {
-  const who = opts?.inviterName?.trim() || "A RateQuip user";
+  const who = opts?.inviterName?.trim() || "A RateQuip partner";
   const org = opts?.inviterOrg?.trim();
   const company = opts?.companyName?.trim();
+  const orgOrCompany = company || org;
+  const fromLabel = orgOrCompany || who;
 
   switch (kind) {
     case "join_company":
       return {
-        title: `Join ${org || company || "our team"} on RateQuip`,
-        text: `${who} invited you to join ${org || company || "their organisation"} on RateQuip — industrial procurement, supplier reputation and RFQs in one place.`,
-        emailSubject: `You're invited to join ${org || company || "a team"} on RateQuip`,
+        title: `Join ${orgOrCompany || "our team"} on RateQuip`,
+        text: `${who} invited you to join ${orgOrCompany || "their organisation"} on RateQuip — the industrial network where teams rate suppliers, compare options, connect with partners, and grow pipeline together.`,
+        emailSubject: `${fromLabel} invited you to join their team on RateQuip`,
       };
     case "refer_company":
       return {
         title: company
-          ? `Claim ${company} on RateQuip`
-          : "Add your company on RateQuip",
-        text: company
-          ? `${who} referred ${company} to RateQuip. Claim the profile free and start winning RFQs from verified buyers.`
-          : `${who} thinks your company should be on RateQuip — claim a profile free and get discovered by industrial buyers.`,
-        emailSubject: company
-          ? `${company} was referred to RateQuip`
+          ? `${company} was referred to RateQuip — claim it free`
           : "Your company was referred to RateQuip",
+        text: company
+          ? `${who} referred ${company} to RateQuip so you can claim the profile free, get discovered by industrial buyers, and turn reputation into real opportunities — not just RFQs.`
+          : `${who} thinks your company belongs on RateQuip — claim a free profile, get discovered by buyers, and grow with trusted industrial partners.`,
+        emailSubject: company
+          ? `${who} referred ${company} to RateQuip — claim your free profile`
+          : `${who} referred your company to RateQuip — claim your free profile`,
       };
     case "refer_contractor":
       return {
-        title: "Join RateQuip as a service provider",
-        text: `${who} referred you as a contractor / service provider on RateQuip. Create your profile and get matched to installation, maintenance and project work.`,
-        emailSubject: "You're invited to join RateQuip as a contractor",
+        title: "You're invited to join RateQuip as a service provider",
+        text: `${who} referred you as a contractor / service provider on RateQuip. Create your profile, get matched to installation, maintenance and project work, and grow alongside industrial buyers who already trust the network.`,
+        emailSubject: `${fromLabel} invited you to RateQuip as a contractor — see the opportunity`,
       };
     case "join_platform":
     default:
       return {
-        title: "Join me on RateQuip",
-        text: `${who}${org ? ` at ${org}` : ""} invited you to RateQuip — trusted industrial company reputation, RFQs and supplier matching.`,
-        emailSubject: "You're invited to join RateQuip",
+        title: orgOrCompany
+          ? `${orgOrCompany} invited you to RateQuip`
+          : `${who} invited you to RateQuip`,
+        text: orgOrCompany
+          ? `${orgOrCompany} invited you to RateQuip — claim your free company profile, get discovered by industrial buyers, rate and compare suppliers, and grow real opportunities with partners who already trust the network.`
+          : `${who}${org ? ` at ${org}` : ""} invited you to RateQuip — claim your free company profile, get discovered by industrial buyers, rate and compare suppliers, and grow real opportunities together.`,
+        emailSubject: orgOrCompany
+          ? `${orgOrCompany} invited you to RateQuip — see why`
+          : `${who} invited you to RateQuip — see why`,
       };
   }
 }
@@ -73,10 +81,10 @@ export function buildShareBundle(input: {
   const signUpUrl = buildSignUpUrl(input.code);
   const copy = referralCopy(input.kind, input);
   const note = input.personalNote?.trim()
-    ? `\n\n“${input.personalNote.trim()}”`
+    ? `\n\nWhy they invited you:\n“${input.personalNote.trim()}”`
     : "";
   const text = `${copy.text}${note}\n\n${joinUrl}`;
-  const emailBody = `${copy.text}${note}\n\nAccept the invite:\n${joinUrl}\n\nOr create an account:\n${signUpUrl}\n\n— RateQuip`;
+  const emailBody = `${copy.text}${note}\n\nAccept the invite (free):\n${joinUrl}\n\nOr create an account:\n${signUpUrl}\n\n— RateQuip · Rate · Compare · Connect · Grow`;
 
   return {
     code: input.code,
