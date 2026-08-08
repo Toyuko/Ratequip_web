@@ -1,7 +1,7 @@
 import { demoCompanies, type DemoCompany } from "@/lib/db/demo-data";
 import { slugify } from "@/lib/utils";
+import { mintClaimInviteToken } from "./claim-token";
 import {
-  createClaimToken,
   encryptEmailDemo,
   emailNormalizedHash,
   maskEmail,
@@ -199,11 +199,31 @@ export function publishSubmission(submissionId: string) {
         (c) => c.email && c.sendAfterPublish && c.sendEligibility === "eligible",
       );
 
+  const inviterDisplay =
+    existing.disclosurePreference === "anonymous_ratequip_user"
+      ? "A RateQuip user"
+      : "A RateQuip contributor";
+
   const invitations: PublishedInvitation[] = sendContacts.map((contact) => {
-    const { token } = createClaimToken();
+    const invitationId = `inv-${contact.id}`;
+    const emailMasked = contact.emailMasked || maskEmail(contact.email!);
+    const token = mintClaimInviteToken({
+      invitationId,
+      submissionId: existing.id,
+      companyName: name,
+      companySlug: slug,
+      locality: existing.locality,
+      countryCode: existing.countryCode,
+      domain:
+        existing.registrableDomain ??
+        registrableDomainFromUrl(existing.websiteUrl),
+      emailMasked,
+      inviterDisplay,
+      invitationState: "queued",
+    });
     const invitation: PublishedInvitation = {
-      id: `inv-${contact.id}`,
-      emailMasked: contact.emailMasked || maskEmail(contact.email!),
+      id: invitationId,
+      emailMasked,
       role: contact.role,
       state: "queued",
       claimToken: token,

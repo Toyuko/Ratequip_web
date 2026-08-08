@@ -248,22 +248,41 @@ export async function getListingSubmission(id: string) {
 
 export async function getClaimInvitation(token: string) {
   const hit = getClaimByToken(token);
-  if (!hit) {
+  if (hit) {
+    return {
+      ok: true as const,
+      companyName: hit.submission.companyName,
+      companySlug: hit.submission.publishedCompanySlug,
+      locality: hit.submission.locality,
+      countryCode: hit.submission.countryCode,
+      domain: hit.submission.registrableDomain,
+      invitationState: hit.invitation.state,
+      emailMasked: hit.invitation.emailMasked,
+      inviterDisplay:
+        hit.submission.disclosurePreference === "anonymous_ratequip_user"
+          ? "A RateQuip user"
+          : "A RateQuip contributor",
+    };
+  }
+
+  // Signed tokens work across serverless instances without in-memory state.
+  const { verifyClaimInviteToken } = await import(
+    "@/lib/organic-growth/claim-token"
+  );
+  const signed = verifyClaimInviteToken(token);
+  if (!signed) {
     return { ok: false as const, message: "Invitation not found or expired." };
   }
 
   return {
     ok: true as const,
-    companyName: hit.submission.companyName,
-    companySlug: hit.submission.publishedCompanySlug,
-    locality: hit.submission.locality,
-    countryCode: hit.submission.countryCode,
-    domain: hit.submission.registrableDomain,
-    invitationState: hit.invitation.state,
-    emailMasked: hit.invitation.emailMasked,
-    inviterDisplay:
-      hit.submission.disclosurePreference === "anonymous_ratequip_user"
-        ? "A RateQuip user"
-        : "A RateQuip contributor",
+    companyName: signed.companyName,
+    companySlug: signed.companySlug,
+    locality: signed.locality,
+    countryCode: signed.countryCode,
+    domain: signed.domain,
+    invitationState: signed.invitationState,
+    emailMasked: signed.emailMasked,
+    inviterDisplay: signed.inviterDisplay,
   };
 }
