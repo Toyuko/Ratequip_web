@@ -4,8 +4,8 @@
     "version": 1,
     "pack_id": "universal",
     "pack_version": 1,
-    "prompt": "What do you want to achieve first?",
-    "answer_type": "single_select",
+    "prompt": "What do you want to achieve?",
+    "answer_type": "multi_select",
     "display_order": 10,
     "visibility_rule": {},
     "required_rule": {

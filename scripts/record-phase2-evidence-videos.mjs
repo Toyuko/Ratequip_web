@@ -497,7 +497,7 @@ async function main() {
       const evidencePath = path.join(RAW, "live-po-evidence.txt");
       fs.writeFileSync(evidencePath, "Live purchase evidence for Phase 2.");
       await page.locator("#evidence").setInputFiles(evidencePath);
-      await page.getByRole("button", { name: /Submit for moderation/i }).click();
+      await page.getByRole("button", { name: /^Submit$/i }).click();
       await sleep(2000);
       await caption(page, "LIVE EVIDENCE: Review submitted with proof on live site", true);
       await sleep(2400);

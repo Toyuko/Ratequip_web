@@ -1,0 +1,15 @@
+{
+  "industry": "general",
+  "version": "1.0.0",
+  "adjacent": [
+    "process equipment",
+    "packaging machinery",
+    "automation and controls",
+    "utilities",
+    "maintenance and spare parts",
+    "installation contractors",
+    "QA and inspection",
+    "freight and logistics"
+  ],
+  "critical_questions": []
+}

@@ -58,8 +58,10 @@ export default function OnboardingPage() {
       </p>
 
       <ol className="mt-4 grid gap-2 text-sm text-[var(--rq-slate)] sm:grid-cols-2">
-        <li className="rounded-md border border-orange-200 bg-orange-50 px-3 py-2">
-          <span className="font-semibold text-orange-800">1. Account</span>
+        <li className="rounded-md border border-orange-200 bg-orange-50 px-3 py-2 dark:border-orange-800 dark:bg-orange-950/40">
+          <span className="font-semibold text-orange-800 dark:text-orange-300">
+            1. Account
+          </span>
           {" — "}role & organisation
         </li>
         <li className="rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 py-2">
@@ -76,8 +78,8 @@ export default function OnboardingPage() {
             onClick={() => setRole(r.id)}
             className={`rounded-lg border p-4 text-left transition ${
               role === r.id
-                ? "border-orange-400 bg-orange-50"
-                : "border-[var(--rq-border)] bg-[var(--rq-card)]"
+                ? "border-orange-400 bg-orange-50 dark:border-orange-500 dark:bg-orange-950/50"
+                : "border-[var(--rq-border)] bg-[var(--rq-card)] hover:bg-[var(--rq-hover)]"
             }`}
           >
             <div className="font-semibold text-[var(--rq-ink)]">{r.title}</div>

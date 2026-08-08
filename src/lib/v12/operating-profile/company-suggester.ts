@@ -4,7 +4,10 @@
  */
 import type { DemoCompany } from "@/lib/db/demo-data";
 import { listCompaniesSync } from "@/lib/db/queries";
-import { getSetupIndustryPack } from "@/lib/v12/operating-profile/interview";
+import {
+  getSetupIndustryPack,
+  hasIntent,
+} from "@/lib/v12/operating-profile/interview";
 import type {
   CompanyRole,
   OperatingProfileRecord,
@@ -50,6 +53,14 @@ const PACK_CATEGORY_HINTS: Record<string, string[]> = {
     "professional-services",
     "commissioning",
     "sensors",
+  ],
+  general: [
+    "industrial-equipment",
+    "packaging-machinery",
+    "automation",
+    "commissioning",
+    "inspection-qc",
+    "professional-services",
   ],
 };
 
@@ -116,13 +127,18 @@ export function buildProfileSearchContext(input: {
     "find_partners";
   if (
     input.role === "buyer" ||
-    intentAnswer === "find_supplier" ||
-    intentAnswer === "create_rfq"
+    hasIntent(intentAnswer, "find_supplier", "create_rfq")
   ) {
     intent = "find_suppliers";
-  } else if (input.role === "supplier" || intentAnswer === "publish_products") {
+  } else if (
+    input.role === "supplier" ||
+    hasIntent(intentAnswer, "publish_products")
+  ) {
     intent = "find_buyers";
-  } else if (input.role === "contractor") {
+  } else if (
+    input.role === "contractor" ||
+    hasIntent(intentAnswer, "find_work")
+  ) {
     intent = "find_partners";
   }
   return {

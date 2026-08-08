@@ -53,7 +53,10 @@ import {
   part7IngestFact,
   part7ResumeSession,
 } from "@/lib/v12/services";
-
+import {
+  hydrateSetupSessionIntoStore,
+  persistSetupSession,
+} from "@/lib/v12/setup-session-cookie";
 
 async function requireServerV12Session() {
   const { user, error } = await resolveSessionUser();
@@ -322,35 +325,47 @@ export async function v12StartCompanySetup(
 ) {
   await requireServerV12Session();
 
-  return startCompanySetup(input);
+  const res = startCompanySetup(input);
+  if (res.ok) await persistSetupSession(res.session);
+  return res;
 }
 
 export async function v12SaveCompanySetupSection(
   input: Parameters<typeof saveCompanySetupSection>[0],
 ) {
   await requireServerV12Session();
+  await hydrateSetupSessionIntoStore(input.sessionId);
 
-  return saveCompanySetupSection(input);
+  const res = saveCompanySetupSection(input);
+  if (res.ok) await persistSetupSession(res.session);
+  return res;
 }
 
 export async function v12ReviewCompanySetupSuggestions(
   input: Parameters<typeof reviewCompanySetupSuggestions>[0],
 ) {
   await requireServerV12Session();
+  await hydrateSetupSessionIntoStore(input.sessionId);
 
-  return reviewCompanySetupSuggestions(input);
+  const res = reviewCompanySetupSuggestions(input);
+  if (res.ok) await persistSetupSession(res.session);
+  return res;
 }
 
 export async function v12ConfirmCompanySetup(
   input: Parameters<typeof confirmCompanySetup>[0],
 ) {
   await requireServerV12Session();
+  await hydrateSetupSessionIntoStore(input.sessionId);
 
-  return confirmCompanySetup(input);
+  const res = confirmCompanySetup(input);
+  if (res.ok) await persistSetupSession(res.session);
+  return res;
 }
 
 export async function v12ListCompanySetup(sessionId?: string) {
   await requireServerV12Session();
+  await hydrateSetupSessionIntoStore(sessionId);
 
   return listCompanySetup(sessionId);
 }
@@ -373,6 +388,7 @@ export async function v12Part7IngestFact(
   input: Parameters<typeof part7IngestFact>[0],
 ) {
   const user = await requireServerV12Session();
+  await hydrateSetupSessionIntoStore(input.sessionId);
   return part7IngestFact({
     ...input,
     createdBy: input.createdBy ?? user.id,
@@ -383,6 +399,7 @@ export async function v12Part7ConfirmFact(
   input: Parameters<typeof part7ConfirmFact>[0],
 ) {
   const user = await requireServerV12Session();
+  await hydrateSetupSessionIntoStore(input.sessionId);
   return part7ConfirmFact({
     ...input,
     actorId: input.actorId || user.id,
@@ -393,6 +410,7 @@ export async function v12Part7ResumeSession(
   input: Parameters<typeof part7ResumeSession>[0],
 ) {
   await requireServerV12Session();
+  await hydrateSetupSessionIntoStore(input.sessionId);
   return part7ResumeSession(input);
 }
 

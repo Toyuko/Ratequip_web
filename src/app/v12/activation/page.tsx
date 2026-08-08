@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   v12ConfirmCompanySetup,
   v12ListCompanySetup,
-  v12ListSetupIndustryPacks,
   v12Part7ConfirmFact,
   v12ReviewCompanySetupSuggestions,
   v12ReviewProfileCompanySuggestion,
@@ -29,6 +28,7 @@ type Question = {
   inputType: "text" | "textarea" | "single_select" | "multi_select";
   options?: Array<{ value: string; label: string }>;
   whyAsked: string;
+  placeholder?: string;
 };
 
 type Section = {
@@ -67,6 +67,8 @@ type Session = {
   companyName: string;
   role: Role;
   industryPack: string;
+  industryPackSource?: "explicit" | "inferred" | "general";
+  industryPackReason?: string;
   status: "in_progress" | "review" | "completed";
   sectionIndex: number;
   sections: Section[];
@@ -130,10 +132,6 @@ function CompanySetupWizard() {
       ? presetRole
       : "buyer",
   );
-  const [industryPack, setIndustryPack] = useState("pet_food");
-  const [packs, setPacks] = useState<
-    Array<{ id: string; label: string; adjacentCount: number }>
-  >([]);
   const [session, setSession] = useState<Session | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [companySuggestions, setCompanySuggestions] = useState<
@@ -155,36 +153,33 @@ function CompanySetupWizard() {
 
   useEffect(() => {
     startTransition(async () => {
-      const [packList, existing] = await Promise.all([
-        v12ListSetupIndustryPacks(),
-        v12ListCompanySetup(),
-      ]);
-      setPacks(packList);
-      const nextPack =
-        packList[0] && !packList.some((p) => p.id === industryPack)
-          ? packList[0].id
-          : industryPack;
-      if (nextPack !== industryPack) setIndustryPack(nextPack);
+      const existing = await v12ListCompanySetup();
+      const wantedName = (presetName || companyName).trim().toLowerCase();
 
       applyDna(existing.dna);
 
-      if (existing.session && existing.session.status !== "completed") {
-        setSession(existing.session as Session);
-        setAnswers(existing.session.answers);
-        setCompanySuggestions(
-          (existing.session as Session).companySuggestions ?? [],
-        );
-        setPhase(
-          existing.session.status === "review" ? "review" : "interview",
-        );
-      } else if (
-        existing.session?.status === "completed" &&
-        (existing.session as Session).companySuggestions?.length
+      const existingSession = existing.session as Session | null;
+      const sameCompany =
+        !wantedName ||
+        !existingSession ||
+        existingSession.companyName.trim().toLowerCase() === wantedName;
+
+      if (
+        existingSession &&
+        existingSession.status !== "completed" &&
+        sameCompany
       ) {
-        setSession(existing.session as Session);
-        setCompanySuggestions(
-          (existing.session as Session).companySuggestions,
-        );
+        setSession(existingSession);
+        setAnswers(existingSession.answers);
+        setCompanySuggestions(existingSession.companySuggestions ?? []);
+        setPhase(existingSession.status === "review" ? "review" : "interview");
+      } else if (
+        existingSession?.status === "completed" &&
+        sameCompany &&
+        existingSession.companySuggestions?.length
+      ) {
+        setSession(existingSession);
+        setCompanySuggestions(existingSession.companySuggestions);
         setPhase("done");
       } else if (
         fromOnboarding &&
@@ -192,20 +187,20 @@ function CompanySetupWizard() {
         (presetName || companyName).trim()
       ) {
         autoStarted.current = true;
-        const packId = nextPack || packList[0]?.id || "pet_food";
-        setIndustryPack(packId);
         const res = await v12StartCompanySetup({
           companyName: (presetName || companyName).trim(),
           role,
-          industryPack: packId,
         });
         if (res.ok) {
           setSession(res.session as Session);
           setAnswers({});
           setPhase("interview");
           applyDna(res.dna);
+          const sensed =
+            res.industryPackResolution?.reason ??
+            "Industry focus sensed automatically.";
           setMessage(
-            `AI questionnaire started · ${res.session.sections.length} sections · profile suggestions stay pending until you confirm.`,
+            `AI questionnaire started · ${res.session.sections.length} sections · ${sensed}`,
           );
         } else {
           setMessage(res.message);
@@ -229,12 +224,19 @@ function CompanySetupWizard() {
     );
   }, [session]);
 
+  const industryLabel = useMemo(() => {
+    if (!session) return "";
+    const pack = session.industryPack.replace(/_/g, " ");
+    if (session.industryPack === "general") return "general industrial";
+    if (session.industryPackSource === "inferred") return `${pack} (sensed)`;
+    return pack;
+  }, [session]);
+
   function startWizard() {
     startTransition(async () => {
       const res = await v12StartCompanySetup({
         companyName,
         role,
-        industryPack,
       });
       if (!res.ok) {
         setMessage(res.message);
@@ -242,12 +244,92 @@ function CompanySetupWizard() {
       }
       setSession(res.session as Session);
       setAnswers({});
+      setCompanySuggestions([]);
+      setPhase("interview");
+      applyDna(res.dna);
+      const sensed =
+        res.industryPackResolution?.reason ??
+        "Industry focus sensed from your company name.";
+      setMessage(
+        `AI interview started · ${res.session.sections.length} sections · ${sensed}`,
+      );
+    });
+  }
+
+  function restartWizard() {
+    const name = (session?.companyName || companyName).trim();
+    const nextRole = session?.role || role;
+    if (!name) {
+      setPhase("start");
+      setSession(null);
+      setAnswers({});
+      setMessage(null);
+      return;
+    }
+    setCompanyName(name);
+    setRole(nextRole);
+    startTransition(async () => {
+      const res = await v12StartCompanySetup({
+        companyName: name,
+        role: nextRole,
+      });
+      if (!res.ok) {
+        setMessage(res.message);
+        return;
+      }
+      setSession(res.session as Session);
+      setAnswers({});
+      setCompanySuggestions([]);
       setPhase("interview");
       applyDna(res.dna);
       setMessage(
-        `AI interview started · ${res.session.sections.length} sections · ${res.policyVersion}`,
+        `Restarted with updated questions · ${res.industryPackResolution?.reason ?? "Industry sensed automatically."}`,
       );
     });
+  }
+
+  async function recreateSessionWithProgress(
+    lost: Session,
+    nextAnswers: Record<string, string>,
+  ) {
+    const started = await v12StartCompanySetup({
+      companyName: lost.companyName,
+      role: lost.role,
+    });
+    if (!started.ok) return started;
+
+    const merged = { ...lost.answers, ...nextAnswers };
+    let current = started.session as Session;
+    const target = Math.min(
+      lost.sectionIndex,
+      Math.max(current.sections.length - 1, 0),
+    );
+
+    for (let i = 0; i <= target; i++) {
+      const section = current.sections[i];
+      if (!section) break;
+      const chunk: Record<string, string> = {};
+      for (const q of section.questions) {
+        const value = (merged[q.id] ?? "").trim();
+        if (value) chunk[q.id] = value;
+        else if (q.required) chunk[q.id] = "unknown";
+      }
+      const saved = await v12SaveCompanySetupSection({
+        sessionId: current.id,
+        answers: chunk,
+        advance: true,
+      });
+      if (!saved.ok) return saved;
+      current = saved.session as Session;
+      applyDna(saved.dna);
+    }
+
+    return {
+      ok: true as const,
+      session: current,
+      currentSection: current.sections[current.sectionIndex] ?? null,
+      dna: undefined,
+    };
   }
 
   function saveSection() {
@@ -260,11 +342,35 @@ function CompanySetupWizard() {
       return;
     }
     startTransition(async () => {
-      const res = await v12SaveCompanySetupSection({
+      let res = await v12SaveCompanySetupSection({
         sessionId: session.id,
         answers,
         advance: true,
       });
+
+      // Serverless / HMR can drop the in-memory store; cookie hydrate usually
+      // fixes it, but if both miss, recreate and replay progress.
+      if (!res.ok && /session not found/i.test(res.message)) {
+        const recovered = await recreateSessionWithProgress(session, answers);
+        if (!recovered.ok) {
+          setMessage(recovered.message);
+          return;
+        }
+        setSession(recovered.session);
+        setAnswers(recovered.session.answers);
+        if (recovered.session.status === "review") {
+          setPhase("review");
+          setMessage(
+            "Interview complete. Review AI suggestions and Business DNA facts before confirming the company profile.",
+          );
+        } else {
+          setMessage(
+            `Saved. Next: ${recovered.currentSection?.label ?? "review"}`,
+          );
+        }
+        return;
+      }
+
       if (!res.ok) {
         setMessage(res.message);
         return;
@@ -280,6 +386,19 @@ function CompanySetupWizard() {
       } else {
         setMessage(`Saved. Next: ${res.currentSection?.label ?? "review"}`);
       }
+    });
+  }
+
+  function toggleMultiAnswer(questionId: string, optionValue: string) {
+    setAnswers((prev) => {
+      const selected = (prev[questionId] ?? "")
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+      const next = selected.includes(optionValue)
+        ? selected.filter((v) => v !== optionValue)
+        : [...selected, optionValue];
+      return { ...prev, [questionId]: next.join(",") };
     });
   }
 
@@ -385,12 +504,21 @@ function CompanySetupWizard() {
 
       {session ? (
         <div className="mt-6">
-          <div className="mb-2 flex justify-between text-xs text-[var(--rq-muted)]">
+          <div className="mb-2 flex justify-between gap-3 text-xs text-[var(--rq-muted)]">
             <span>
-              {session.companyName} · {session.role} ·{" "}
-              {session.industryPack.replace(/_/g, " ")}
+              {session.companyName} · {session.role} · {industryLabel}
             </span>
-            <span>{progress}%</span>
+            <span className="flex items-center gap-3">
+              <button
+                type="button"
+                className="underline-offset-2 hover:underline"
+                disabled={pending}
+                onClick={restartWizard}
+              >
+                Start over
+              </button>
+              <span>{progress}%</span>
+            </span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-[var(--rq-border)]">
             <div
@@ -402,7 +530,17 @@ function CompanySetupWizard() {
       ) : null}
 
       {message ? (
-        <p className="mt-4 text-sm text-emerald-800">{message}</p>
+        <p
+          className={`mt-4 text-sm ${
+            /not found|invalid|required|failed|error|please answer/i.test(
+              message,
+            )
+              ? "text-red-700 dark:text-red-400"
+              : "text-emerald-800 dark:text-emerald-300"
+          }`}
+        >
+          {message}
+        </p>
       ) : null}
 
       {phase === "start" ? (
@@ -426,10 +564,10 @@ function CompanySetupWizard() {
                   key={r.id}
                   type="button"
                   onClick={() => setRole(r.id)}
-                  className={`rounded-md border p-3 text-left ${
+                  className={`rounded-md border p-3 text-left transition-colors ${
                     role === r.id
-                      ? "border-orange-400 bg-orange-50"
-                      : "border-[var(--rq-border)]"
+                      ? "border-orange-400 bg-orange-50 dark:border-orange-500 dark:bg-orange-950/50"
+                      : "border-[var(--rq-border)] hover:bg-[var(--rq-hover)]"
                   }`}
                 >
                   <div className="font-medium text-[var(--rq-ink)]">
@@ -441,23 +579,10 @@ function CompanySetupWizard() {
             </div>
           </div>
 
-          <div>
-            <Label>Industry interview pack</Label>
-            <select
-              className="mt-1 h-11 w-full rounded-md border border-[var(--rq-border)] bg-white px-3 text-sm"
-              value={industryPack}
-              onChange={(e) => setIndustryPack(e.target.value)}
-            >
-              {packs.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label} ({p.adjacentCount} adjacency hints)
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-[var(--rq-muted)]">
-              Packs come from Part 5 Domain 75 — Business Operating Profile.
-            </p>
-          </div>
+          <p className="text-xs text-[var(--rq-muted)]">
+            Industry focus is sensed from your company name and early interview
+            answers — no pack to pick.
+          </p>
 
           <Button
             type="button"
@@ -472,7 +597,7 @@ function CompanySetupWizard() {
       {phase === "interview" && currentSection ? (
         <div className="mt-8 space-y-4">
           <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
-            <p className="text-sm font-medium text-orange-700">
+            <p className="text-sm font-medium text-orange-700 dark:text-orange-400">
               AI assistant · section {(session?.sectionIndex ?? 0) + 1} of{" "}
               {session?.sections.length ?? 0}
             </p>
@@ -496,7 +621,7 @@ function CompanySetupWizard() {
               <p className="mt-1 text-xs text-[var(--rq-muted)]">{q.whyAsked}</p>
               {q.inputType === "single_select" && q.options?.length ? (
                 <select
-                  className="mt-2 h-11 w-full rounded-md border border-[var(--rq-border)] bg-white px-3 text-sm"
+                  className="mt-2 h-11 w-full rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 text-sm text-[var(--rq-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rq-orange)]"
                   value={answers[q.id] ?? ""}
                   onChange={(e) =>
                     setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
@@ -510,6 +635,34 @@ function CompanySetupWizard() {
                     </option>
                   ))}
                 </select>
+              ) : q.inputType === "multi_select" && q.options?.length ? (
+                <div className="mt-2 space-y-2">
+                  {q.options.map((o) => {
+                    const selected = (answers[q.id] ?? "")
+                      .split(",")
+                      .map((part) => part.trim())
+                      .filter(Boolean);
+                    const checked = selected.includes(o.value);
+                    return (
+                      <label
+                        key={o.value}
+                        className={`flex cursor-pointer items-start gap-2 rounded-md border p-2.5 text-sm text-[var(--rq-ink)] ${
+                          checked
+                            ? "border-orange-400 bg-orange-50 dark:border-orange-500 dark:bg-orange-950/40"
+                            : "border-[var(--rq-border)]"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={checked}
+                          onChange={() => toggleMultiAnswer(q.id, o.value)}
+                        />
+                        <span>{o.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               ) : q.inputType === "text" ? (
                 <Input
                   className="mt-2"
@@ -517,6 +670,7 @@ function CompanySetupWizard() {
                   onChange={(e) =>
                     setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
                   }
+                  placeholder={q.placeholder}
                 />
               ) : (
                 <Textarea
@@ -525,7 +679,10 @@ function CompanySetupWizard() {
                   onChange={(e) =>
                     setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
                   }
-                  placeholder="Type your answer — or write unknown if you do not know yet"
+                  placeholder={
+                    q.placeholder ??
+                    "Type your answer — or write unknown if you do not know yet"
+                  }
                 />
               )}
             </div>
@@ -600,7 +757,7 @@ function CompanySetupWizard() {
           ))}
 
           {dna?.enabled && dna.facts.length > 0 ? (
-            <div className="rounded-lg border border-dashed border-orange-300 bg-orange-50/40 p-5">
+            <div className="rounded-lg border border-dashed border-orange-300 bg-orange-50/40 p-5 dark:border-orange-800 dark:bg-orange-950/30">
               <h3 className="text-lg font-semibold text-[var(--rq-ink)]">
                 Business DNA facts
               </h3>
@@ -756,7 +913,7 @@ function CompanySetupWizard() {
                         <div className="flex flex-wrap items-center gap-2">
                           <Link
                             href={`/companies/${c.companySlug}`}
-                            className="font-semibold text-orange-700 hover:underline"
+                            className="font-semibold text-orange-700 hover:underline dark:text-orange-400"
                           >
                             {c.rank}. {c.companyName}
                           </Link>

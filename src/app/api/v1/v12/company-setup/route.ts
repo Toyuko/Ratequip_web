@@ -14,6 +14,10 @@ import {
   saveCompanySetupSection,
   startCompanySetup,
 } from "@/lib/v12/services";
+import {
+  hydrateSetupSessionIntoStore,
+  persistSetupSession,
+} from "@/lib/v12/setup-session-cookie";
 
 export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
@@ -24,6 +28,7 @@ export async function GET(req: NextRequest) {
   if (gate.errorResponse) return gate.errorResponse;
 
   const sessionId = req.nextUrl.searchParams.get("sessionId") ?? undefined;
+  await hydrateSetupSessionIntoStore(sessionId);
   return apiResponse(req, ok(listCompanySetup(sessionId)));
 }
 
@@ -41,11 +46,10 @@ export async function POST(req: NextRequest) {
       typeof body?.companyName === "string" ? body.companyName : "";
     const role = body?.role;
     const industryPack =
-      typeof body?.industryPack === "string" ? body.industryPack : "";
+      typeof body?.industryPack === "string" ? body.industryPack : undefined;
     if (
       !companyName ||
-      (role !== "buyer" && role !== "supplier" && role !== "contractor") ||
-      !industryPack
+      (role !== "buyer" && role !== "supplier" && role !== "contractor")
     ) {
       return apiResponse(req, err("Invalid start payload"));
     }
@@ -57,6 +61,7 @@ export async function POST(req: NextRequest) {
         typeof body?.companyId === "string" ? body.companyId : undefined,
     });
     if (!res.ok) return apiResponse(req, err(res.message, 400));
+    await persistSetupSession(res.session);
     return apiResponse(req, ok(res));
   }
 
@@ -70,12 +75,14 @@ export async function POST(req: NextRequest) {
     if (!sessionId || !answers) {
       return apiResponse(req, err("Invalid section payload"));
     }
+    await hydrateSetupSessionIntoStore(sessionId);
     const res = saveCompanySetupSection({
       sessionId,
       answers,
       advance: body?.advance !== false,
     });
     if (!res.ok) return apiResponse(req, err(res.message, 400));
+    await persistSetupSession(res.session);
     return apiResponse(req, ok(res));
   }
 
@@ -86,6 +93,7 @@ export async function POST(req: NextRequest) {
     if (!sessionId || !decisions) {
       return apiResponse(req, err("Invalid review payload"));
     }
+    await hydrateSetupSessionIntoStore(sessionId);
     const res = reviewCompanySetupSuggestions({
       sessionId,
       decisions: decisions as Array<{
@@ -94,6 +102,7 @@ export async function POST(req: NextRequest) {
       }>,
     });
     if (!res.ok) return apiResponse(req, err(res.message, 400));
+    await persistSetupSession(res.session);
     return apiResponse(req, ok(res));
   }
 
@@ -105,6 +114,7 @@ export async function POST(req: NextRequest) {
     if (!sessionId || !confirmedBy) {
       return apiResponse(req, err("Invalid confirm payload"));
     }
+    await hydrateSetupSessionIntoStore(sessionId);
     const res = confirmCompanySetup({ sessionId, confirmedBy });
     if (!res.ok) {
       return apiResponse(
@@ -112,6 +122,7 @@ export async function POST(req: NextRequest) {
         err(res.message, 409, "code" in res ? res.code : undefined),
       );
     }
+    await persistSetupSession(res.session);
     return apiResponse(req, ok(res));
   }
 
@@ -156,6 +167,7 @@ export async function POST(req: NextRequest) {
     if (!sessionId || !predicate || body?.value === undefined) {
       return apiResponse(req, err("Invalid ingest_fact payload"));
     }
+    await hydrateSetupSessionIntoStore(sessionId);
     const res = part7IngestFact({
       sessionId,
       predicate,
@@ -186,6 +198,7 @@ export async function POST(req: NextRequest) {
     ) {
       return apiResponse(req, err("Invalid confirm_fact payload"));
     }
+    await hydrateSetupSessionIntoStore(sessionId);
     const res = part7ConfirmFact({
       sessionId,
       factId,
@@ -202,6 +215,7 @@ export async function POST(req: NextRequest) {
     if (!sessionId) {
       return apiResponse(req, err("Invalid resume_session payload"));
     }
+    await hydrateSetupSessionIntoStore(sessionId);
     const res = part7ResumeSession({
       sessionId,
       companyId:

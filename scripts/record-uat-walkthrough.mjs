@@ -500,7 +500,7 @@ Generated: ${dbJson.generatedAt}</pre></div>`,
     const poEvidence = path.join(RAW, "uat-po-evidence.txt");
     fs.writeFileSync(poEvidence, "UAT purchase order evidence for review.");
     await page.locator("#evidence").setInputFiles(poEvidence);
-    await page.getByRole("button", { name: /Submit for moderation/i }).click();
+    await page.getByRole("button", { name: /^Submit$/i }).click();
     await sleep(2000);
     await caption(page, "STEP 5a: Review submitted with evidence file", true);
     await sleep(1800);

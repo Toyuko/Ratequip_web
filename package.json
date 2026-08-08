@@ -22,6 +22,7 @@
     "evidence:videos": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-phase2-evidence-videos.mjs",
     "evidence:uat": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-uat-walkthrough.mjs",
     "evidence:v13": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-v13-client-demo.mjs",
+    "evidence:phase2-payment": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-phase2-client-payment-video.mjs",
     "uat:db": "tsx scripts/uat-db-demo.ts",
     "smoke:v12": "tsx scripts/v12-smoke.ts",
     "smoke:part7": "ENTERPRISE_PART7_ENABLED=true ENTERPRISE_GRAPH_MATCH_ENABLED=true tsx scripts/part7-smoke.ts",

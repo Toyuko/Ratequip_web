@@ -392,7 +392,8 @@ Capacity: 20-60 bags/min`,
     const answers: Record<string, string> = {};
     for (const q of section.questions) {
       answers[q.id] =
-        q.inputType === "single_select" && q.options?.[0]
+        (q.inputType === "single_select" || q.inputType === "multi_select") &&
+        q.options?.[0]
           ? q.options[0].value
           : `smoke-answer-${q.id}`;
     }

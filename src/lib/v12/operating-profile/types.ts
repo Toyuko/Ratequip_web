@@ -40,6 +40,7 @@ export type SetupQuestion = {
   inputType: "text" | "textarea" | "single_select" | "multi_select";
   options?: Array<{ value: string; label: string }>;
   whyAsked: string;
+  placeholder?: string;
   answerOwner: "buyer" | "supplier" | "either";
   source: "dqe" | "operating_profile" | "industry_pack";
 };
@@ -79,6 +80,9 @@ export type CompanySetupSession = {
   companyName: string;
   role: CompanyRole;
   industryPack: string;
+  /** How the pack was chosen — explicit override, sensed, or general fallback. */
+  industryPackSource?: "explicit" | "inferred" | "general";
+  industryPackReason?: string;
   status: "in_progress" | "review" | "completed";
   sectionIndex: number;
   sections: SetupSection[];

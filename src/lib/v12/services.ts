@@ -53,6 +53,7 @@ import {
   buildSetupSuggestions,
   COMPANY_SETUP_POLICY,
   listSetupIndustryPacks,
+  resolveSetupIndustryPack,
   summariseAnswers,
 } from "@/lib/v12/operating-profile/interview";
 import { suggestCompaniesForOperatingProfile } from "@/lib/v12/operating-profile/company-suggester";
@@ -89,7 +90,7 @@ import {
 } from "@/lib/v12/workflow/runtime";
 import { createHash } from "node:crypto";
 
-export { listIndustryPacks, listSetupIndustryPacks };
+export { listIndustryPacks, listSetupIndustryPacks, resolveSetupIndustryPack };
 
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -1546,7 +1547,8 @@ export function listCatalogFactory() {
 export function startCompanySetup(input: {
   companyName: string;
   role: CompanyRole;
-  industryPack: string;
+  /** Optional — when omitted/`auto`, sensed from company name. */
+  industryPack?: string;
   companyId?: string;
 }) {
   const companyName = input.companyName.trim();
@@ -1556,16 +1558,28 @@ export function startCompanySetup(input: {
   if (!["buyer", "supplier", "contractor"].includes(input.role)) {
     return { ok: false as const, message: "Invalid role" };
   }
-  const packs = listSetupIndustryPacks();
-  if (!packs.some((p) => p.id === input.industryPack)) {
+
+  const explicit = (input.industryPack ?? "").trim();
+  if (
+    explicit &&
+    explicit !== "auto" &&
+    explicit !== "general" &&
+    !listSetupIndustryPacks().some((p) => p.id === explicit)
+  ) {
     return { ok: false as const, message: "Unknown industry pack" };
   }
 
+  const resolved = resolveSetupIndustryPack({
+    companyName,
+    industryPack: explicit || "auto",
+  });
+  const industryPack = resolved.packId;
+  const packs = listSetupIndustryPacks();
   const store = getV12Store();
   const companyId = input.companyId ?? id("co");
   const sections = buildCompanySetupSections({
     role: input.role,
-    industryPack: input.industryPack,
+    industryPack,
   });
   const now = new Date().toISOString();
   const session = {
@@ -1573,7 +1587,9 @@ export function startCompanySetup(input: {
     companyId,
     companyName,
     role: input.role,
-    industryPack: input.industryPack,
+    industryPack,
+    industryPackSource: resolved.source,
+    industryPackReason: resolved.reason,
     status: "in_progress" as const,
     sectionIndex: 0,
     sections,
@@ -1591,7 +1607,7 @@ export function startCompanySetup(input: {
       companyId,
       legalName: companyName,
       role: input.role,
-      industryPack: input.industryPack,
+      industryPack,
       setupSessionId: session.id,
       createdBy: "company-setup",
     });
@@ -1602,6 +1618,7 @@ export function startCompanySetup(input: {
     session,
     policyVersion: COMPANY_SETUP_POLICY,
     industryPacks: packs,
+    industryPackResolution: resolved,
     dna: dna
       ? {
           profile: dna.profile,
@@ -1626,6 +1643,34 @@ export function saveCompanySetupSection(input: {
 
   session.answers = { ...session.answers, ...input.answers };
   session.updatedAt = new Date().toISOString();
+
+  // If we started on the general pack, refine from company name + answers as
+  // the user fills primary industry / operating text.
+  if (
+    session.industryPack === "general" ||
+    session.industryPackSource === "general"
+  ) {
+    const hintText = [
+      session.answers["universal.primary_industry"] ?? "",
+      ...Object.values(session.answers),
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const refined = resolveSetupIndustryPack({
+      companyName: session.companyName,
+      hintText,
+      industryPack: "auto",
+    });
+    if (refined.packId !== "general" && refined.packId !== session.industryPack) {
+      session.industryPack = refined.packId;
+      session.industryPackSource = refined.source;
+      session.industryPackReason = refined.reason;
+      session.sections = buildCompanySetupSections({
+        role: session.role,
+        industryPack: refined.packId,
+      });
+    }
+  }
 
   if (isPart7Enabled()) {
     const dna = listDnaForSession(session.id);

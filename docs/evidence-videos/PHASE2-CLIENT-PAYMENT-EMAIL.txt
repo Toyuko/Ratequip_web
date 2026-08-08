@@ -1,0 +1,28 @@
+Subject: Phase 2 MVP complete — ready for written acceptance & Milestone 1 payment
+
+Hi Robin,
+
+Phase 2 MVP Core is complete and live:
+
+https://ratequip-web.vercel.app
+
+Attached is a short live walkthrough with on-screen subtitles (no voiceover):
+- Guest security (owner controls hidden when signed out)
+- Company create / claim
+- RFQ create → compare → owner controls
+- Reviews + admin moderation
+- Billing / credits / pricing
+
+Acceptance status (8 Aug 2026 UAT):
+- 19/19 acceptance checks
+- 31/31 Playwright
+- Database migrate / seed / rollback 6/6
+- Stripe smoke PASS
+- Production: database connected, demo mode off
+
+Full evidence pack + technical PASSED certificate are under docs/acceptance-phase2/.
+
+Please send written acceptance for Phase 2 Milestone 1 (Invoice 2026-010 · THB 20,000) so payment can be released.
+
+Thanks,
+Touy

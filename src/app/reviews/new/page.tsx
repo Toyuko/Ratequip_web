@@ -71,7 +71,7 @@ function ReviewForm() {
       </div>
       {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Submitting…" : "Submit for moderation"}
+        {pending ? "Submitting…" : "Submit"}
       </Button>
     </form>
   );
