@@ -1,7 +1,8 @@
+import { publicAppUrl } from "@/lib/config";
 import type { ReferralKind, ReferralShareBundle } from "./types";
 
 function appBaseUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  return publicAppUrl();
 }
 
 export function buildJoinUrl(code: string, kind?: ReferralKind) {

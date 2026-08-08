@@ -11,6 +11,10 @@
 import { config } from "dotenv";
 import { resolve } from "node:path";
 import { Resend } from "resend";
+import {
+  emailParagraph,
+  renderEmailDocument,
+} from "../src/lib/email-template";
 
 config({ path: resolve(process.cwd(), ".env.local") });
 config({ path: resolve(process.cwd(), ".env") });
@@ -50,13 +54,15 @@ async function main() {
     from,
     to,
     subject: "RateQuip email test",
-    html: `
-      <div style="font-family:Montserrat,Arial,sans-serif;color:#0f172a;line-height:1.5">
-        <p>This is a RateQuip transactional email test.</p>
-        <p>If you received this, Resend is configured correctly.</p>
-        <p style="color:#64748b;font-size:12px">Sent at ${new Date().toISOString()}</p>
-      </div>
-    `.trim(),
+    html: renderEmailDocument({
+      preheader: "Resend is configured correctly.",
+      heading: "Email setup check",
+      bodyHtml: `
+        ${emailParagraph("This is a RateQuip transactional email test.")}
+        ${emailParagraph("If you received this, Resend is configured correctly.")}
+      `.trim(),
+      footerNote: `Sent at ${new Date().toISOString()}`,
+    }),
     tags: [{ name: "category", value: "email_test" }],
   });
 

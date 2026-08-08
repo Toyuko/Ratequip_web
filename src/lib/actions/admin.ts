@@ -3,11 +3,17 @@
 import { cookies } from "next/headers";
 import { requireServerAdmin } from "@/lib/api/auth";
 import { persistModeration } from "@/lib/db/phase2";
+import { publicAppUrl } from "@/lib/config";
 import {
   looksLikeEmail,
   opsEmail,
   sendTransactionalEmail,
 } from "@/lib/email";
+import {
+  emailLink,
+  emailParagraph,
+  renderEmailDocument,
+} from "@/lib/email-template";
 
 export async function moderateEntity(input: {
   entityType: "review" | "claim";
@@ -31,8 +37,7 @@ export async function moderateEntity(input: {
   });
 
   if (result.ok) {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const baseUrl = publicAppUrl();
     const companyLabel =
       ("companyName" in result && result.companyName) ||
       ("companySlug" in result && result.companySlug) ||
@@ -45,7 +50,14 @@ export async function moderateEntity(input: {
     await sendTransactionalEmail({
       to: opsEmail(),
       subject: `Moderation ${input.decision}: ${input.entityType}`,
-      html: `<p>${input.entityType} ${input.entityId} (${companyLabel}) was ${input.decision} by ${actor}.</p>`,
+      html: renderEmailDocument({
+        preheader: `${input.entityType} ${input.entityId} was ${input.decision}`,
+        heading: `Moderation ${input.decision}`,
+        bodyHtml: emailParagraph(
+          `<strong style="color:#0F172A">${input.entityType}</strong> ${input.entityId} (${companyLabel}) was <strong style="color:#0F172A">${input.decision}</strong> by ${actor}.`,
+        ),
+        cta: { label: "Open admin", href: `${baseUrl}/admin` },
+      }),
       tags: [
         { name: "category", value: "moderation_ops" },
         { name: "entity", value: input.entityType },
@@ -63,16 +75,27 @@ export async function moderateEntity(input: {
         subject: approved
           ? `Your claim for ${companyLabel} was approved`
           : `Update on your claim for ${companyLabel}`,
-        html: `
-          <div style="font-family:Montserrat,Arial,sans-serif;color:#0f172a;line-height:1.5">
-            <p>Your company profile claim for <strong>${companyLabel}</strong> was <strong>${input.decision}</strong>.</p>
+        html: renderEmailDocument({
+          preheader: `Your claim for ${companyLabel} was ${input.decision}.`,
+          heading: approved ? "Claim approved" : "Claim update",
+          bodyHtml: `
+            ${emailParagraph(
+              `Your company profile claim for <strong style="color:#0F172A">${companyLabel}</strong> was <strong style="color:#0F172A">${input.decision}</strong>.`,
+            )}
             ${
               approved
-                ? `<p>You can manage the profile here: <a href="${profileUrl}">${profileUrl}</a></p>`
-                : `<p>If you believe this was in error, reply to this email or contact support via <a href="${baseUrl}/contact">${baseUrl}/contact</a>.</p>`
+                ? emailParagraph(
+                    `You can manage the profile here: ${emailLink(profileUrl, "Open company profile")}`,
+                  )
+                : emailParagraph(
+                    `If you believe this was in error, reply to this email or contact support via ${emailLink(`${baseUrl}/contact`, "Contact")}.`,
+                  )
             }
-          </div>
-        `.trim(),
+          `.trim(),
+          cta: approved
+            ? { label: "Manage profile", href: profileUrl }
+            : { label: "Contact support", href: `${baseUrl}/contact` },
+        }),
         tags: [
           { name: "category", value: "claim_decision" },
           { name: "decision", value: input.decision },

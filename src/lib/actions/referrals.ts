@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { publicAppUrl } from "@/lib/config";
 import { sendTransactionalEmail } from "@/lib/email";
 import {
   isDisposableEmail,
@@ -123,7 +124,7 @@ export async function sendReferralInvite(input: {
     personalNote: input.personalNote,
   });
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const baseUrl = publicAppUrl();
   const rendered = renderJoinInviteEmail({
     kindLabel: KIND_LABELS[input.kind],
     title: copy.emailSubject,

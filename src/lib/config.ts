@@ -13,6 +13,22 @@ export const brand = {
   },
 } as const;
 
+/** Canonical public origin for emails and share links (never localhost). */
+export const PUBLIC_APP_URL = "https://ratequip-web.vercel.app";
+
+/**
+ * Absolute site origin for outbound links (transactional email, invites).
+ * Uses NEXT_PUBLIC_APP_URL when it is a non-local URL; otherwise the
+ * deployed RateQuip origin so recipients never get localhost links.
+ */
+export function publicAppUrl() {
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
+  if (raw && !/^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?$/i.test(raw)) {
+    return raw;
+  }
+  return PUBLIC_APP_URL;
+}
+
 export function hasClerkPublishableKey() {
   return Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 }

@@ -30,7 +30,8 @@
     "stripe:setup": "tsx scripts/stripe-setup-local.ts",
     "stripe:listen": "stripe listen --forward-to https://ratequip-web.vercel.app/api/webhooks/stripe --events checkout.session.completed,customer.subscription.updated,customer.subscription.deleted,invoice.paid",
     "stripe:uat-smoke": "STRIPE_UAT_BASE_URL=https://ratequip-web.vercel.app tsx scripts/stripe-uat-smoke.ts",
-    "email:test": "tsx scripts/test-email.ts"
+    "email:test": "tsx scripts/test-email.ts",
+    "email:test:platform": "tsx scripts/test-platform-emails.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.17",

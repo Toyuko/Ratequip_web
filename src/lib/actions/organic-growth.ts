@@ -25,6 +25,7 @@ import type {
   ContactCandidateDraft,
   ListingSubmissionDraft,
 } from "@/lib/organic-growth/types";
+import { publicAppUrl } from "@/lib/config";
 import { sendTransactionalEmail } from "@/lib/email";
 
 function sanitizeContacts(
@@ -171,8 +172,7 @@ export async function publishListingSubmission(input: {
   const result = publishSubmission(input.id);
   if (!result.ok) return result;
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const baseUrl = publicAppUrl();
   const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(
     "en-GB",
     { day: "numeric", month: "short", year: "numeric" },
