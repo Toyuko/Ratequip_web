@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     recipientName?: string;
     companyName?: string;
     personalNote?: string;
+    opportunitySummary?: string;
     invitationReason?: string;
     inviterName?: string;
     inviterEmail?: string;
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
     recipientName: body.recipientName,
     companyName: body.companyName,
     personalNote: body.personalNote,
+    opportunitySummary: body.opportunitySummary,
     invitationReason,
     inviterName: body.inviterName,
     inviterEmail: body.inviterEmail,

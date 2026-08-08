@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getClaimInvitation } from "@/lib/actions/organic-growth";
+import { getInviteRewardConfig } from "@/lib/actions/referrals";
+import { WELCOME_CREDIT_USES } from "@/lib/referrals/invite-rewards";
 
 type ClaimView = {
   companyName?: string;
@@ -22,10 +24,19 @@ export default function ClaimTokenPage() {
   const params = useParams<{ token: string }>();
   const [data, setData] = useState<ClaimView | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [welcomeCredits, setWelcomeCredits] = useState(250);
+  const [founding, setFounding] = useState(true);
 
   useEffect(() => {
     void (async () => {
-      const result = await getClaimInvitation(params.token);
+      const [result, rewards] = await Promise.all([
+        getClaimInvitation(params.token),
+        getInviteRewardConfig(),
+      ]);
+      if (rewards.ok) {
+        setWelcomeCredits(rewards.settings.welcomeCredits);
+        setFounding(rewards.settings.foundingMemberEnabled);
+      }
       if (!result.ok) {
         setError(result.message);
         return;
@@ -65,7 +76,12 @@ export default function ClaimTokenPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
-      <Badge variant="warning">Opportunity invitation</Badge>
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="warning">Opportunity invitation</Badge>
+        {founding && welcomeCredits > 0 ? (
+          <Badge variant="success">Founding Member</Badge>
+        ) : null}
+      </div>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         {company} was introduced on RateQuip
       </h1>
@@ -73,6 +89,22 @@ export default function ClaimTokenPage() {
         {inviter} added {company} so buyers and industry partners can discover
         the business — a deliberate introduction, not a random listing.
       </p>
+
+      {welcomeCredits > 0 ? (
+        <div className="mt-6 rounded-xl border-2 border-[var(--rq-orange-deep)] bg-orange-50 px-5 py-5">
+          <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--rq-orange-deep)]">
+            {inviter} has unlocked your RateQuip Welcome Reward
+          </p>
+          <p className="mt-2 text-xl font-extrabold tracking-tight text-[var(--rq-ink)]">
+            Claim this profile and receive {welcomeCredits} FREE RateQuip Credits
+          </p>
+          <ul className="mt-3 space-y-1.5 text-sm text-[var(--rq-slate)]">
+            {WELCOME_CREDIT_USES.map((use) => (
+              <li key={use}>✓ {use}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="mt-6 rounded-lg border border-[var(--rq-border)] border-l-4 border-l-[var(--rq-orange)] bg-[var(--rq-card)] px-4 py-4">
         <p className="text-xs font-bold uppercase tracking-wide text-[var(--rq-orange)]">
@@ -148,7 +180,9 @@ export default function ClaimTokenPage() {
           <Link
             href={`/companies/claim?company=${data.companySlug ?? ""}&token=${params.token}`}
           >
-            Claim {company}&apos;s free profile &amp; get discovered
+            {welcomeCredits > 0
+              ? `Claim ${company} + claim ${welcomeCredits} free credits`
+              : `Claim ${company}'s free profile & get discovered`}
           </Link>
         </Button>
         {data.companySlug ? (

@@ -42,7 +42,15 @@ export type ReferralInvite = {
   recipientName?: string;
   companyName?: string;
   personalNote?: string;
+  /** Concrete opportunity attached to this invite (optional). */
+  opportunitySummary?: string;
   invitationReason?: InvitationReason;
+  /** Welcome credits promised at send time (admin-configurable economics). */
+  welcomeCredits?: number;
+  /** Inviter reward credits mentioned in growth-loop copy at send time. */
+  inviterRewardCredits?: number;
+  /** Early / Founding Member badge eligibility for launch invites. */
+  foundingMemberEligible?: boolean;
   inviterName?: string;
   inviterOrg?: string;
   /**

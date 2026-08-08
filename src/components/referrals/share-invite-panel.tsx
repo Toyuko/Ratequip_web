@@ -67,6 +67,7 @@ export function ShareInvitePanel({
   const [inviterEmail, setInviterEmail] = useState("");
   const [invitationReason, setInvitationReason] =
     useState<InvitationReason>("industry_connection");
+  const [opportunitySummary, setOpportunitySummary] = useState("");
   const [personalNote, setPersonalNote] = useState("");
   const [share, setShare] = useState<ReferralShareBundle | null>(null);
   const [invites, setInvites] = useState<ReferralInvite[]>([]);
@@ -92,6 +93,7 @@ export function ShareInvitePanel({
           kind,
           companyName: companyName.trim() || undefined,
           invitationReason,
+          opportunitySummary: opportunitySummary.trim() || undefined,
           personalNote: personalNote.trim() || undefined,
         }),
         listReferralInvites(),
@@ -109,6 +111,7 @@ export function ShareInvitePanel({
         kind,
         companyName: companyName.trim() || undefined,
         invitationReason,
+        opportunitySummary: opportunitySummary.trim() || undefined,
         personalNote: personalNote.trim() || undefined,
       });
       if (!link.ok) {
@@ -128,6 +131,7 @@ export function ShareInvitePanel({
         recipientName: recipientName.trim() || undefined,
         companyName: companyName.trim() || undefined,
         personalNote: personalNote.trim() || undefined,
+        opportunitySummary: opportunitySummary.trim() || undefined,
         invitationReason,
         inviterName: inviterName.trim() || undefined,
         inviterEmail: inviterEmail.trim() || undefined,
@@ -313,6 +317,22 @@ export function ShareInvitePanel({
           </p>
         </div>
         <div>
+          <Label htmlFor="ref-opportunity">
+            Specific opportunity (optional)
+          </Label>
+          <Textarea
+            id="ref-opportunity"
+            className="mt-1 min-h-16"
+            value={opportunitySummary}
+            onChange={(e) => setOpportunitySummary(e.target.value)}
+            placeholder="Only fill this if there’s a real opportunity attached — e.g. packaging line upgrade RFQ, supplier shortlist for Q3, install project in Malmö…"
+          />
+          <p className="mt-1 text-xs text-[var(--rq-muted)]">
+            When set, the email says they’ll immediately see the opportunity you
+            opened. Otherwise it shows the invitation reason only.
+          </p>
+        </div>
+        <div>
           <Label htmlFor="ref-note">Personal message</Label>
           <Textarea
             id="ref-note"
@@ -322,8 +342,8 @@ export function ShareInvitePanel({
             placeholder="Hi Rob, we thought your business would be a good fit for the RateQuip network and we’d like to connect with you there. We’ve sent you this invitation so you can take a look at the platform and the opportunities available."
           />
           <p className="mt-1 text-xs text-[var(--rq-muted)]">
-            Featured prominently as a message from you / your company — not from
-            RateQuip Ops.
+            Featured as a message from you / your company — use your real name
+            above, not RateQuip Ops.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

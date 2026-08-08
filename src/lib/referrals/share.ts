@@ -64,18 +64,22 @@ export function referralCopy(
       };
     case "join_platform":
     default: {
+      const person =
+        opts?.inviterName?.trim() && !opts.inviterName.includes("@")
+          ? opts.inviterName.trim()
+          : undefined;
       const belief = invitationReasonExplanation(
         opts?.invitationReason,
         orgOrCompany || who,
+        person,
       );
+      const titleWho = person && orgOrCompany
+        ? `${person} at ${orgOrCompany}`
+        : orgOrCompany || who;
       return {
-        title: orgOrCompany
-          ? `${orgOrCompany} has invited you to connect on RateQuip`
-          : `${who} has invited you to connect on RateQuip`,
+        title: `${titleWho} has invited you to connect on RateQuip`,
         text: belief,
-        emailSubject: orgOrCompany
-          ? `${orgOrCompany} has invited you to connect on RateQuip`
-          : `${who} has invited you to connect on RateQuip`,
+        emailSubject: `${titleWho} has invited you to connect on RateQuip`,
       };
     }
   }
@@ -90,7 +94,9 @@ export function buildShareBundle(input: {
   inviterOrg?: string;
   companyName?: string;
   personalNote?: string;
+  opportunitySummary?: string;
   invitationReason?: InvitationReason;
+  welcomeCredits?: number;
 }): ReferralShareBundle {
   const joinKey = input.token || input.code;
   const joinUrl = buildJoinUrl(joinKey, input.kind);
@@ -101,14 +107,29 @@ export function buildShareBundle(input: {
     input.inviterOrg?.trim() ||
     input.inviterName?.trim() ||
     "your partner";
+  const who =
+    input.inviterName?.trim() && !input.inviterName.includes("@")
+      ? `${input.inviterName.trim()} at ${orgLabel}`
+      : orgLabel;
   const reason =
     input.invitationReason &&
     `\n\nInvitation reason: ${INVITATION_REASON_LABELS[input.invitationReason]}`;
-  const note = input.personalNote?.trim()
-    ? `\n\nPersonal message from ${orgLabel}:\n“${input.personalNote.trim()}”`
+  const opportunity = input.opportunitySummary?.trim()
+    ? `\n\nOpportunity:\n${input.opportunitySummary.trim()}`
     : "";
-  const text = `${copy.text}${reason || ""}${note}\n\nView why they invited you:\n${joinUrl}`;
-  const emailBody = `${copy.text}${reason || ""}${note}\n\nAccept ${orgLabel}'s invitation:\n${signUpUrl}\n\nOr view why they invited you (no sign-up required):\n${joinUrl}\n\n— RateQuip · Rate · Compare · Connect · Grow`;
+  const note = input.personalNote?.trim()
+    ? `\n\nPersonal message from ${who}:\n“${input.personalNote.trim()}”`
+    : "";
+  const reward =
+    input.welcomeCredits && input.welcomeCredits > 0
+      ? `\n\nWelcome reward: ${input.welcomeCredits} FREE RateQuip Credits when you accept.`
+      : "";
+  const text = `${copy.text}${reason || ""}${opportunity}${note}${reward}\n\nView why they invited you:\n${joinUrl}`;
+  const emailBody = `${copy.text}${reason || ""}${opportunity}${note}${reward}\n\nAccept ${who}'s invitation${
+    input.welcomeCredits && input.welcomeCredits > 0
+      ? ` + claim ${input.welcomeCredits} free credits`
+      : ""
+  }:\n${signUpUrl}\n\nOr view why they invited you (no sign-up required):\n${joinUrl}\n\n— RateQuip · Rate · Compare · Connect · Grow`;
 
   return {
     code: input.code,

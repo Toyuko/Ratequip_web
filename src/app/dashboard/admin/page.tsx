@@ -7,6 +7,7 @@ import {
   listPendingClaimsAsync,
   listPendingReviewsAsync,
 } from "@/lib/db/phase2";
+import { getInviteRewardSettings } from "@/lib/referrals/invite-rewards";
 
 export const metadata = { title: "Admin moderation" };
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function AdminDashboardPage() {
     listPendingClaimsAsync(),
   ]);
   const audit = getRuntimeAudit();
+  const inviteRewards = getInviteRewardSettings();
 
   return (
     <DashboardShell role="admin" title="Admin moderation">
@@ -29,6 +31,7 @@ export default async function AdminDashboardPage() {
         initialReviews={pendingReviews}
         initialClaims={pendingClaims}
         initialAudit={audit}
+        initialInviteRewards={inviteRewards}
       />
     </DashboardShell>
   );

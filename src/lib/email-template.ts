@@ -96,6 +96,25 @@ export function emailBenefits(items: string[]) {
   `.trim();
 }
 
+/** High-visibility welcome reward banner for invite emails. */
+export function emailRewardBanner(opts: {
+  title: string;
+  headline: string;
+  bodyHtml: string;
+}) {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px">
+      <tr>
+        <td bgcolor="#FFEDD5" style="padding:18px 20px;background-color:#FFEDD5;border:2px solid ${COLORS.orangeDeep};border-radius:12px">
+          <p style="margin:0 0 8px;font-family:Montserrat,Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;line-height:1.4;letter-spacing:0.08em;text-transform:uppercase;color:${COLORS.orangeDeep}">${opts.title}</p>
+          <p style="margin:0 0 10px;font-family:Montserrat,Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;line-height:1.25;color:${COLORS.navy};letter-spacing:-0.02em">${opts.headline}</p>
+          <div style="font-family:Montserrat,Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:${COLORS.slate}">${opts.bodyHtml}</div>
+        </td>
+      </tr>
+    </table>
+  `.trim();
+}
+
 /**
  * Wrap transactional email content in the RateQuip branded layout.
  * Uses nested tables for broad client support (Gmail, Outlook, Apple Mail).

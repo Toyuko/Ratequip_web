@@ -52,7 +52,11 @@ export function createShareCode(input: {
   inviterEmail?: string;
   companyName?: string;
   personalNote?: string;
+  opportunitySummary?: string;
   invitationReason?: InvitationReason;
+  welcomeCredits?: number;
+  inviterRewardCredits?: number;
+  foundingMemberEligible?: boolean;
   channel?: ReferralChannel;
 }): ReferralInvite {
   const now = new Date().toISOString();
@@ -67,7 +71,11 @@ export function createShareCode(input: {
     inviterEmail: input.inviterEmail,
     companyName: input.companyName,
     personalNote: input.personalNote?.trim() || undefined,
+    opportunitySummary: input.opportunitySummary?.trim() || undefined,
     invitationReason: input.invitationReason,
+    welcomeCredits: input.welcomeCredits,
+    inviterRewardCredits: input.inviterRewardCredits,
+    foundingMemberEligible: input.foundingMemberEligible,
     channel: input.channel ?? "copy_link",
     createdAt: now,
     updatedAt: now,
@@ -85,7 +93,11 @@ export function createEmailInvite(input: {
   recipientName?: string;
   companyName?: string;
   personalNote?: string;
+  opportunitySummary?: string;
   invitationReason?: InvitationReason;
+  welcomeCredits?: number;
+  inviterRewardCredits?: number;
+  foundingMemberEligible?: boolean;
   inviterName?: string;
   inviterOrg?: string;
   inviterEmail?: string;
@@ -103,7 +115,11 @@ export function createEmailInvite(input: {
     recipientName: input.recipientName?.trim() || undefined,
     companyName: input.companyName?.trim() || undefined,
     personalNote: input.personalNote?.trim() || undefined,
+    opportunitySummary: input.opportunitySummary?.trim() || undefined,
     invitationReason: input.invitationReason,
+    welcomeCredits: input.welcomeCredits,
+    inviterRewardCredits: input.inviterRewardCredits,
+    foundingMemberEligible: input.foundingMemberEligible,
     inviterName: input.inviterName,
     inviterOrg: input.inviterOrg,
     inviterEmail: input.inviterEmail

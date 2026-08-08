@@ -4,23 +4,38 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { moderateEntity } from "@/lib/actions/admin";
+import { updateInviteRewardConfig } from "@/lib/actions/referrals";
 import type { DemoClaim, DemoReview } from "@/lib/db/demo-data";
 import type { RuntimeAudit } from "@/lib/db/runtime-store";
+import type { InviteRewardSettings } from "@/lib/referrals/invite-rewards";
 
 export function AdminModerationClient({
   initialReviews,
   initialClaims,
   initialAudit,
+  initialInviteRewards,
 }: {
   initialReviews: DemoReview[];
   initialClaims: DemoClaim[];
   initialAudit: RuntimeAudit[];
+  initialInviteRewards: InviteRewardSettings;
 }) {
   const router = useRouter();
   const [reviews, setReviews] = useState(initialReviews);
   const [claims, setClaims] = useState(initialClaims);
   const [audit, setAudit] = useState(initialAudit);
+  const [welcomeCredits, setWelcomeCredits] = useState(
+    String(initialInviteRewards.welcomeCredits),
+  );
+  const [inviterRewardCredits, setInviterRewardCredits] = useState(
+    String(initialInviteRewards.inviterRewardCredits),
+  );
+  const [foundingMemberEnabled, setFoundingMemberEnabled] = useState(
+    initialInviteRewards.foundingMemberEnabled,
+  );
   const [pending, startTransition] = useTransition();
   const [note, setNote] = useState<string | null>(null);
 
@@ -57,6 +72,69 @@ export function AdminModerationClient({
         <Stat label="Pending claims" value={String(claims.length)} />
         <Stat label="Audit events" value={String(audit.length)} />
       </div>
+
+      <section className="mt-10 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4">
+        <h2 className="font-semibold text-[var(--rq-ink)]">
+          Invite welcome reward
+        </h2>
+        <p className="mt-1 text-sm text-[var(--rq-slate)]">
+          Configurable credit economics for partner invites. Amount is locked
+          onto each invite at send time. Override env defaults (
+          <code className="text-xs">INVITE_WELCOME_CREDITS</code>) here.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div>
+            <Label htmlFor="welcome-credits">Welcome credits</Label>
+            <Input
+              id="welcome-credits"
+              type="number"
+              min={0}
+              className="mt-1"
+              value={welcomeCredits}
+              onChange={(e) => setWelcomeCredits(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="inviter-credits">Inviter reward credits</Label>
+            <Input
+              id="inviter-credits"
+              type="number"
+              min={0}
+              className="mt-1"
+              value={inviterRewardCredits}
+              onChange={(e) => setInviterRewardCredits(e.target.value)}
+            />
+          </div>
+          <div className="flex items-end pb-2">
+            <label className="flex items-center gap-2 text-sm text-[var(--rq-ink)]">
+              <input
+                type="checkbox"
+                checked={foundingMemberEnabled}
+                onChange={(e) => setFoundingMemberEnabled(e.target.checked)}
+              />
+              Founding Member badge
+            </label>
+          </div>
+        </div>
+        <Button
+          className="mt-4"
+          size="sm"
+          disabled={pending}
+          onClick={() =>
+            startTransition(async () => {
+              const res = await updateInviteRewardConfig({
+                welcomeCredits: Number(welcomeCredits),
+                inviterRewardCredits: Number(inviterRewardCredits),
+                foundingMemberEnabled,
+              });
+              setNote(res.message);
+              if (res.ok) router.refresh();
+            })
+          }
+        >
+          Save invite rewards
+        </Button>
+      </section>
 
       <section className="mt-10">
         <h2 className="font-semibold text-[var(--rq-ink)]">Review queue</h2>

@@ -97,6 +97,9 @@ function cases(): Case[] {
     inviterName: "Alex Bergman",
     inviterOrg: companyName,
     inviterEmail: "ops@ratequip.com",
+    welcomeCredits: 250,
+    inviterRewardCredits: 50,
+    foundingMemberEligible: true,
   });
   const sentInvite = markInviteSent(invite.id) ?? invite;
 
@@ -116,6 +119,9 @@ function cases(): Case[] {
     personalNote:
       "Hi — we thought your business would be a good fit for the RateQuip network and we’d like to connect with you there. We’ve sent this invitation so you can take a look at the platform and the opportunities available.",
     recipientName: "Email Tester",
+    welcomeCredits: 250,
+    inviterRewardCredits: 50,
+    foundingMemberEligible: true,
     supportUrl: `${baseUrl}/contact`,
   });
 

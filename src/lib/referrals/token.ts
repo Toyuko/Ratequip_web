@@ -16,7 +16,11 @@ type InvitePayload = {
   inviterEmail?: string;
   companyName?: string;
   personalNote?: string;
+  opportunitySummary?: string;
   invitationReason?: InvitationReason;
+  welcomeCredits?: number;
+  inviterRewardCredits?: number;
+  foundingMemberEligible?: boolean;
   emailMasked?: string;
   recipientName?: string;
   status?: ReferralInvite["status"];
@@ -30,8 +34,6 @@ function hmacSecret() {
     process.env.REFERRAL_HMAC_SECRET?.trim() ||
     process.env.OG_EMAIL_HMAC_SECRET?.trim();
   if (configured) return configured;
-  // Stable demo fallback so invite minting never blanks the referrals UI.
-  // Prefer setting REFERRAL_HMAC_SECRET / OG_EMAIL_HMAC_SECRET in production.
   return "ratequip-demo-referral-hmac-v1";
 }
 
@@ -54,7 +56,11 @@ export function mintInviteToken(
     | "inviterEmail"
     | "companyName"
     | "personalNote"
+    | "opportunitySummary"
     | "invitationReason"
+    | "welcomeCredits"
+    | "inviterRewardCredits"
+    | "foundingMemberEligible"
     | "emailMasked"
     | "recipientName"
     | "status"
@@ -73,7 +79,11 @@ export function mintInviteToken(
     inviterEmail: invite.inviterEmail,
     companyName: invite.companyName,
     personalNote: invite.personalNote?.slice(0, 500),
+    opportunitySummary: invite.opportunitySummary?.slice(0, 280),
     invitationReason: invite.invitationReason,
+    welcomeCredits: invite.welcomeCredits,
+    inviterRewardCredits: invite.inviterRewardCredits,
+    foundingMemberEligible: invite.foundingMemberEligible,
     emailMasked: invite.emailMasked,
     recipientName: invite.recipientName,
     status: invite.status,
@@ -130,7 +140,15 @@ export function verifyInviteToken(token: string): ReferralInvite | null {
       recipientName: raw.recipientName,
       companyName: raw.companyName,
       personalNote: raw.personalNote,
+      opportunitySummary: raw.opportunitySummary,
       invitationReason,
+      welcomeCredits:
+        typeof raw.welcomeCredits === "number" ? raw.welcomeCredits : undefined,
+      inviterRewardCredits:
+        typeof raw.inviterRewardCredits === "number"
+          ? raw.inviterRewardCredits
+          : undefined,
+      foundingMemberEligible: raw.foundingMemberEligible,
       inviterName: raw.inviterName,
       inviterOrg: raw.inviterOrg,
       inviterEmail: raw.inviterEmail,

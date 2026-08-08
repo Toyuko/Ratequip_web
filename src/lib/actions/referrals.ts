@@ -13,6 +13,11 @@ import {
   isInvitationReason,
   type InvitationReason,
 } from "@/lib/referrals/invitation-reasons";
+import {
+  getInviteRewardSettings,
+  setInviteRewardSettings,
+  type InviteRewardSettings,
+} from "@/lib/referrals/invite-rewards";
 import { renderInviteReplyEmail } from "@/lib/referrals/invite-reply-email";
 import { renderJoinInviteEmail } from "@/lib/referrals/join-invite-email";
 import { buildShareBundle, referralCopy } from "@/lib/referrals/share";
@@ -27,6 +32,7 @@ import {
 } from "@/lib/referrals/store";
 import type { ReferralChannel, ReferralKind } from "@/lib/referrals/types";
 import { REFERRAL_KINDS } from "@/lib/referrals/types";
+import { requireServerAdmin } from "@/lib/api/auth";
 
 function isKind(value: string): value is ReferralKind {
   return (REFERRAL_KINDS as readonly string[]).includes(value);
@@ -56,10 +62,39 @@ const KIND_LABELS: Record<ReferralKind, string> = {
   refer_contractor: "Contractor referral",
 };
 
+function rewardSnapshot() {
+  const settings = getInviteRewardSettings();
+  return {
+    welcomeCredits: settings.welcomeCredits,
+    inviterRewardCredits: settings.inviterRewardCredits,
+    foundingMemberEligible: settings.foundingMemberEnabled,
+  };
+}
+
+export async function getInviteRewardConfig() {
+  return { ok: true as const, settings: getInviteRewardSettings() };
+}
+
+export async function updateInviteRewardConfig(
+  input: Partial<InviteRewardSettings>,
+) {
+  const auth = await requireServerAdmin();
+  if (!auth.user) {
+    return { ok: false as const, message: auth.error ?? "Admin role required" };
+  }
+  const settings = setInviteRewardSettings(input);
+  return {
+    ok: true as const,
+    settings,
+    message: `Invite welcome credits set to ${settings.welcomeCredits}.`,
+  };
+}
+
 export async function getOrCreateShareLink(input: {
   kind: ReferralKind;
   companyName?: string;
   personalNote?: string;
+  opportunitySummary?: string;
   invitationReason?: InvitationReason;
   channel?: ReferralChannel;
 }) {
@@ -71,14 +106,17 @@ export async function getOrCreateShareLink(input: {
   }
 
   const ctx = await inviterContext();
+  const rewards = rewardSnapshot();
   const invite = createShareCode({
     kind: input.kind,
     companyName: input.companyName,
     personalNote: input.personalNote,
+    opportunitySummary: input.opportunitySummary,
     invitationReason: input.invitationReason,
     inviterName: ctx.inviterName,
     inviterOrg: ctx.inviterOrg,
     inviterEmail: ctx.inviterEmail,
+    ...rewards,
     channel: input.channel ?? "copy_link",
   });
 
@@ -90,7 +128,9 @@ export async function getOrCreateShareLink(input: {
     inviterOrg: ctx.inviterOrg,
     companyName: input.companyName,
     personalNote: input.personalNote,
+    opportunitySummary: input.opportunitySummary,
     invitationReason: input.invitationReason,
+    welcomeCredits: rewards.welcomeCredits,
   });
 
   return { ok: true as const, invite, share };
@@ -102,6 +142,7 @@ export async function sendReferralInvite(input: {
   recipientName?: string;
   companyName?: string;
   personalNote?: string;
+  opportunitySummary?: string;
   invitationReason?: InvitationReason;
   inviterName?: string;
   inviterEmail?: string;
@@ -137,16 +178,19 @@ export async function sendReferralInvite(input: {
     return { ok: false as const, message: "Enter a valid reply-to email for yourself." };
   }
 
+  const rewards = rewardSnapshot();
   const invite = createEmailInvite({
     kind: input.kind,
     email,
     recipientName: input.recipientName,
     companyName,
     personalNote: input.personalNote,
+    opportunitySummary: input.opportunitySummary,
     invitationReason: input.invitationReason,
     inviterName,
     inviterOrg: ctx.inviterOrg || companyName,
     inviterEmail,
+    ...rewards,
   });
 
   const copy = referralCopy(input.kind, {
@@ -169,7 +213,9 @@ export async function sendReferralInvite(input: {
     inviterOrg: ctx.inviterOrg || companyName,
     companyName,
     personalNote: input.personalNote,
+    opportunitySummary: input.opportunitySummary,
     invitationReason: input.invitationReason,
+    welcomeCredits: rewards.welcomeCredits,
   });
 
   const baseUrl = publicAppUrl();
@@ -182,8 +228,12 @@ export async function sendReferralInvite(input: {
     inviterOrg: ctx.inviterOrg || companyName,
     companyName,
     personalNote: input.personalNote,
+    opportunitySummary: input.opportunitySummary,
     invitationReason: input.invitationReason,
     recipientName: input.recipientName,
+    welcomeCredits: rewards.welcomeCredits,
+    inviterRewardCredits: rewards.inviterRewardCredits,
+    foundingMemberEligible: rewards.foundingMemberEligible,
     supportUrl: `${baseUrl}/contact`,
   });
 

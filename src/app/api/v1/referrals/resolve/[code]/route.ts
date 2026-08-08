@@ -27,7 +27,9 @@ export async function GET(
     inviterOrg: invite.inviterOrg,
     companyName: invite.companyName,
     personalNote: invite.personalNote,
+    opportunitySummary: invite.opportunitySummary,
     invitationReason: invite.invitationReason,
+    welcomeCredits: invite.welcomeCredits,
   });
 
   return apiResponse(req, ok({ invite, share }));
