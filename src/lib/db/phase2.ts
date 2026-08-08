@@ -996,6 +996,10 @@ export async function persistOnboarding(input: {
           name: input.orgName,
           slug: `${orgSlug}-${Date.now().toString(36)}`,
           type: input.role,
+          contactEmail: input.email,
+          contactName: input.contactName,
+          phone: input.phone || null,
+          address: input.address || null,
         })
         .returning();
 

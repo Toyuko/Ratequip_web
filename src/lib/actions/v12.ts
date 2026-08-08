@@ -355,10 +355,14 @@ export async function v12ReviewCompanySetupSuggestions(
 export async function v12ConfirmCompanySetup(
   input: Parameters<typeof confirmCompanySetup>[0],
 ) {
-  await requireServerV12Session();
+  const user = await requireServerV12Session();
   await hydrateSetupSessionIntoStore(input.sessionId);
 
-  const res = confirmCompanySetup(input);
+  const res = confirmCompanySetup({
+    ...input,
+    // Always attribute confirmation to the authenticated actor.
+    confirmedBy: user.email || user.id,
+  });
   if (res.ok) await persistSetupSession(res.session);
   return res;
 }

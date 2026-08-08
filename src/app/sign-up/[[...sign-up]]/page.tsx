@@ -1,6 +1,6 @@
-import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
 import { Suspense } from "react";
+import { ClerkSignUpForm } from "@/components/auth/clerk-auth-forms";
 import { CaptureReferralRef } from "@/components/referrals/capture-referral-ref";
 import { Button } from "@/components/ui/button";
 import { hasClerkPublishableKey } from "@/lib/config";
@@ -43,7 +43,7 @@ export default function SignUpPage() {
         <CaptureReferralRef />
       </Suspense>
       <Suspense fallback={<ClerkLoading />}>
-        <SignUp />
+        <ClerkSignUpForm />
       </Suspense>
     </div>
   );

@@ -20,12 +20,21 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 const clerkHandler = clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    // Prefer sign-in redirect over blank protect-rewrite 404 for guests.
-    await auth.protect({
-      unauthenticatedUrl: new URL("/sign-in", req.url).toString(),
-    });
+  if (!isProtectedRoute(req)) return;
+
+  const session = await auth();
+  if (session.userId) return;
+
+  // Custom unauthenticatedUrl alone drops the return path; append redirect_url
+  // so SignIn can send users back to /v12/activation?… after auth.
+  // (Bare auth.protect() uses protect-rewrite and can 404 guests.)
+  const returnPath = `${req.nextUrl.pathname}${req.nextUrl.search}`;
+  const signInUrl = new URL("/sign-in", req.url);
+  if (returnPath && returnPath !== "/sign-in" && !returnPath.startsWith("/sign-in?")) {
+    signInUrl.searchParams.set("redirect_url", returnPath);
   }
+
+  return NextResponse.redirect(signInUrl);
 });
 
 export default function proxy(...args: Parameters<typeof clerkHandler>) {

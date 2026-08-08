@@ -93,6 +93,10 @@ export const organisations = pgTable("organisations", {
   type: accountRoleEnum("type").notNull().default("buyer"),
   country: varchar("country", { length: 100 }),
   website: text("website"),
+  contactEmail: varchar("contact_email", { length: 255 }),
+  contactName: varchar("contact_name", { length: 255 }),
+  phone: varchar("phone", { length: 64 }),
+  address: text("address"),
   enterpriseAccountId: uuid("enterprise_account_id").references(
     () => enterpriseAccounts.id,
   ),

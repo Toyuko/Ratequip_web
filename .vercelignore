@@ -1,0 +1,11 @@
+# Keep Vercel uploads lean — local evidence / raw media is not needed to build.
+docs/acceptance-phase2/
+docs/evidence-videos/
+scripts/evidence-recordings/
+scripts/data/
+*.webm
+*.mp4
+*.aiff
+*.wav
+tmp/
+.agent-tools/

@@ -1947,7 +1947,7 @@ export function part7ConfirmFact(input: {
   sessionId: string;
   factId: string;
   status: "confirmed" | "rejected";
-  actorId: string;
+  actorId?: string;
 }) {
   const store = getV12Store();
   const session = store.companySetupSessions.find((s) => s.id === input.sessionId);
@@ -1956,7 +1956,7 @@ export function part7ConfirmFact(input: {
     factId: input.factId,
     companyId: session.companyId,
     status: input.status,
-    actorId: input.actorId,
+    actorId: input.actorId || "company-admin",
   });
   if (!res.ok) return res;
   return { ok: true as const, fact: res.fact, dna: listDnaForSession(session.id) };

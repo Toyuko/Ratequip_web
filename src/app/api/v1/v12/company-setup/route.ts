@@ -109,11 +109,13 @@ export async function POST(req: NextRequest) {
   if (action === "confirm") {
     const sessionId =
       typeof body?.sessionId === "string" ? body.sessionId : "";
-    const confirmedBy =
-      typeof body?.confirmedBy === "string" ? body.confirmedBy : "";
-    if (!sessionId || !confirmedBy) {
+    if (!sessionId) {
       return apiResponse(req, err("Invalid confirm payload"));
     }
+    const confirmedBy =
+      (typeof body?.confirmedBy === "string" && body.confirmedBy.trim()) ||
+      gate.user.email ||
+      gate.user.id;
     await hydrateSetupSessionIntoStore(sessionId);
     const res = confirmCompanySetup({ sessionId, confirmedBy });
     if (!res.ok) {

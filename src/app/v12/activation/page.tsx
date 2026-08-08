@@ -409,7 +409,6 @@ function CompanySetupWizard() {
         sessionId: session.id,
         factId,
         status,
-        actorId: "company-admin@demo.ratequip.com",
       });
       if (!res.ok) {
         setMessage(res.message);
@@ -439,7 +438,7 @@ function CompanySetupWizard() {
     startTransition(async () => {
       const res = await v12ConfirmCompanySetup({
         sessionId: session.id,
-        confirmedBy: "company-admin@demo.ratequip.com",
+        confirmedBy: "",
       });
       if (!res.ok) {
         setMessage(res.message);
