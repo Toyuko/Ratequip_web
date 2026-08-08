@@ -135,12 +135,135 @@ html[data-locale="zh"] body {
 .rq-stagger > *:nth-child(6) {
   animation-delay: 0.4s;
 }
+.rq-stagger > *:nth-child(7) {
+  animation-delay: 0.45s;
+}
+.rq-stagger > *:nth-child(8) {
+  animation-delay: 0.5s;
+}
+.rq-stagger > *:nth-child(9) {
+  animation-delay: 0.55s;
+}
+.rq-stagger > *:nth-child(10) {
+  animation-delay: 0.6s;
+}
 
 .rq-hero-grid {
+  position: relative;
+  isolation: isolate;
+  background-color: #0a0f1a;
   background-image:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.72)),
-    radial-gradient(circle at 20% 20%, rgba(249, 115, 22, 0.35), transparent 40%),
-    radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.08), transparent 35%),
-    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  background-size: cover, cover, cover, 60px 60px;
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(249, 115, 22, 0.28),
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 80% 10%,
+      rgba(255, 255, 255, 0.08),
+      transparent 35%
+    ),
+    linear-gradient(135deg, #0a0f1a 0%, #111827 55%, #0f172a 100%);
+}
+
+.rq-hero-montage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.rq-hero-montage__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: rq-hero-crossfade 18s ease-in-out infinite;
+  transform: scale(1.06);
+}
+
+.rq-hero-montage__slide:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.rq-hero-montage__slide:nth-child(2) {
+  animation-delay: 6s;
+}
+
+.rq-hero-montage__slide:nth-child(3) {
+  animation-delay: 12s;
+}
+
+.rq-hero-montage__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(
+      105deg,
+      rgba(8, 12, 20, 0.88) 0%,
+      rgba(8, 12, 20, 0.72) 38%,
+      rgba(8, 12, 20, 0.45) 68%,
+      rgba(8, 12, 20, 0.28) 100%
+    ),
+    radial-gradient(
+      circle at 78% 28%,
+      rgba(249, 115, 22, 0.18),
+      transparent 42%
+    );
+}
+
+@keyframes rq-hero-crossfade {
+  0% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  8% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  38% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rq-hero-montage__slide {
+    animation: none;
+    opacity: 0;
+    transform: none;
+  }
+
+  .rq-hero-montage__slide:first-child {
+    opacity: 1;
+  }
+}
+
+.rq-map-pin {
+  transform-origin: center;
+  animation: rq-pin-pulse 2.8s ease-in-out infinite;
+}
+
+.rq-map-pin:nth-child(odd) {
+  animation-delay: 0.4s;
+}
+
+.rq-map-pin:nth-child(3n) {
+  animation-delay: 1s;
+}
+
+@keyframes rq-pin-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
 }

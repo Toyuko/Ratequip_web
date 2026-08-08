@@ -13,6 +13,7 @@ type InvitePayload = {
   kind: ReferralKind;
   inviterName?: string;
   inviterOrg?: string;
+  inviterOrgId?: string;
   inviterEmail?: string;
   companyName?: string;
   personalNote?: string;
@@ -53,6 +54,7 @@ export function mintInviteToken(
     | "kind"
     | "inviterName"
     | "inviterOrg"
+    | "inviterOrgId"
     | "inviterEmail"
     | "companyName"
     | "personalNote"
@@ -76,6 +78,7 @@ export function mintInviteToken(
     kind: invite.kind,
     inviterName: invite.inviterName,
     inviterOrg: invite.inviterOrg,
+    inviterOrgId: invite.inviterOrgId,
     inviterEmail: invite.inviterEmail,
     companyName: invite.companyName,
     personalNote: invite.personalNote?.slice(0, 500),
@@ -151,6 +154,8 @@ export function verifyInviteToken(token: string): ReferralInvite | null {
       foundingMemberEligible: raw.foundingMemberEligible,
       inviterName: raw.inviterName,
       inviterOrg: raw.inviterOrg,
+      inviterOrgId:
+        typeof raw.inviterOrgId === "string" ? raw.inviterOrgId : undefined,
       inviterEmail: raw.inviterEmail,
       channel: raw.channel ?? "copy_link",
       createdAt: raw.createdAt,

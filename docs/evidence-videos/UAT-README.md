@@ -1,6 +1,6 @@
 # RateQuip Phase 2 — Full UAT Walkthrough
 
-**Recorded:** 2026-07-30T06:20:47.122Z  
+**Recorded:** 2026-08-08T09:02:26.044Z  
 **Target:** https://ratequip-web.vercel.app  
 **Video:** `uat-full-walkthrough.mp4`
 
@@ -21,10 +21,11 @@
 
 ## Companion files
 
-- `uat-full-walkthrough.mp4` / `.webm`
+- `uat-full-walkthrough.mp4` / `.webm` (**~4m 37s**, recorded 2026-08-08)
 - `uat-step1-db.json`
 - `uat-acceptance-counter.txt`
 - `../Phase2_MVP_Client_Evidence_Response_2026-07-30.md`
+- Full UAT report: [`../acceptance-phase2/UAT-Report-2026-08-08.md`](../acceptance-phase2/UAT-Report-2026-08-08.md)
 
 ## Reproduce
 

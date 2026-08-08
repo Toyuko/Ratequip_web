@@ -49,6 +49,7 @@ export function createShareCode(input: {
   kind: ReferralKind;
   inviterName?: string;
   inviterOrg?: string;
+  inviterOrgId?: string;
   inviterEmail?: string;
   companyName?: string;
   personalNote?: string;
@@ -68,6 +69,7 @@ export function createShareCode(input: {
     status: "queued",
     inviterName: input.inviterName,
     inviterOrg: input.inviterOrg,
+    inviterOrgId: input.inviterOrgId,
     inviterEmail: input.inviterEmail,
     companyName: input.companyName,
     personalNote: input.personalNote?.trim() || undefined,
@@ -100,6 +102,7 @@ export function createEmailInvite(input: {
   foundingMemberEligible?: boolean;
   inviterName?: string;
   inviterOrg?: string;
+  inviterOrgId?: string;
   inviterEmail?: string;
 }): StoredInvite {
   const now = new Date().toISOString();
@@ -122,6 +125,7 @@ export function createEmailInvite(input: {
     foundingMemberEligible: input.foundingMemberEligible,
     inviterName: input.inviterName,
     inviterOrg: input.inviterOrg,
+    inviterOrgId: input.inviterOrgId,
     inviterEmail: input.inviterEmail
       ? normalizeEmail(input.inviterEmail)
       : undefined,
@@ -145,6 +149,11 @@ export function markInviteSent(id: string) {
   invites().set(id, refreshed);
   codes().set(refreshed.token, id);
   return publicInvite(refreshed);
+}
+
+export function getInviteById(id: string) {
+  const invite = invites().get(id);
+  return invite ? publicInvite(invite) : null;
 }
 
 export function getInviteByCode(code: string) {
@@ -191,6 +200,25 @@ export function listRecentInvites(limit = 20): ReferralInvite[] {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, limit)
     .map(publicInvite);
+}
+
+export function markInviteAccepted(code: string) {
+  const invite = getInviteByCode(code);
+  if (!invite) return null;
+  const stored = invites().get(invite.id);
+  if (!stored) {
+    return {
+      ...invite,
+      status: "accepted" as const,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+  stored.status = "accepted";
+  stored.updatedAt = new Date().toISOString();
+  const refreshed = withToken(stored);
+  invites().set(stored.id, refreshed);
+  codes().set(refreshed.token, stored.id);
+  return publicInvite(refreshed);
 }
 
 export function recordChannelOpen(code: string, channel: ReferralChannel) {

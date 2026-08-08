@@ -746,6 +746,113 @@ export async function getEnterpriseAsync(organisationId?: string) {
   }
 }
 
+/**
+ * Grant platform credits (referral rewards, adjustments). Idempotent when
+ * referenceType + a unique reason are provided and already present on the wallet.
+ * Prefer encoding uniqueness in `reason` — `referenceId` must be a UUID if set.
+ */
+export async function grantPlatformCredits(input: {
+  amount: number;
+  reason: string;
+  organisationId?: string;
+  referenceType?: string;
+  referenceId?: string;
+}) {
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    return { ok: false as const, message: "Grant amount must be positive." };
+  }
+  const reason = input.reason.trim() || "Platform credit grant";
+  const db = getDb();
+  if (db) {
+    try {
+      const org = input.organisationId
+        ? (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.id, input.organisationId))
+              .limit(1)
+          )[0]
+        : (
+            await db
+              .select()
+              .from(organisations)
+              .where(eq(organisations.slug, "demo-buyer-org"))
+              .limit(1)
+          )[0];
+      if (!org) return { ok: false as const, message: "Organisation not found." };
+
+      const [wallet] = await db
+        .select()
+        .from(creditWallets)
+        .where(eq(creditWallets.organisationId, org.id))
+        .limit(1);
+      if (wallet) {
+        const [dup] = await db
+          .select()
+          .from(creditLedgerEntries)
+          .where(
+            and(
+              eq(creditLedgerEntries.walletId, wallet.id),
+              eq(creditLedgerEntries.reason, reason),
+            ),
+          )
+          .limit(1);
+        if (dup) {
+          return {
+            ok: true as const,
+            balance: wallet.balance,
+            granted: 0,
+            duplicate: true as const,
+            demo: false as const,
+          };
+        }
+      }
+
+      const result = await neonCreditOrg(
+        db,
+        org.id,
+        input.amount,
+        reason,
+        input.referenceType ?? "platform_grant",
+        input.referenceId,
+      );
+      appendAudit("credits.platform_granted", "wallet", reason);
+      return {
+        ok: true as const,
+        balance: result.balance,
+        granted: input.amount,
+        duplicate: false as const,
+        demo: false as const,
+      };
+    } catch (error) {
+      console.warn("[billing] grantPlatformCredits neon failed", error);
+    }
+  }
+
+  // Demo / runtime path — idempotency via ledger reason.
+  const store = getStore();
+  const exists = store.wallet.entries.some((e) => e.reason === reason);
+  if (exists) {
+    return {
+      ok: true as const,
+      balance: store.wallet.balance,
+      granted: 0,
+      duplicate: true as const,
+      demo: true as const,
+    };
+  }
+  const credited = creditCredits(input.amount, reason);
+  appendAudit("credits.platform_granted", "wallet", reason);
+  return {
+    ok: true as const,
+    balance: credited.balance,
+    granted: input.amount,
+    duplicate: false as const,
+    demo: true as const,
+  };
+}
+
 export async function refundCredits(input: {
   amount: number;
   reason: string;

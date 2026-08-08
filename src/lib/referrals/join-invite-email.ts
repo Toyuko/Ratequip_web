@@ -19,9 +19,13 @@ import {
   type InvitationReason,
 } from "@/lib/referrals/invitation-reasons";
 import {
+  getInviteRewardSettings,
+  potentialWelcomeCredits,
   WELCOME_CREDIT_USES,
+  WELCOME_CREDIT_USES_INTRO,
   welcomeRewardCtaLabel,
 } from "@/lib/referrals/invite-rewards";
+import { rewardLadderSummaryLines } from "@/lib/referrals/reward-ladder";
 
 export function renderJoinInviteEmail(vars: {
   kindLabel: string;
@@ -47,14 +51,22 @@ export function renderJoinInviteEmail(vars: {
   const opportunitySummary = vars.opportunitySummary?.trim();
   const recipientName = vars.recipientName?.trim();
   const invitationReason = vars.invitationReason;
+  const settings = getInviteRewardSettings();
   const welcomeCredits = Math.max(0, vars.welcomeCredits ?? 0);
   const inviterRewardCredits = Math.max(0, vars.inviterRewardCredits ?? 0);
+  const potentialCredits = Math.max(
+    welcomeCredits,
+    potentialWelcomeCredits(settings),
+  );
+  const ladderLines = rewardLadderSummaryLines(settings.ladder);
   const founding = Boolean(vars.foundingMemberEligible && welcomeCredits > 0);
 
   const orgLabel = companyName || inviterOrg || "A RateQuip partner";
   const fromPerson =
     inviterName && !inviterName.includes("@") ? inviterName : undefined;
+  const replyName = fromPerson || orgLabel;
   const whoLabel = fromPerson ? `${fromPerson} at ${orgLabel}` : orgLabel;
+  const askUrl = `${vars.joinUrl}${vars.joinUrl.includes("#") ? "" : "#ask-inviter"}`;
   const greeting = recipientName
     ? `Hey ${escapeHtml(recipientName)},`
     : "Hello,";
@@ -76,27 +88,13 @@ export function renderJoinInviteEmail(vars: {
     WELCOME_CREDIT_USES.map((use) => escapeHtml(use)),
   );
 
-  const rewardBlock =
-    welcomeCredits > 0
-      ? emailRewardBanner({
-          title: `${escapeHtml(orgLabel)} has unlocked your RateQuip Welcome Reward`,
-          headline: `Accept this invitation and receive ${welcomeCredits} FREE RateQuip Credits`,
-          bodyHtml: `
-            <p style="margin:0 0 8px">A tangible welcome benefit because <strong style="color:#0F172A">${escapeHtml(whoLabel)}</strong> invited you — not just another free signup.</p>
-            <p style="margin:0 0 6px"><strong style="color:#0F172A">Credits can eventually be used for:</strong></p>
-            ${creditUses}
-            ${
-              founding
-                ? `<p style="margin:10px 0 0"><strong style="color:#0F172A">Early Member / Founding Member badge</strong> included for invited launch users.</p>`
-                : ""
-            }
-          `.trim(),
-        })
-      : "";
+  const relationshipLead = emailParagraph(
+    `<strong style="color:#0F172A">${escapeHtml(whoLabel)}</strong> wants to connect with you on RateQuip — this is a personal industry introduction from <strong style="color:#0F172A">${escapeHtml(orgLabel)}</strong>, not a platform marketing blast.`,
+  );
 
   const whyOrOpportunity = attachedOpportunity
     ? emailCallout({
-        label: "The opportunity they opened for you",
+        label: `Why ${escapeHtml(orgLabel)} reached out · opportunity`,
         bodyHtml: `<p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:#0F172A">${
           opportunitySummary
             ? escapeHtml(opportunitySummary)
@@ -106,8 +104,8 @@ export function renderJoinInviteEmail(vars: {
       })
     : emailCallout({
         label: reasonLabel
-          ? `Why they invited you · ${escapeHtml(reasonLabel)}`
-          : "Why they invited you",
+          ? `Why ${escapeHtml(orgLabel)} invited you · ${escapeHtml(reasonLabel)}`
+          : `Why ${escapeHtml(orgLabel)} invited you`,
         bodyHtml: personalNote
           ? `<p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#EA580C">Personal message from ${escapeHtml(whoLabel)}</p>
              <p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#0F172A"><em>“${escapeHtml(personalNote)}”</em></p>
@@ -123,25 +121,61 @@ export function renderJoinInviteEmail(vars: {
         })
       : "";
 
+  const askInviterBlock = emailCallout({
+    label: `Talk to ${escapeHtml(replyName)} before you join`,
+    bodyHtml: `
+      <p style="margin:0 0 10px;font-size:15px;line-height:1.6;color:#0F172A">Not sure why ${escapeHtml(orgLabel)} invited you? Ask them directly — no RateQuip account required.</p>
+      <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#334155">Quick replies: “Thanks for the referral!” · “What is RateQuip all about?” · “Why did you send this to me?” · “What opportunity did you have in mind?”</p>
+      <p style="margin:0">${emailLink(askUrl, `Ask ${replyName} a question →`)}</p>
+    `.trim(),
+  });
+
+  const rewardBlock =
+    welcomeCredits > 0
+      ? emailRewardBanner({
+          title: `${escapeHtml(orgLabel)} unlocked your RateQuip Welcome Reward`,
+          headline: `Accept this invitation and unlock ${welcomeCredits} RateQuip Credits`,
+          bodyHtml: `
+            <p style="margin:0 0 8px">A real platform benefit because <strong style="color:#0F172A">${escapeHtml(whoLabel)}</strong> invited you — spend credits on visibility and growth tools once you’re in.</p>
+            <p style="margin:0 0 6px"><strong style="color:#0F172A">${escapeHtml(WELCOME_CREDIT_USES_INTRO)}</strong></p>
+            ${creditUses}
+            ${
+              potentialCredits > welcomeCredits
+                ? `<p style="margin:10px 0 6px"><strong style="color:#0F172A">Keep earning — up to ${potentialCredits} credits</strong> as you verify and participate:</p>
+                   ${emailBenefits(ladderLines.map((line) => escapeHtml(line)))}`
+                : ""
+            }
+            ${
+              inviterRewardCredits > 0
+                ? `<p style="margin:10px 0 0">${escapeHtml(orgLabel)} also earns <strong style="color:#0F172A">${inviterRewardCredits} credits</strong> when you claim and participate — a shared win.</p>`
+                : ""
+            }
+            ${
+              founding
+                ? `<p style="margin:10px 0 0"><strong style="color:#0F172A">Early Member / Founding Member badge</strong> included for invited launch users.</p>`
+                : ""
+            }
+          `.trim(),
+        })
+      : "";
+
   const growthLoop =
     welcomeCredits > 0
       ? `
       ${emailParagraph(`<strong style="color:#0F172A">Grow with RateQuip</strong>`)}
       ${emailParagraph(
-        `Invite businesses you work with → they receive a welcome benefit (like your ${welcomeCredits} free credits) → you earn RateQuip Credits${
-          inviterRewardCredits > 0 ? ` (from ${inviterRewardCredits} credits)` : ""
-        } when they join and participate.`,
+        `Invite businesses you work with → they get a welcome benefit → you earn RateQuip Credits when they join and participate. Both sides grow through verified network activity.`,
       )}
     `.trim()
       : "";
 
   const subject =
     welcomeCredits > 0
-      ? `${whoLabel} invited you — claim ${welcomeCredits} free RateQuip credits`
+      ? `${whoLabel} invited you — unlock ${welcomeCredits} RateQuip credits`
       : vars.title;
   const preheader =
     welcomeCredits > 0
-      ? `${orgLabel} unlocked your welcome reward: ${welcomeCredits} free credits. See why they invited you and claim them.`
+      ? `${whoLabel} invited you. Unlock ${welcomeCredits} credits you can use for profile boosts, featured listings and more — or ask them a question first.`
       : `${whoLabel} invited you to connect on RateQuip — see why and explore the opportunity.`;
 
   const html = renderEmailDocument({
@@ -149,27 +183,24 @@ export function renderJoinInviteEmail(vars: {
     heading: vars.title,
     bodyHtml: `
       ${emailParagraph(greeting)}
-      ${emailParagraph(
-        `<strong style="color:#0F172A">${escapeHtml(whoLabel)}</strong> has personally invited you to connect on RateQuip.`,
-      )}
-      ${rewardBlock}
+      ${relationshipLead}
       ${whyOrOpportunity}
       ${personalWithOpportunity}
+      ${askInviterBlock}
+      ${rewardBlock}
       ${emailWhatIsRateQuip()}
       ${emailParagraph(`<strong style="color:#0F172A">Why join?</strong>`)}
       ${emailOpportunityBenefits(orgLabel)}
       ${growthLoop}
-      ${emailParagraph(
-        `Have a question for ${escapeHtml(fromPerson || orgLabel)} before you join? Open the invitation page to send a quick reply — no account required.`,
-      )}
       ${emailMeta(
         [
           `Invited by: <strong style="color:#0F172A">${escapeHtml(whoLabel)}</strong>`,
+          `Connect with: <strong style="color:#0F172A">${escapeHtml(orgLabel)}</strong>`,
           reasonLabel
             ? `Invitation reason: <strong style="color:#0F172A">${escapeHtml(reasonLabel)}</strong>`
             : null,
           welcomeCredits > 0
-            ? `Welcome reward: <strong style="color:#0F172A">${welcomeCredits} free credits</strong>`
+            ? `Welcome credits: <strong style="color:#0F172A">${welcomeCredits}</strong> you can use on RateQuip`
             : null,
           founding
             ? `Badge: <strong style="color:#0F172A">Early / Founding Member</strong>`
@@ -180,10 +211,16 @@ export function renderJoinInviteEmail(vars: {
           .join("<br/>"),
       )}
     `.trim(),
-    cta: { label: welcomeRewardCtaLabel(welcomeCredits), href: vars.signUpUrl },
+    cta: {
+      label:
+        welcomeCredits > 0
+          ? `Accept invite + claim ${welcomeCredits} free credits`
+          : welcomeRewardCtaLabel(potentialCredits),
+      href: vars.signUpUrl,
+    },
     secondaryLink: {
-      label: `View why ${orgLabel} invited you (no sign-up required)`,
-      href: vars.joinUrl,
+      label: `Ask ${replyName} a question (no account needed)`,
+      href: askUrl,
     },
     footerNote: emailLink(
       vars.supportUrl,

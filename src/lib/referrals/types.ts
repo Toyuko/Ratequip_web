@@ -53,6 +53,8 @@ export type ReferralInvite = {
   foundingMemberEligible?: boolean;
   inviterName?: string;
   inviterOrg?: string;
+  /** Inviter organisation id for dual-sided credit grants when available. */
+  inviterOrgId?: string;
   /**
    * Inviter contact for reply routing. Prefer omitting from list UIs;
    * use `canReplyToInviter` for invitee-facing pages.

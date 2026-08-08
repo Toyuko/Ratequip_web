@@ -85,6 +85,35 @@ export default async function RequestDetailPage({
       <p className="mt-4 leading-relaxed text-[var(--rq-slate)]">
         {request.description}
       </p>
+
+      <section className="mt-6 rounded-lg border border-[var(--rq-border)] border-l-4 border-l-[var(--rq-orange)] bg-[var(--rq-card)] px-4 py-4">
+        <p className="text-xs font-bold uppercase tracking-wide text-[var(--rq-orange)]">
+          RateQuip Deal Room
+        </p>
+        <p className="mt-1 text-sm text-[var(--rq-slate)]">
+          Keep this opportunity on-platform: specifications, attachment,
+          supplier quotes, revisions and award status stay with the RFQ instead
+          of disappearing into email threads.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/quotes/compare?request=${request.id}`}>
+              Compare quotes
+            </Link>
+          </Button>
+          {canManage && request.status === "open" ? (
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/requests/${request.id}/edit`}>
+                Revise specifications
+              </Link>
+            </Button>
+          ) : null}
+          <Button asChild size="sm" variant="outline">
+            <Link href="/messages">Open Messenger</Link>
+          </Button>
+        </div>
+      </section>
+
       <dl className="mt-6 grid gap-4 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5 sm:grid-cols-2">
         <div>
           <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">

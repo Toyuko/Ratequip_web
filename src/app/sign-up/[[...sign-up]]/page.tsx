@@ -1,6 +1,7 @@
 import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
 import { Suspense } from "react";
+import { CaptureReferralRef } from "@/components/referrals/capture-referral-ref";
 import { Button } from "@/components/ui/button";
 import { hasClerkPublishableKey } from "@/lib/config";
 
@@ -38,6 +39,9 @@ export default function SignUpPage() {
 
   return (
     <div className="flex justify-center px-4 py-16">
+      <Suspense fallback={null}>
+        <CaptureReferralRef />
+      </Suspense>
       <Suspense fallback={<ClerkLoading />}>
         <SignUp />
       </Suspense>

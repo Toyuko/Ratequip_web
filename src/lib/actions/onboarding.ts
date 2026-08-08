@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
 import { hasClerk } from "@/lib/config";
 import { persistOnboarding } from "@/lib/db/phase2";
+import { releaseReferralReward } from "@/lib/actions/referrals";
 import { slugify } from "@/lib/utils";
 
 export async function completeOnboarding(input: {
@@ -69,10 +70,25 @@ export async function completeOnboarding(input: {
     jar.set("rq_org_id", result.orgId, { path: "/", httpOnly: false });
   }
 
+  // Progressive referral: email verified / account joined unlocks the first tier.
+  let rewardNote = "";
+  try {
+    const reward = await releaseReferralReward({
+      event: "email_verified",
+      organisationId: result.orgId,
+      allowDemoFallback: true,
+    });
+    if (reward.ok && (reward.inviteeGranted > 0 || reward.inviterGranted > 0)) {
+      rewardNote = ` ${reward.message}`;
+    }
+  } catch (error) {
+    console.warn("[onboarding] referral reward release failed", error);
+  }
+
   return {
     message: result.demo
-      ? `Organisation “${orgName}” ready (runtime store + cookies).`
-      : `Organisation “${orgName}” saved to database.`,
+      ? `Organisation “${orgName}” ready (runtime store + cookies).${rewardNote}`
+      : `Organisation “${orgName}” saved to database.${rewardNote}`,
     redirectTo: `/v12/activation?company=${encodeURIComponent(orgName)}&role=${input.role}&from=onboarding`,
   };
 }

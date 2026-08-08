@@ -122,14 +122,14 @@ export function buildShareBundle(input: {
     : "";
   const reward =
     input.welcomeCredits && input.welcomeCredits > 0
-      ? `\n\nWelcome reward: ${input.welcomeCredits} FREE RateQuip Credits when you accept.`
+      ? `\n\nCredit path: unlock ${input.welcomeCredits} RateQuip Credits after you verify and claim (pending verified actions — not for just opening the email).`
       : "";
   const text = `${copy.text}${reason || ""}${opportunity}${note}${reward}\n\nView why they invited you:\n${joinUrl}`;
   const emailBody = `${copy.text}${reason || ""}${opportunity}${note}${reward}\n\nAccept ${who}'s invitation${
     input.welcomeCredits && input.welcomeCredits > 0
-      ? ` + claim ${input.welcomeCredits} free credits`
+      ? ` & unlock up to ${input.welcomeCredits} credits after verification`
       : ""
-  }:\n${signUpUrl}\n\nOr view why they invited you (no sign-up required):\n${joinUrl}\n\n— RateQuip · Rate · Compare · Connect · Grow`;
+  }:\n${signUpUrl}\n\nOr view why they invited you (no sign-up required):\n${joinUrl}\n\n— RateQuip · Discover · Connect · Enquire · Grow`;
 
   return {
     code: input.code,

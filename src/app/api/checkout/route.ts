@@ -141,6 +141,20 @@ async function checkoutCreditPack(
       );
     }
     await purchaseCreditPack({ packCode: pack.code, orgId });
+    if (orgId) {
+      try {
+        const { processReferralRewardForOrganisation } = await import(
+          "@/lib/referrals/reward-engine"
+        );
+        await processReferralRewardForOrganisation({
+          event: "paying_customer",
+          organisationId: orgId,
+          allowDemoFallback: true,
+        });
+      } catch (error) {
+        console.warn("[checkout] paying_customer reward failed", error);
+      }
+    }
     return NextResponse.redirect(
       new URL(
         `${billingPath}?pack=demo&credits=${pack.credits}`,

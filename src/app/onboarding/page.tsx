@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { Suspense, useState, useTransition } from "react";
+import { CaptureReferralRef } from "@/components/referrals/capture-referral-ref";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,9 @@ export default function OnboardingPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+      <Suspense fallback={null}>
+        <CaptureReferralRef />
+      </Suspense>
       <Badge variant="orange">Step 1 of 2</Badge>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         Welcome to RateQuip

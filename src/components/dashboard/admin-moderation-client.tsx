@@ -75,16 +75,19 @@ export function AdminModerationClient({
 
       <section className="mt-10 rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4">
         <h2 className="font-semibold text-[var(--rq-ink)]">
-          Invite welcome reward
+          Progressive invite rewards
         </h2>
         <p className="mt-1 text-sm text-[var(--rq-slate)]">
-          Configurable credit economics for partner invites. Amount is locked
-          onto each invite at send time. Override env defaults (
-          <code className="text-xs">INVITE_WELCOME_CREDITS</code>) here.
+          Unlimited invites. Primary knobs set the <em>profile claimed</em>{" "}
+          stage (locked onto each invite at send). Full ladder releases on
+          verified events only — override env (
+          <code className="text-xs">INVITE_WELCOME_CREDITS</code>).
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div>
-            <Label htmlFor="welcome-credits">Welcome credits</Label>
+            <Label htmlFor="welcome-credits">
+              Invitee credits (on claim approved)
+            </Label>
             <Input
               id="welcome-credits"
               type="number"
@@ -95,7 +98,9 @@ export function AdminModerationClient({
             />
           </div>
           <div>
-            <Label htmlFor="inviter-credits">Inviter reward credits</Label>
+            <Label htmlFor="inviter-credits">
+              Inviter credits (on claim approved)
+            </Label>
             <Input
               id="inviter-credits"
               type="number"
@@ -116,6 +121,14 @@ export function AdminModerationClient({
             </label>
           </div>
         </div>
+        <ul className="mt-4 space-y-1 text-xs text-[var(--rq-muted)]">
+          {initialInviteRewards.ladder.map((stage) => (
+            <li key={stage.event}>
+              {stage.label}: invitee {stage.inviteeCredits} · inviter{" "}
+              {stage.inviterCredits}
+            </li>
+          ))}
+        </ul>
         <Button
           className="mt-4"
           size="sm"

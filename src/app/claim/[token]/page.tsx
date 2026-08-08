@@ -7,7 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getClaimInvitation } from "@/lib/actions/organic-growth";
 import { getInviteRewardConfig } from "@/lib/actions/referrals";
-import { WELCOME_CREDIT_USES } from "@/lib/referrals/invite-rewards";
+import {
+  claimRewardCtaLabel,
+  WELCOME_CREDIT_USES,
+  WELCOME_CREDIT_USES_INTRO,
+} from "@/lib/referrals/invite-rewards";
 
 type ClaimView = {
   companyName?: string;
@@ -93,12 +97,20 @@ export default function ClaimTokenPage() {
       {welcomeCredits > 0 ? (
         <div className="mt-6 rounded-xl border-2 border-[var(--rq-orange-deep)] bg-orange-50 px-5 py-5">
           <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--rq-orange-deep)]">
-            {inviter} has unlocked your RateQuip Welcome Reward
+            Progressive credit path · pending verification
           </p>
           <p className="mt-2 text-xl font-extrabold tracking-tight text-[var(--rq-ink)]">
-            Claim this profile and receive {welcomeCredits} FREE RateQuip Credits
+            Claim this profile to unlock {welcomeCredits} RateQuip Credits after
+            verification
           </p>
-          <ul className="mt-3 space-y-1.5 text-sm text-[var(--rq-slate)]">
+          <p className="mt-2 text-sm text-[var(--rq-slate)]">
+            A real platform benefit once your claim is verified — spend credits
+            on visibility and growth tools on RateQuip.
+          </p>
+          <p className="mt-3 text-sm font-semibold text-[var(--rq-ink)]">
+            {WELCOME_CREDIT_USES_INTRO}
+          </p>
+          <ul className="mt-2 space-y-1.5 text-sm text-[var(--rq-slate)]">
             {WELCOME_CREDIT_USES.map((use) => (
               <li key={use}>✓ {use}</li>
             ))}
@@ -180,9 +192,7 @@ export default function ClaimTokenPage() {
           <Link
             href={`/companies/claim?company=${data.companySlug ?? ""}&token=${params.token}`}
           >
-            {welcomeCredits > 0
-              ? `Claim ${company} + claim ${welcomeCredits} free credits`
-              : `Claim ${company}'s free profile & get discovered`}
+            {claimRewardCtaLabel(company, welcomeCredits)}
           </Link>
         </Button>
         {data.companySlug ? (

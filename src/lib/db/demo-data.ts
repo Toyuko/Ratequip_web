@@ -526,6 +526,33 @@ export const demoCompanies: DemoCompany[] = [
     ],
   },
   {
+    id: "co-inkjetprint",
+    name: "InkjetPrint",
+    slug: "inkjetprint",
+    headline: "Batch coding, labelling and packaging equipment for Australian industry",
+    description:
+      "INKJETPRINT PTY LTD supplies industrial inkjet coding, thermal inkjet, laser marking, print-and-apply labelling and packaging line equipment across Australia, with installation, training and after-sales support for food, beverage, pharma and industrial plants.",
+    country: "Australia",
+    city: "Lane Cove West",
+    website: "https://inkjetprint.com.au/",
+    verified: false,
+    claimed: false,
+    trustScore: 0,
+    reviewCount: 0,
+    employeeRange: "1-10",
+    yearFounded: 2014,
+    categories: [
+      "packaging-machinery",
+      "coding-and-marking",
+      "inkjet-printers",
+      "thermal-inkjet-printers",
+      "cij-printers",
+      "labellers",
+      "vertical-form-fill-seal",
+      "conveyors",
+    ],
+  },
+  {
     id: "co-cartonmax",
     name: "CartonMax Solutions",
     slug: "cartonmax-solutions",
@@ -1102,6 +1129,20 @@ export const demoProducts = [
     companySlug: "codejet-marking",
     name: "CJ-Pro CIJ Printer",
     summary: "IP65 continuous inkjet coder for high-speed beverage lines.",
+  },
+  {
+    id: "prod-inkjetprint-anser-u2",
+    companySlug: "inkjetprint",
+    name: "Anser U2 Pro-S TIJ Printer",
+    summary:
+      "Thermal inkjet batch coder for reliable, low-maintenance product marking on packaging lines.",
+  },
+  {
+    id: "prod-inkjetprint-anser-a1",
+    companySlug: "inkjetprint",
+    name: "Anser A1 Inkjet Printer",
+    summary:
+      "Versatile industrial inkjet printer for evolving production and coding requirements.",
   },
   {
     id: "prod-7",

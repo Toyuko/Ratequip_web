@@ -15,11 +15,20 @@ import {
 } from "@/lib/referrals/invitation-reasons";
 import {
   getInviteRewardSettings,
+  potentialWelcomeCredits,
   setInviteRewardSettings,
   type InviteRewardSettings,
 } from "@/lib/referrals/invite-rewards";
 import { renderInviteReplyEmail } from "@/lib/referrals/invite-reply-email";
 import { renderJoinInviteEmail } from "@/lib/referrals/join-invite-email";
+import { appendInviteReplyMessage } from "@/lib/referrals/messenger";
+import {
+  acceptReferralAttribution,
+  bindInviteeOrganisation,
+  processReferralRewardEvent,
+  REFERRAL_COOKIE,
+} from "@/lib/referrals/reward-engine";
+import type { RewardEvent } from "@/lib/referrals/reward-ladder";
 import { buildShareBundle, referralCopy } from "@/lib/referrals/share";
 import {
   createEmailInvite,
@@ -43,6 +52,7 @@ async function inviterContext() {
   const emailRaw = jar.get("rq_email")?.value?.trim();
   const nameRaw = jar.get("rq_contact_name")?.value?.trim();
   const orgRaw = jar.get("rq_org")?.value?.trim();
+  const orgIdRaw = jar.get("rq_org_id")?.value?.trim();
   const inviterEmail = emailRaw && looksLikeEmail(emailRaw) ? emailRaw : undefined;
   // Prefer a real display name — never use the email address as "who invited".
   const inviterName =
@@ -51,6 +61,7 @@ async function inviterContext() {
   return {
     inviterName,
     inviterOrg: orgRaw || undefined,
+    inviterOrgId: orgIdRaw || undefined,
     inviterEmail,
   };
 }
@@ -86,8 +97,48 @@ export async function updateInviteRewardConfig(
   return {
     ok: true as const,
     settings,
-    message: `Invite welcome credits set to ${settings.welcomeCredits}.`,
+    message: `Invite rewards updated — claim stage ${settings.welcomeCredits} / inviter ${settings.inviterRewardCredits}; ladder total up to ${potentialWelcomeCredits(settings)} for invitees.`,
   };
+}
+
+/** Capture ?ref= attribution into a durable cookie and mark invite accepted. */
+export async function captureReferralRef(code: string) {
+  const result = acceptReferralAttribution(code);
+  if (!result.ok) return result;
+  const jar = await cookies();
+  jar.set(REFERRAL_COOKIE, result.cookieValue, {
+    path: "/",
+    httpOnly: false,
+    maxAge: 60 * 60 * 24 * 60,
+    sameSite: "lax",
+  });
+  return {
+    ok: true as const,
+    invite: result.invite,
+    message: "Invitation linked to this browser. Credits unlock after verified steps.",
+  };
+}
+
+/** Bind current org to referral cookie and optionally release a ladder event. */
+export async function releaseReferralReward(input: {
+  event: RewardEvent;
+  organisationId?: string | null;
+  allowDemoFallback?: boolean;
+}) {
+  const jar = await cookies();
+  const ref = jar.get(REFERRAL_COOKIE)?.value?.trim();
+  if (!ref) {
+    return { ok: false as const, message: "No referral attribution found." };
+  }
+  if (input.organisationId) {
+    bindInviteeOrganisation(ref, input.organisationId);
+  }
+  return processReferralRewardEvent({
+    event: input.event,
+    inviteCode: ref,
+    inviteeOrganisationId: input.organisationId,
+    allowDemoFallback: input.allowDemoFallback ?? true,
+  });
 }
 
 export async function getOrCreateShareLink(input: {
@@ -115,6 +166,7 @@ export async function getOrCreateShareLink(input: {
     invitationReason: input.invitationReason,
     inviterName: ctx.inviterName,
     inviterOrg: ctx.inviterOrg,
+    inviterOrgId: ctx.inviterOrgId,
     inviterEmail: ctx.inviterEmail,
     ...rewards,
     channel: input.channel ?? "copy_link",
@@ -189,6 +241,7 @@ export async function sendReferralInvite(input: {
     invitationReason: input.invitationReason,
     inviterName,
     inviterOrg: ctx.inviterOrg || companyName,
+    inviterOrgId: ctx.inviterOrgId,
     inviterEmail,
     ...rewards,
   });
@@ -320,6 +373,17 @@ export async function replyToReferralInviter(input: {
     supportUrl: `${baseUrl}/contact`,
   });
 
+  const thread = appendInviteReplyMessage({
+    inviteId: invite.id,
+    inviteCode: invite.token || invite.code,
+    inviterEmail,
+    inviterName: invite.inviterName,
+    inviterOrg: orgLabel,
+    fromLabel: recipientLabel,
+    fromEmail: replyFrom,
+    body: message,
+  });
+
   const emailResult = await sendTransactionalEmail({
     to: inviterEmail,
     subject: rendered.subject,
@@ -331,13 +395,15 @@ export async function replyToReferralInviter(input: {
   if (!emailResult.ok) {
     return {
       ok: false as const,
-      message: `Could not deliver your reply: ${emailResult.error}`,
+      message: `Saved in RateQuip Messenger but email failed: ${emailResult.error}`,
+      threadId: thread.id,
     };
   }
 
   return {
     ok: true as const,
-    message: `Your reply was sent to ${orgLabel}. They’ll get an email notification and can respond directly.`,
+    threadId: thread.id,
+    message: `Your reply was added to RateQuip Messenger and emailed to ${orgLabel}.`,
   };
 }
 

@@ -13,9 +13,10 @@ import {
   renderEmailDocument,
 } from "@/lib/email-template";
 import {
+  claimRewardCtaLabel,
   getInviteRewardSettings,
   WELCOME_CREDIT_USES,
-  welcomeRewardCtaLabel,
+  WELCOME_CREDIT_USES_INTRO,
 } from "@/lib/referrals/invite-rewards";
 
 export function renderClaimInviteEmail(vars: {
@@ -69,11 +70,15 @@ export function renderClaimInviteEmail(vars: {
   const rewardBlock =
     welcomeCredits > 0
       ? emailRewardBanner({
-          title: `${inviterSafe} has unlocked your RateQuip Welcome Reward`,
-          headline: `Claim this profile and receive ${welcomeCredits} FREE RateQuip Credits`,
+          title: `${inviterSafe} opened a RateQuip credit path for ${companyName}`,
+          headline: `Claim this profile to unlock ${welcomeCredits} RateQuip Credits after verification`,
           bodyHtml: `
-            <p style="margin:0 0 8px">A tangible welcome benefit for representing <strong style="color:#0F172A">${companyName}</strong> on RateQuip.</p>
-            <p style="margin:0 0 6px"><strong style="color:#0F172A">Credits can eventually be used for:</strong></p>
+            <p style="margin:0 0 8px">Credits stay pending until your claim is verified — then you receive <strong style="color:#0F172A">${welcomeCredits}</strong>${
+              inviterRewardCredits > 0
+                ? ` and ${inviterSafe} earns <strong style="color:#0F172A">${inviterRewardCredits}</strong>`
+                : ""
+            }.</p>
+            <p style="margin:0 0 6px"><strong style="color:#0F172A">${escapeHtml(WELCOME_CREDIT_USES_INTRO)}</strong></p>
             ${creditUses}
             ${
               founding
@@ -84,23 +89,17 @@ export function renderClaimInviteEmail(vars: {
         })
       : "";
 
-  const ctaLabel =
-    welcomeCredits > 0
-      ? welcomeRewardCtaLabel(welcomeCredits).replace(
-          "Accept invite",
-          `Claim ${vars.companyName}`,
-        )
-      : `Claim ${vars.companyName}'s free profile & get discovered`;
+  const ctaLabel = claimRewardCtaLabel(vars.companyName, welcomeCredits);
 
   const subject =
     welcomeCredits > 0
-      ? `${vars.companyName} was introduced on RateQuip — claim ${welcomeCredits} free credits`
+      ? `${vars.companyName} was introduced on RateQuip — unlock ${welcomeCredits} credits after claim`
       : `${vars.companyName} was introduced on RateQuip — claim your free profile`;
 
   const html = renderEmailDocument({
     preheader:
       welcomeCredits > 0
-        ? `${inviter} introduced ${vars.companyName} and unlocked ${welcomeCredits} free RateQuip credits for you.`
+        ? `${inviter} introduced ${vars.companyName}. Unlock ${welcomeCredits} credits after your claim is verified.`
         : `${inviter} introduced ${vars.companyName} on RateQuip. See why and claim your free profile if you represent the business.`,
     heading: `${vars.companyName} was introduced on RateQuip`,
     bodyHtml: `
@@ -122,11 +121,7 @@ export function renderClaimInviteEmail(vars: {
       ${
         welcomeCredits > 0
           ? emailParagraph(
-              `Invite businesses you work with → they receive a welcome benefit → you earn RateQuip Credits${
-                inviterRewardCredits > 0
-                  ? ` (from ${inviterRewardCredits} credits)`
-                  : ""
-              } when they join and participate.`,
+              `Credits unlock on verified actions — claim, complete profile, list products, participate in enquiries. Unlimited invitations; rewards only when real value is created.`,
             )
           : ""
       }

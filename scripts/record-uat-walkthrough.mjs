@@ -530,7 +530,7 @@ Generated: ${dbJson.generatedAt}</pre></div>`,
       );
       const publish = page.getByRole("button", {
         name: /Publish response/i,
-      });
+      }).first();
       if (await publish.count()) {
         await publish.click();
         await sleep(1500);
@@ -550,10 +550,18 @@ Generated: ${dbJson.generatedAt}</pre></div>`,
       waitUntil: "networkidle",
     });
     await dismissTour(page);
-    const appealBox = page.getByPlaceholder(/appeal/i).first();
+    const uatReview = page
+      .getByRole("article")
+      .filter({ hasText: new RegExp(`UAT review ${stamp}`) })
+      .first();
+    const appealBox = (await uatReview.count())
+      ? uatReview.getByPlaceholder(/appeal/i).first()
+      : page.getByPlaceholder(/appeal/i).first();
     if (await appealBox.count()) {
       await appealBox.fill("UAT appeal — requesting re-moderation of decision.");
-      const appealBtn = page.getByRole("button", { name: /Submit appeal/i });
+      const appealBtn = (await uatReview.count())
+        ? uatReview.getByRole("button", { name: /Submit appeal/i }).first()
+        : page.getByRole("button", { name: /Submit appeal/i }).first();
       if (await appealBtn.count()) {
         await appealBtn.click();
         await sleep(1500);

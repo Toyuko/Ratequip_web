@@ -34,6 +34,11 @@ import {
   renderClaimOpsAlertEmail,
   renderClaimSubmittedEmail,
 } from "@/lib/organic-growth/claim-lifecycle-emails";
+import { releaseReferralReward } from "@/lib/actions/referrals";
+import {
+  bindClaimAttribution,
+  REFERRAL_COOKIE,
+} from "@/lib/referrals/reward-engine";
 import { validateRfqContent } from "@/lib/rfq/validation";
 
 async function requireMutationActor(): Promise<
@@ -147,6 +152,16 @@ export async function submitQuote(input: {
   });
 
   if (result.ok) {
+    try {
+      await releaseReferralReward({
+        event: "first_enquiry",
+        organisationId: jar.get("rq_org_id")?.value,
+        allowDemoFallback: true,
+      });
+    } catch (error) {
+      console.warn("[marketplace] quote first_enquiry reward failed", error);
+    }
+
     const buyerEmail = jar.get("rq_email")?.value;
     if (looksLikeEmail(buyerEmail)) {
       const quoteEmail = renderQuoteSubmittedEmail({
@@ -308,7 +323,7 @@ export async function createRequest(input: {
   }
 
   const organisationId = await orgIdFromCookies();
-  return persistRequest({
+  const created = await persistRequest({
     title: input.title,
     description: input.description,
     budgetMin: input.budgetMin,
@@ -335,6 +350,20 @@ export async function createRequest(input: {
     attachmentName,
     attachmentMimeType,
   });
+
+  if (created.ok) {
+    try {
+      await releaseReferralReward({
+        event: "first_enquiry",
+        organisationId,
+        allowDemoFallback: true,
+      });
+    } catch (error) {
+      console.warn("[marketplace] first_enquiry reward failed", error);
+    }
+  }
+
+  return created;
 }
 
 export async function submitReview(input: {
@@ -402,6 +431,17 @@ export async function submitClaim(input: {
   });
 
   if (result.ok) {
+    const jar = await cookies();
+    const ref = jar.get(REFERRAL_COOKIE)?.value?.trim();
+    const orgId = jar.get("rq_org_id")?.value?.trim();
+    if (ref && result.id) {
+      bindClaimAttribution(result.id, {
+        inviteCode: ref,
+        organisationId: orgId,
+        claimantEmail: looksLikeEmail(gate.actor) ? gate.actor : undefined,
+      });
+    }
+
     const baseUrl = publicAppUrl();
     const companyLabel = input.companySlug;
     const profileUrl = `${baseUrl}/companies/${input.companySlug}`;

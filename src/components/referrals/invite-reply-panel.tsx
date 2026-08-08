@@ -25,9 +25,14 @@ export function InviteReplyPanel({
 
   if (!canReply) {
     return (
-      <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] px-4 py-3 text-sm text-[var(--rq-slate)]">
-        Have a question for {orgLabel}? Accept the invitation to connect on
-        RateQuip, or email them directly if you already have their contact.
+      <div className="rounded-lg border-2 border-[var(--rq-orange)] bg-orange-50 px-4 py-4 text-sm text-[var(--rq-slate)]">
+        <p className="font-semibold text-[var(--rq-ink)]">
+          Talk to {orgLabel} before you join
+        </p>
+        <p className="mt-1">
+          Accept the invitation to connect on RateQuip, or email them directly if
+          you already have their contact.
+        </p>
       </div>
     );
   }
@@ -48,15 +53,16 @@ export function InviteReplyPanel({
   return (
     <div
       id="ask-inviter"
-      className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4 space-y-3"
+      className="rounded-xl border-2 border-[var(--rq-orange)] bg-orange-50/80 p-4 space-y-3"
     >
       <div>
         <h2 className="text-base font-semibold text-[var(--rq-ink)]">
-          Have a question for {orgLabel}?
+          Talk to {orgLabel} before you join
         </h2>
         <p className="mt-1 text-sm text-[var(--rq-slate)]">
-          Send a quick reply before you join. They’ll get an email notification
-          and can continue the conversation with you.
+          This invite is from {orgLabel}. Ask them why they reached out — no
+          RateQuip account required. Your message goes to them by email (and
+          Messenger when available).
         </p>
       </div>
 

@@ -14,6 +14,10 @@ import {
   renderEmailDocument,
 } from "@/lib/email-template";
 import { renderClaimDecisionEmail } from "@/lib/organic-growth/claim-lifecycle-emails";
+import {
+  getClaimAttribution,
+  processReferralRewardEvent,
+} from "@/lib/referrals/reward-engine";
 
 export async function moderateEntity(input: {
   entityType: "review" | "claim";
@@ -91,6 +95,28 @@ export async function moderateEntity(input: {
           { name: "decision", value: input.decision },
         ],
       });
+    }
+
+    if (input.entityType === "claim" && input.decision === "approved") {
+      const attribution = getClaimAttribution(input.entityId);
+      if (attribution?.inviteCode) {
+        try {
+          const reward = await processReferralRewardEvent({
+            event: "profile_claimed",
+            inviteCode: attribution.inviteCode,
+            inviteeOrganisationId: attribution.organisationId,
+            allowDemoFallback: true,
+          });
+          if (reward.ok) {
+            return {
+              ...result,
+              message: `${result.message} ${reward.message}`,
+            };
+          }
+        } catch (error) {
+          console.warn("[admin] claim referral reward failed", error);
+        }
+      }
     }
   }
 

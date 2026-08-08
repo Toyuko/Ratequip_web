@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, useTransition } from "react";
+import { CaptureReferralRef } from "@/components/referrals/capture-referral-ref";
 import { AddCompanyWizardShell } from "@/components/organic-growth/wizard-shell";
 import { writeLocalDraft } from "@/components/organic-growth/use-listing-draft";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,7 @@ function SearchForm() {
       title="Search before adding"
       description="Prevent duplicate profiles. Search by company name, website or location before creating a listing."
     >
+      <CaptureReferralRef />
       <form onSubmit={runSearch} className="space-y-4">
         <div>
           <Label htmlFor="q">Company name, website or location</Label>

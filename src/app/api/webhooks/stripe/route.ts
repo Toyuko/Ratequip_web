@@ -59,6 +59,20 @@ export async function POST(req: NextRequest) {
               orgId: session.metadata.orgId,
               stripeSessionId: session.id,
             });
+            if (session.metadata.orgId) {
+              try {
+                const { processReferralRewardForOrganisation } = await import(
+                  "@/lib/referrals/reward-engine"
+                );
+                await processReferralRewardForOrganisation({
+                  event: "paying_customer",
+                  organisationId: session.metadata.orgId,
+                  allowDemoFallback: true,
+                });
+              } catch (error) {
+                console.warn("[stripe] paying_customer reward failed", error);
+              }
+            }
           }
           break;
         }

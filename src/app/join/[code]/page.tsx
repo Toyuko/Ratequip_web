@@ -8,13 +8,18 @@ import {
   invitationReasonExplanation,
   INVITATION_REASON_LABELS,
 } from "@/lib/referrals/invitation-reasons";
+import { CaptureReferralRef } from "@/components/referrals/capture-referral-ref";
 import {
   getInviteRewardSettings,
+  potentialWelcomeCredits,
   WELCOME_CREDIT_USES,
+  WELCOME_CREDIT_USES_INTRO,
   welcomeRewardCtaLabel,
 } from "@/lib/referrals/invite-rewards";
+import { rewardLadderSummaryLines } from "@/lib/referrals/reward-ladder";
 import { referralCopy } from "@/lib/referrals/share";
 import type { ReferralKind } from "@/lib/referrals/types";
+import { Suspense } from "react";
 
 export const metadata = { title: "Your RateQuip invitation" };
 
@@ -56,6 +61,11 @@ export default async function JoinReferralPage({
   const welcomeCredits = invite.welcomeCredits ?? defaults.welcomeCredits;
   const inviterRewardCredits =
     invite.inviterRewardCredits ?? defaults.inviterRewardCredits;
+  const potentialCredits = Math.max(
+    welcomeCredits,
+    potentialWelcomeCredits(defaults),
+  );
+  const ladderLines = rewardLadderSummaryLines(defaults.ladder);
   const founding =
     (invite.foundingMemberEligible ?? defaults.foundingMemberEnabled) &&
     welcomeCredits > 0;
@@ -98,47 +108,22 @@ export default async function JoinReferralPage({
 
   return (
     <div className="mx-auto max-w-xl px-4 py-14">
+      <Suspense fallback={null}>
+        <CaptureReferralRef code={joinKey} />
+      </Suspense>
       <div className="flex flex-wrap gap-2">
-        <Badge variant="orange">Opportunity invitation</Badge>
+        <Badge variant="orange">Industry network invitation</Badge>
         {founding ? <Badge variant="success">Founding Member</Badge> : null}
       </div>
       <h1 className="mt-3 text-3xl font-bold tracking-tight text-[var(--rq-ink)]">
         {copy.title}
       </h1>
       <p className="mt-3 text-[var(--rq-slate)]">
-        <strong className="text-[var(--rq-ink)]">{whoLabel}</strong> has
-        personally invited you to connect on RateQuip.
+        <strong className="text-[var(--rq-ink)]">{whoLabel}</strong> wants to
+        connect with you on RateQuip — a personal industry introduction from{" "}
+        <strong className="text-[var(--rq-ink)]">{fromOrg}</strong>, not a
+        platform marketing blast.
       </p>
-
-      {welcomeCredits > 0 ? (
-        <div className="mt-6 rounded-xl border-2 border-[var(--rq-orange-deep)] bg-gradient-to-br from-orange-50 to-amber-50 px-5 py-5">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--rq-orange-deep)]">
-            {fromOrg} has unlocked your RateQuip Welcome Reward
-          </p>
-          <p className="mt-2 text-xl font-extrabold tracking-tight text-[var(--rq-ink)]">
-            Accept this invitation and receive {welcomeCredits} FREE RateQuip
-            Credits
-          </p>
-          <p className="mt-2 text-sm text-[var(--rq-slate)]">
-            A tangible welcome benefit because {whoLabel} invited you — not just
-            another free signup.
-          </p>
-          <p className="mt-3 text-sm font-semibold text-[var(--rq-ink)]">
-            Credits can eventually be used for:
-          </p>
-          <ul className="mt-2 space-y-1.5 text-sm text-[var(--rq-slate)]">
-            {WELCOME_CREDIT_USES.map((use) => (
-              <li key={use}>✓ {use}</li>
-            ))}
-          </ul>
-          {founding ? (
-            <p className="mt-3 text-sm font-semibold text-[var(--rq-ink)]">
-              Early Member / Founding Member badge included for invited launch
-              users.
-            </p>
-          ) : null}
-        </div>
-      ) : null}
 
       <div
         id="why"
@@ -147,7 +132,7 @@ export default async function JoinReferralPage({
         {attachedOpportunity ? (
           <>
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--rq-orange)]">
-              The opportunity they opened for you
+              Why {fromOrg} reached out · opportunity
             </p>
             <p className="mt-2 text-sm text-[var(--rq-ink)]">
               {invite.opportunitySummary?.trim() || belief}
@@ -161,8 +146,8 @@ export default async function JoinReferralPage({
           <>
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--rq-orange)]">
               {reasonLabel
-                ? `Why they invited you · ${reasonLabel}`
-                : "Why they invited you"}
+                ? `Why ${fromOrg} invited you · ${reasonLabel}`
+                : `Why ${fromOrg} invited you`}
             </p>
             {invite.personalNote ? (
               <>
@@ -186,6 +171,59 @@ export default async function JoinReferralPage({
             — {whoLabel}
           </footer>
         </blockquote>
+      ) : null}
+
+      <div className="mt-6">
+        <InviteReplyPanel
+          inviteCode={joinKey}
+          orgLabel={fromPerson || fromOrg}
+          canReply={canReply}
+        />
+      </div>
+
+      {welcomeCredits > 0 ? (
+        <div className="mt-6 rounded-xl border-2 border-[var(--rq-orange-deep)] bg-gradient-to-br from-orange-50 to-amber-50 px-5 py-5">
+          <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--rq-orange-deep)]">
+            {fromOrg} unlocked your RateQuip Welcome Reward
+          </p>
+          <p className="mt-2 text-xl font-extrabold tracking-tight text-[var(--rq-ink)]">
+            Accept this invitation and unlock {welcomeCredits} RateQuip Credits
+          </p>
+          <p className="mt-2 text-sm text-[var(--rq-slate)]">
+            A real platform benefit because {whoLabel} invited you — spend
+            credits on visibility and growth tools once you’re in.
+            {inviterRewardCredits > 0
+              ? ` ${fromOrg} also earns ${inviterRewardCredits} credits when you claim and participate.`
+              : ""}
+          </p>
+          <p className="mt-3 text-sm font-semibold text-[var(--rq-ink)]">
+            {WELCOME_CREDIT_USES_INTRO}
+          </p>
+          <ul className="mt-2 space-y-1.5 text-sm text-[var(--rq-slate)]">
+            {WELCOME_CREDIT_USES.map((use) => (
+              <li key={use}>✓ {use}</li>
+            ))}
+          </ul>
+          {potentialCredits > welcomeCredits ? (
+            <>
+              <p className="mt-3 text-sm font-semibold text-[var(--rq-ink)]">
+                Keep earning — up to {potentialCredits} credits as you verify
+                and participate:
+              </p>
+              <ul className="mt-2 space-y-1.5 text-sm text-[var(--rq-slate)]">
+                {ladderLines.map((line) => (
+                  <li key={line}>✓ {line}</li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          {founding ? (
+            <p className="mt-3 text-sm font-semibold text-[var(--rq-ink)]">
+              Early Member / Founding Member badge included for invited launch
+              users.
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       <section className="mt-8 space-y-3">
@@ -219,32 +257,26 @@ export default async function JoinReferralPage({
             Grow with RateQuip
           </h2>
           <p className="mt-2 text-sm text-[var(--rq-slate)]">
-            Invite businesses you work with → they receive a welcome benefit
-            (like your {welcomeCredits} free credits) → you earn RateQuip
-            Credits
+            Invite businesses you work with → they get a welcome benefit → you
+            earn RateQuip Credits when they join and participate.
             {inviterRewardCredits > 0
-              ? ` (from ${inviterRewardCredits} credits)`
-              : ""}{" "}
-            when they join and participate.
+              ? ` ${fromOrg} earns too (e.g. ${inviterRewardCredits} after you claim).`
+              : ""}
           </p>
         </section>
       ) : null}
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <Button asChild size="lg">
-          <Link href={acceptHref}>{welcomeRewardCtaLabel(welcomeCredits)}</Link>
+          <Link href={acceptHref}>
+            {welcomeCredits > 0
+              ? `Accept invite + claim ${welcomeCredits} free credits`
+              : welcomeRewardCtaLabel(potentialCredits)}
+          </Link>
         </Button>
         <Button asChild variant="outline" size="lg">
-          <Link href="/sign-in">Already on RateQuip? Sign in</Link>
+          <Link href="#ask-inviter">Ask {fromPerson || fromOrg} a question</Link>
         </Button>
-      </div>
-
-      <div className="mt-8">
-        <InviteReplyPanel
-          inviteCode={joinKey}
-          orgLabel={fromPerson || fromOrg}
-          canReply={canReply}
-        />
       </div>
 
       <p className="mt-6 text-xs text-[var(--rq-muted)]">
