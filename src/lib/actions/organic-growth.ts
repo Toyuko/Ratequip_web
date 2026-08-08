@@ -211,11 +211,22 @@ export async function publishListingSubmission(input: {
       personalNote: recipient.personalNote,
     });
 
-    await sendTransactionalEmail({
+    const sent = await sendTransactionalEmail({
       to: recipient.email,
       subject: email.subject,
       html: email.html,
+      tags: [
+        { name: "category", value: "claim_invite" },
+        { name: "company", value: (result.companySlug ?? "unknown").slice(0, 256) },
+      ],
     });
+    if (!sent.ok) {
+      console.error("[organic-growth] claim invite email failed", {
+        invitationId: invitation.id,
+        error: sent.error,
+        demo: sent.demo,
+      });
+    }
   }
 
   const sent = markInvitationsSent(input.id) ?? result.submission;

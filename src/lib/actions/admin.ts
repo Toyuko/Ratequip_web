@@ -3,7 +3,11 @@
 import { cookies } from "next/headers";
 import { requireServerAdmin } from "@/lib/api/auth";
 import { persistModeration } from "@/lib/db/phase2";
-import { sendTransactionalEmail } from "@/lib/email";
+import {
+  looksLikeEmail,
+  opsEmail,
+  sendTransactionalEmail,
+} from "@/lib/email";
 
 export async function moderateEntity(input: {
   entityType: "review" | "claim";
@@ -27,11 +31,54 @@ export async function moderateEntity(input: {
   });
 
   if (result.ok) {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const companyLabel =
+      ("companyName" in result && result.companyName) ||
+      ("companySlug" in result && result.companySlug) ||
+      input.entityId;
+    const profileUrl =
+      "companySlug" in result && result.companySlug
+        ? `${baseUrl}/companies/${result.companySlug}`
+        : `${baseUrl}/admin`;
+
     await sendTransactionalEmail({
-      to: "ops@ratequip.com",
+      to: opsEmail(),
       subject: `Moderation ${input.decision}: ${input.entityType}`,
-      html: `<p>${input.entityType} ${input.entityId} was ${input.decision}.</p>`,
+      html: `<p>${input.entityType} ${input.entityId} (${companyLabel}) was ${input.decision} by ${actor}.</p>`,
+      tags: [
+        { name: "category", value: "moderation_ops" },
+        { name: "entity", value: input.entityType },
+      ],
     });
+
+    if (
+      input.entityType === "claim" &&
+      "claimantEmail" in result &&
+      looksLikeEmail(result.claimantEmail)
+    ) {
+      const approved = input.decision === "approved";
+      await sendTransactionalEmail({
+        to: result.claimantEmail,
+        subject: approved
+          ? `Your claim for ${companyLabel} was approved`
+          : `Update on your claim for ${companyLabel}`,
+        html: `
+          <div style="font-family:Montserrat,Arial,sans-serif;color:#0f172a;line-height:1.5">
+            <p>Your company profile claim for <strong>${companyLabel}</strong> was <strong>${input.decision}</strong>.</p>
+            ${
+              approved
+                ? `<p>You can manage the profile here: <a href="${profileUrl}">${profileUrl}</a></p>`
+                : `<p>If you believe this was in error, reply to this email or contact support via <a href="${baseUrl}/contact">${baseUrl}/contact</a>.</p>`
+            }
+          </div>
+        `.trim(),
+        tags: [
+          { name: "category", value: "claim_decision" },
+          { name: "decision", value: input.decision },
+        ],
+      });
+    }
   }
 
   return result;

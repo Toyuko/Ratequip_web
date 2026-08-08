@@ -24,7 +24,11 @@ import {
   updateRequestFields,
   updateRequestStatus,
 } from "@/lib/db/phase2";
-import { sendTransactionalEmail } from "@/lib/email";
+import {
+  looksLikeEmail,
+  opsEmail,
+  sendTransactionalEmail,
+} from "@/lib/email";
 import { validateRfqContent } from "@/lib/rfq/validation";
 
 async function requireMutationActor(): Promise<
@@ -60,6 +64,16 @@ async function requireMutationActor(): Promise<
 }
 
 async function actorFromCookies() {
+  if (hasClerk()) {
+    try {
+      const { currentUser } = await import("@clerk/nextjs/server");
+      const user = await currentUser();
+      const clerkEmail = user?.primaryEmailAddress?.emailAddress;
+      if (looksLikeEmail(clerkEmail)) return clerkEmail;
+    } catch {
+      // Fall through to cookie/demo actor.
+    }
+  }
   const jar = await cookies();
   return (
     jar.get("rq_email")?.value ??
@@ -128,12 +142,17 @@ export async function submitQuote(input: {
   });
 
   if (result.ok) {
-    const buyerEmail = jar.get("rq_email")?.value ?? "buyer@example.com";
-    await sendTransactionalEmail({
-      to: buyerEmail,
-      subject: `New quote on RFQ ${input.requestId}`,
-      html: `<p>A supplier submitted a quote of ${input.amount} (${input.leadTimeDays} days lead time).</p><p>${input.notes}</p>`,
-    });
+    const buyerEmail = jar.get("rq_email")?.value;
+    if (looksLikeEmail(buyerEmail)) {
+      await sendTransactionalEmail({
+        to: buyerEmail,
+        subject: `New quote on RFQ ${input.requestId}`,
+        html: `<p>A supplier submitted a quote of ${input.amount} (${input.leadTimeDays} days lead time).</p><p>${input.notes}</p>`,
+        tags: [{ name: "category", value: "quote_submitted" }],
+      });
+    } else {
+      console.warn("[marketplace] quote email skipped — no valid buyer email");
+    }
   }
 
   return result;
@@ -363,12 +382,60 @@ export async function submitClaim(input: {
     evidenceUrl = `demo://evidence/${input.evidenceName}`;
   }
 
-  return persistClaim({
+  const result = await persistClaim({
     companySlug: input.companySlug,
     notes: input.notes,
     claimant: gate.actor,
     evidenceUrl,
   });
+
+  if (result.ok) {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const companyLabel = input.companySlug;
+    const profileUrl = `${baseUrl}/companies/${input.companySlug}`;
+    const adminUrl = `${baseUrl}/admin`;
+
+    if (looksLikeEmail(gate.actor)) {
+      await sendTransactionalEmail({
+        to: gate.actor,
+        subject: `We received your claim for ${companyLabel}`,
+        html: `
+          <div style="font-family:Montserrat,Arial,sans-serif;color:#0f172a;line-height:1.5">
+            <p>Thanks — your company profile claim is queued for review.</p>
+            <p>Company: <strong>${companyLabel}</strong></p>
+            <p><a href="${profileUrl}">View the public profile</a></p>
+            <p>We will email you when the claim is approved or rejected.</p>
+          </div>
+        `.trim(),
+        tags: [
+          { name: "category", value: "claim_submitted" },
+          { name: "company", value: input.companySlug.slice(0, 256) },
+        ],
+      });
+    }
+
+    await sendTransactionalEmail({
+      to: opsEmail(),
+      subject: `New company claim: ${companyLabel}`,
+      html: `
+        <div style="font-family:Montserrat,Arial,sans-serif;color:#0f172a;line-height:1.5">
+          <p>A new company claim was submitted.</p>
+          <p>Company: <strong>${companyLabel}</strong></p>
+          <p>Claimant: ${gate.actor}</p>
+          <p>Claim id: ${result.id}</p>
+          <p>Notes: ${input.notes || "(none)"}</p>
+          <p><a href="${adminUrl}">Open admin</a> · <a href="${profileUrl}">View profile</a></p>
+        </div>
+      `.trim(),
+      tags: [
+        { name: "category", value: "claim_ops_alert" },
+        { name: "company", value: input.companySlug.slice(0, 256) },
+      ],
+    });
+  }
+
+  return result;
 }
 
 export async function createProject(input: {

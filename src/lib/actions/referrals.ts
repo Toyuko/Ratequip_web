@@ -136,11 +136,18 @@ export async function sendReferralInvite(input: {
     supportUrl: `${baseUrl}/contact`,
   });
 
-  await sendTransactionalEmail({
+  const emailResult = await sendTransactionalEmail({
     to: email,
     subject: rendered.subject,
     html: rendered.html,
+    tags: [{ name: "category", value: "referral_invite" }],
   });
+  if (!emailResult.ok) {
+    return {
+      ok: false as const,
+      message: `Invite saved but email failed: ${emailResult.error}`,
+    };
+  }
 
   return {
     ok: true as const,

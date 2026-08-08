@@ -1661,6 +1661,9 @@ export async function persistModeration(input: {
   let companySlug = claim?.companySlug;
   let companyId: string | undefined;
 
+  let claimantEmail: string | undefined = claim?.claimant;
+  let companyName: string | undefined = claim?.companyName;
+
   if (db) {
     try {
       const [row] = await db
@@ -1668,14 +1671,19 @@ export async function persistModeration(input: {
           claim: companyClaims,
           companySlug: companies.slug,
           companyId: companies.id,
+          companyName: companies.name,
+          claimantEmail: users.email,
         })
         .from(companyClaims)
         .leftJoin(companies, eq(companyClaims.companyId, companies.id))
+        .leftJoin(users, eq(companyClaims.claimantUserId, users.id))
         .where(eq(companyClaims.id, input.entityId))
         .limit(1);
       if (row) {
         companySlug = row.companySlug ?? undefined;
         companyId = row.companyId ?? row.claim.companyId;
+        companyName = row.companyName ?? companyName ?? companySlug;
+        claimantEmail = row.claimantEmail ?? claimantEmail;
         await db
           .update(companyClaims)
           .set({
@@ -1699,9 +1707,9 @@ export async function persistModeration(input: {
         if (!claim) {
           claim = {
             id: row.claim.id,
-            companyName: companySlug ?? row.claim.companyId,
+            companyName: companyName ?? companySlug ?? row.claim.companyId,
             companySlug: companySlug ?? row.claim.companyId,
-            claimant: "claimant",
+            claimant: claimantEmail ?? "claimant",
             status: input.decision,
             notes: row.claim.notes ?? "",
             createdAt: row.claim.createdAt.toISOString().slice(0, 10),
@@ -1730,6 +1738,9 @@ export async function persistModeration(input: {
   return {
     ok: true as const,
     message: `Claim ${input.entityId} marked ${input.decision}.`,
+    claimantEmail,
+    companyName: companyName ?? claim.companyName,
+    companySlug: companySlug ?? claim.companySlug,
   };
 }
 
