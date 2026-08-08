@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T03:45:59.015Z",
+  "generatedAt": "2026-08-07T12:07:26.399Z",
   "result": "READY",
   "results": [
     {
@@ -15,17 +15,17 @@
     {
       "step": "1b Seed verification",
       "ok": true,
-      "detail": "companies=12998, requests=34, rq.schema_migrations=43"
+      "detail": "companies=12998, requests=37, rq.schema_migrations=43"
     },
     {
       "step": "1c Forward change (temp migrate)",
       "ok": true,
-      "detail": "Created rq.uat_rollback_marker_1786074356748 with 1 row"
+      "detail": "Created rq.uat_rollback_marker_1786104444035 with 1 row"
     },
     {
       "step": "1d Rollback (drop temp change)",
       "ok": true,
-      "detail": "Dropped rq.uat_rollback_marker_1786074356748; table no longer exists"
+      "detail": "Dropped rq.uat_rollback_marker_1786104444035; table no longer exists"
     },
     {
       "step": "1e Production migrations intact",
