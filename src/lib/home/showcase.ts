@@ -39,30 +39,30 @@ export type ShowcaseCountry = {
   y: number;
 };
 
-/** High-quality industrial photography (Unsplash). */
+/** Soft, atmospheric industrial photography (used with blur + heavy overlay). */
 export const HERO_MONTAGE = [
   {
-    src: "https://images.unsplash.com/photo-1513828583688-c52646db42da?auto=format&fit=crop&w=1600&q=80",
-    alt: "Industrial packaging and filling line",
+    src: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1600&q=60",
+    alt: "Muted factory floor atmosphere",
   },
   {
-    src: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=80",
-    alt: "Factory robotics and automation",
+    src: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=1600&q=60",
+    alt: "Soft-focus industrial machinery",
   },
   {
-    src: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1600&q=80",
-    alt: "Processing and production equipment",
+    src: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=60",
+    alt: "Abstract production environment",
   },
 ] as const;
 
 export const HERO_QUICK_LINKS = [
-  { label: "Filling Machines", href: "/search?q=filling+machine" },
-  { label: "Packaging", href: "/categories/packaging-machinery" },
-  { label: "Conveyors", href: "/search?q=conveyor" },
-  { label: "Robotics", href: "/categories/factory-automation" },
-  { label: "Processing", href: "/categories/food-processing" },
-  { label: "Coding", href: "/search?q=coding+marking" },
-  { label: "Inspection", href: "/categories/inspection-qc" },
+  { label: "Filling Machines", query: "Filling Machines" },
+  { label: "Packaging", query: "Packaging" },
+  { label: "Conveyors", query: "Conveyors" },
+  { label: "Robotics", query: "Robotics" },
+  { label: "Processing", query: "Processing" },
+  { label: "Coding", query: "Coding" },
+  { label: "Inspection", query: "Inspection" },
 ] as const;
 
 export const FEATURED_EQUIPMENT: ShowcaseEquipment[] = [

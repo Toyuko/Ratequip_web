@@ -45,6 +45,7 @@ export type Dictionary = {
     heroEyebrow: string;
     heroTitle: string;
     heroBody: string;
+    heroAiBadge: string;
     heroSearchPlaceholder: string;
     searchRateQuip: string;
     postRfq: string;
@@ -68,6 +69,8 @@ export type Dictionary = {
     featuredEquipmentBody: string;
     viewEquipment: string;
     compareAction: string;
+    topVerifiedTitle: string;
+    topVerifiedBody: string;
     topSuppliers: string;
     topSuppliersBody: string;
     viewDirectory: string;
@@ -186,10 +189,13 @@ const en: Dictionary = {
     supplierDashboard: "Supplier dashboard",
   },
   home: {
-    heroEyebrow: "The industrial equipment network built for better decisions",
-    heroTitle: "Find. Compare. Source. Connect.",
+    heroEyebrow: "Industrial equipment network",
+    heroTitle:
+      "From project requirement to the ecosystem that delivers it.",
     heroBody:
-      "Discover verified suppliers, compare equipment, issue RFQs, build your industry reputation and connect with companies around the world — in one platform.",
+      "Discover verified suppliers, compare equipment, issue RFQs, build reputation and connect with companies worldwide — guided by RateQuip’s AI understanding of your project.",
+    heroAiBadge:
+      "Describe your project — RateQuip’s AI finds the ecosystem that can deliver it",
     heroSearchPlaceholder:
       "Search equipment, suppliers, manufacturers or categories…",
     searchRateQuip: "Search RateQuip",
@@ -215,6 +221,9 @@ const en: Dictionary = {
       "Machinery with real specifications — not empty catalogue placeholders.",
     viewEquipment: "View equipment",
     compareAction: "Compare",
+    topVerifiedTitle: "Top verified suppliers",
+    topVerifiedBody:
+      "Evidence-based Trust Scores — not marketing claims. See who has verified reviews and real delivery history.",
     topSuppliers: "Find the right supplier — with evidence",
     topSuppliersBody:
       "Don’t rely on a sales pitch. See the company behind the equipment: independent ratings, capabilities, history and connections.",
@@ -239,14 +248,14 @@ const en: Dictionary = {
       "Explore the plant floor by what you actually buy and install.",
     journeysTitle: "What brings you to RateQuip?",
     journeysBody: "Built for both sides of industry.",
-    buyerTitle: "I’m buying equipment",
+    buyerTitle: "I’m sourcing equipment",
     buyerBody:
       "Search, compare, create RFQs, shortlist suppliers and request quotes — with reputation evidence at every step.",
-    buyerCta: "Start as a buyer",
+    buyerCta: "Post an RFQ",
     supplierTitle: "I supply equipment",
     supplierBody:
       "Build your profile, list equipment, receive RFQs, earn reputation and generate qualified leads.",
-    supplierCta: "Start as a supplier",
+    supplierCta: "Claim or create your company",
     creditsTitle: "RateQuip Credits & network growth",
     creditsBody:
       "Credits power profile boosts, featured listings, premium RFQ access and discovery placements. Invite industry businesses — they get a welcome benefit; you earn credits when they join and participate.",
@@ -265,7 +274,8 @@ const en: Dictionary = {
     howBody:
       "One workflow from need to verified supplier — without leaving the platform.",
     discoverTitle: "Discover",
-    discoverBody: "Search suppliers by category, location and Trust Score.",
+    discoverBody:
+      "Describe a project or search by category — AI helps map the ecosystem you need.",
     requestTitle: "Request",
     requestBody: "Post RFQs, collect quotes and compare in one workspace.",
     verifyTitle: "Verify",
@@ -345,10 +355,12 @@ const th: Dictionary = {
     supplierDashboard: "แดชบอร์ดซัพพลายเออร์",
   },
   home: {
-    heroEyebrow: "เครือข่ายอุปกรณ์อุตสาหกรรมสำหรับการตัดสินใจที่ดีกว่า",
-    heroTitle: "ค้นหา เปรียบเทียบ จัดหา เชื่อมต่อ",
+    heroEyebrow: "เครือข่ายอุปกรณ์อุตสาหกรรม",
+    heroTitle: "จากความต้องการของโปรเจกต์ สู่ระบบนิเวศที่ส่งมอบได้จริง",
     heroBody:
-      "ค้นหาซัพพลายเออร์ที่ผ่านการตรวจสอบ เปรียบเทียบอุปกรณ์ ออก RFQ สร้างชื่อเสียงในอุตสาหกรรม และเชื่อมต่อกับบริษัททั่วโลก — ในแพลตฟอร์มเดียว",
+      "ค้นหาซัพพลายเออร์ที่ผ่านการตรวจสอบ เปรียบเทียบอุปกรณ์ ออก RFQ สร้างชื่อเสียง และเชื่อมต่อกับบริษัททั่วโลก — ด้วย AI ของ RateQuip ที่เข้าใจโปรเจกต์ของคุณ",
+    heroAiBadge:
+      "อธิบายโปรเจกต์ของคุณ — AI ของ RateQuip จะหาอีโคซิสเต็มที่ส่งมอบได้",
     heroSearchPlaceholder: "ค้นหาอุปกรณ์ ซัพพลายเออร์ ผู้ผลิต หรือหมวดหมู่…",
     searchRateQuip: "ค้นหา RateQuip",
     postRfq: "โพสต์ RFQ",
@@ -372,6 +384,9 @@ const th: Dictionary = {
     featuredEquipmentBody: "เครื่องจักรพร้อมสเปกจริง — ไม่ใช่แคตตาล็อกว่าง",
     viewEquipment: "ดูอุปกรณ์",
     compareAction: "เปรียบเทียบ",
+    topVerifiedTitle: "ซัพพลายเออร์ที่ผ่านการตรวจสอบชั้นนำ",
+    topVerifiedBody:
+      "Trust Score จากหลักฐาน — ไม่ใช่คำโฆษณา ดูผู้ที่มีรีวิวยืนยันและประวัติการส่งมอบจริง",
     topSuppliers: "หาซัพพลายเออร์ที่ใช่ — ด้วยหลักฐาน",
     topSuppliersBody:
       "อย่าเชื่อแค่การขาย ดูบริษัทที่อยู่เบื้องหลังอุปกรณ์: คะแนนอิสระ ความสามารถ ประวัติ และการเชื่อมต่อ",
@@ -395,14 +410,14 @@ const th: Dictionary = {
     industriesBody: "สำรวจโรงงานตามสิ่งที่คุณซื้อและติดตั้งจริง",
     journeysTitle: "คุณมา RateQuip เพื่ออะไร?",
     journeysBody: "ออกแบบมาสำหรับทั้งสองฝั่งของอุตสาหกรรม",
-    buyerTitle: "ฉันต้องการซื้ออุปกรณ์",
+    buyerTitle: "ฉันต้องการจัดหาอุปกรณ์",
     buyerBody:
       "ค้นหา เปรียบเทียบ สร้าง RFQ คัดเลือกซัพพลายเออร์ และขอใบเสนอราคา — พร้อมหลักฐานชื่อเสียงทุกขั้นตอน",
-    buyerCta: "เริ่มในฐานะผู้ซื้อ",
+    buyerCta: "โพสต์ RFQ",
     supplierTitle: "ฉันเป็นผู้จำหน่ายอุปกรณ์",
     supplierBody:
       "สร้างโปรไฟล์ ลงทะเบียนอุปกรณ์ รับ RFQ สร้างชื่อเสียง และสร้างลีดที่มีคุณภาพ",
-    supplierCta: "เริ่มในฐานะซัพพลายเออร์",
+    supplierCta: "เคลมหรือสร้างบริษัทของคุณ",
     creditsTitle: "RateQuip Credits และการเติบโตของเครือข่าย",
     creditsBody:
       "เครดิตใช้สำหรับบูสต์โปรไฟล์ รายการแนะนำ การเข้าถึง RFQ พรีเมียม และการโฆษณา เชิญธุรกิจในอุตสาหกรรม — พวกเขาได้รับสิทธิประโยชน์ต้อนรับ คุณได้รับเครดิตเมื่อพวกเขาเข้าร่วมและมีส่วนร่วม",
@@ -420,7 +435,8 @@ const th: Dictionary = {
     howBody:
       "เวิร์กโฟลว์เดียวจากความต้องการไปจนถึงซัพพลายเออร์ที่ผ่านการตรวจสอบ — โดยไม่ต้องออกจากแพลตฟอร์ม",
     discoverTitle: "ค้นพบ",
-    discoverBody: "ค้นหาซัพพลายเออร์ตามหมวดหมู่ ที่ตั้ง และ Trust Score",
+    discoverBody:
+      "อธิบายโปรเจกต์หรือค้นหาตามหมวดหมู่ — AI ช่วยแม็พอีโคซิสเต็มที่คุณต้องการ",
     requestTitle: "ร้องขอ",
     requestBody: "โพสต์ RFQ รับใบเสนอราคา และเปรียบเทียบในที่เดียว",
     verifyTitle: "ตรวจสอบ",
@@ -500,10 +516,11 @@ const zh: Dictionary = {
     supplierDashboard: "供应商控制台",
   },
   home: {
-    heroEyebrow: "为更好决策而生的工业设备网络",
-    heroTitle: "发现. 对比. 采购. 连接.",
+    heroEyebrow: "工业设备网络",
+    heroTitle: "从项目需求到能够交付的生态系统。",
     heroBody:
-      "发现已验证供应商、对比设备、发布询价、建立行业信誉，并与全球企业连接——尽在同一平台。",
+      "发现已验证供应商、对比设备、发布询价、建立信誉并连接全球企业——由 RateQuip AI 理解你的项目并完成匹配。",
+    heroAiBadge: "描述你的项目——RateQuip AI 找出能够交付的生态系统",
     heroSearchPlaceholder: "搜索设备、供应商、制造商或分类…",
     searchRateQuip: "搜索 RateQuip",
     postRfq: "发布询价",
@@ -527,6 +544,9 @@ const zh: Dictionary = {
     featuredEquipmentBody: "带真实规格的机械——不是空洞目录占位。",
     viewEquipment: "查看设备",
     compareAction: "对比",
+    topVerifiedTitle: "顶级已验证供应商",
+    topVerifiedBody:
+      "基于证据的信任评分——而非营销话术。查看拥有已验证评价与真实交付历史的企业。",
     topSuppliers: "用证据找到合适供应商",
     topSuppliersBody:
       "不要只听销售话术。查看设备背后的企业：独立评分、能力、历史与连接。",
@@ -551,10 +571,10 @@ const zh: Dictionary = {
     buyerTitle: "我要采购设备",
     buyerBody:
       "搜索、对比、创建询价、短名单供应商并索取报价——每一步都有信誉证据。",
-    buyerCta: "以采购方开始",
+    buyerCta: "发布询价",
     supplierTitle: "我供应设备",
     supplierBody: "建立档案、上架设备、接收询价、积累信誉并生成优质线索。",
-    supplierCta: "以供应方开始",
+    supplierCta: "认领或创建公司档案",
     creditsTitle: "RateQuip 积分与网络增长",
     creditsBody:
       "积分用于档案提升、精选上架、高级询价准入与发现位投放。邀请行业企业——受邀方获得欢迎权益；当他们加入并参与时，你获得积分。",
@@ -570,7 +590,7 @@ const zh: Dictionary = {
     howTitle: "RateQuip 如何运作",
     howBody: "从需求到已验证供应商的一站式流程——无需离开平台。",
     discoverTitle: "发现",
-    discoverBody: "按分类、地区和信任评分搜索供应商。",
+    discoverBody: "描述项目或按分类搜索——AI 帮助映射你需要的生态系统。",
     requestTitle: "询价",
     requestBody: "发布询价、收集报价，并在同一工作区比较。",
     verifyTitle: "验证",

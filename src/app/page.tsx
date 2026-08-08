@@ -36,13 +36,13 @@ function pickFeatured(companies: DemoCompany[]): DemoCompany[] {
   const fromLive = SHOWCASE_COMPANY_SLUGS.map((slug) => bySlug.get(slug)).filter(
     (c): c is DemoCompany => Boolean(c),
   );
-  if (fromLive.length >= 3) return fromLive.slice(0, 3);
+  if (fromLive.length >= 3) return fromLive.slice(0, 4);
 
   const fromDemo = SHOWCASE_COMPANY_SLUGS.map((slug) =>
     demoCompanies.find((c) => c.slug === slug),
   ).filter((c): c is DemoCompany => Boolean(c));
 
-  return fromDemo.slice(0, 3);
+  return fromDemo.slice(0, 4);
 }
 
 function pickRequests(requests: DemoRequest[]): DemoRequest[] {

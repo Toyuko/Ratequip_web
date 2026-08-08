@@ -4,6 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
 export function SupplierCard({ company }: { company: DemoCompany }) {
+  const primaryCategory = company.categories[0]
+    ?.replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
   return (
     <Card interactive className="h-full">
       <Link href={`/companies/${company.slug}`} className="block h-full">
@@ -36,6 +40,9 @@ export function SupplierCard({ company }: { company: DemoCompany }) {
             <Badge variant="warning">Unclaimed</Badge>
           )}
           <Badge variant="muted">{company.reviewCount} reviews</Badge>
+          {primaryCategory ? (
+            <Badge variant="muted">{primaryCategory}</Badge>
+          ) : null}
         </div>
       </Link>
     </Card>

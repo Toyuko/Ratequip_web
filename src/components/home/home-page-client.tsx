@@ -59,15 +59,35 @@ export function HomePageClient({
 }) {
   const t = useT();
   const [filter, setFilter] = useState<SearchFilter>("equipment");
+  const [query, setQuery] = useState("");
   const spotlight = requests[0];
   const latest = requests.slice(0, 4);
   const evidenceCompany = featured[0];
+  const topVerified = featured.slice(0, 4);
 
   const filters: { id: SearchFilter; label: string }[] = [
     { id: "equipment", label: t.home.filterEquipment },
     { id: "supplier", label: t.home.filterSupplier },
     { id: "category", label: t.home.filterCategory },
     { id: "country", label: t.home.filterCountry },
+  ];
+
+  const howSteps = [
+    {
+      icon: Search,
+      title: t.home.discoverTitle,
+      body: t.home.discoverBody,
+    },
+    {
+      icon: FileText,
+      title: t.home.requestTitle,
+      body: t.home.requestBody,
+    },
+    {
+      icon: ShieldCheck,
+      title: t.home.verifyTitle,
+      body: t.home.verifyBody,
+    },
   ];
 
   const explore = [
@@ -97,6 +117,11 @@ export function HomePageClient({
     },
   ];
 
+  function applyCategoryChip(chipQuery: string) {
+    setFilter("category");
+    setQuery(chipQuery);
+  }
+
   return (
     <div>
       {/* HERO */}
@@ -114,20 +139,19 @@ export function HomePageClient({
                 fill
                 priority={index === 0}
                 sizes="100vw"
-                className="object-cover"
               />
             </div>
           ))}
           <div className="rq-hero-montage__overlay" />
         </div>
 
-        <div className="relative z-10 mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-center px-4 py-20 sm:px-6">
+        <div className="relative z-10 mx-auto flex min-h-[88vh] max-w-7xl flex-col justify-center px-4 py-16 sm:px-6">
           <div className="rq-fade-up max-w-4xl">
-            <Logo size="hero" variant="onDark" priority className="mb-8" />
+            <Logo size="lg" variant="onDark" priority className="mb-6" />
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-orange-300">
               {t.home.heroEyebrow}
             </p>
-            <h1 className="mt-4 max-w-3xl text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="mt-4 max-w-3xl text-3xl font-extrabold tracking-tight sm:text-5xl lg:text-[3.25rem] lg:leading-tight">
               {t.home.heroTitle}
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-slate-200 sm:text-xl">
@@ -136,8 +160,12 @@ export function HomePageClient({
 
             <form
               action={searchActionFor(filter)}
-              className="mt-10 rounded-2xl border border-white/15 bg-black/35 p-3 shadow-2xl backdrop-blur-md sm:p-4"
+              className="mt-8 rounded-2xl border border-white/15 bg-black/45 p-3 shadow-2xl backdrop-blur-md sm:p-4"
             >
+              <p className="mb-3 inline-flex max-w-full items-start gap-2 rounded-md bg-orange-500/15 px-3 py-2 text-sm text-orange-100">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-orange-300" />
+                <span>{t.home.heroAiBadge}</span>
+              </p>
               <div className="mb-3 flex flex-wrap gap-2">
                 {filters.map((item) => (
                   <button
@@ -159,6 +187,8 @@ export function HomePageClient({
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input
                     name={filter === "country" ? "country" : "q"}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
                     placeholder={t.home.heroSearchPlaceholder}
                     className="h-12 border-white/20 bg-white/95 pl-10 text-[var(--rq-ink)]"
                   />
@@ -180,28 +210,33 @@ export function HomePageClient({
               </div>
             </form>
 
-            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-300">
+            <div className="mt-5 flex flex-wrap gap-2">
               {HERO_QUICK_LINKS.map((link) => (
-                <Link
-                  key={link.href + link.label}
-                  href={link.href}
-                  className="transition hover:text-orange-300"
+                <button
+                  key={link.label}
+                  type="button"
+                  onClick={() => applyCategoryChip(link.query)}
+                  className={`rounded-md border px-3 py-1.5 text-sm transition ${
+                    filter === "category" && query === link.query
+                      ? "border-orange-400 bg-orange-500/20 text-orange-200"
+                      : "border-white/20 bg-white/5 text-slate-300 hover:border-orange-300/60 hover:text-orange-200"
+                  }`}
                 >
                   {link.label}
-                </Link>
+                </button>
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* EXPLORE */}
+      {/* EXPLORE — early platform shape */}
       <section className="border-b border-[var(--rq-border)] bg-[var(--rq-card)]">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <h2 className="text-2xl font-bold text-[var(--rq-ink)] sm:text-3xl">
             {t.home.exploreTitle}
           </h2>
-          <div className="rq-stagger mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rq-stagger mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {explore.map((item) => (
               <Link
                 key={item.href}
@@ -218,6 +253,123 @@ export function HomePageClient({
                 </span>
               </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TOP VERIFIED SUPPLIERS — trust strip */}
+      <section className="border-b border-[var(--rq-border)] bg-[var(--rq-surface)]">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-[var(--rq-ink)] sm:text-3xl">
+                {t.home.topVerifiedTitle}
+              </h2>
+              <p className="mt-2 max-w-2xl text-[var(--rq-slate)]">
+                {t.home.topVerifiedBody}
+              </p>
+            </div>
+            <Button asChild variant="outline">
+              <Link href="/suppliers">{t.home.viewDirectory}</Link>
+            </Button>
+          </div>
+          <div className="rq-stagger grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {topVerified.map((company) => (
+              <SupplierCard key={company.id} company={company} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how-it-works" className="bg-[var(--rq-card)]">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+          <div className="max-w-3xl">
+            <h2 className="text-2xl font-bold text-[var(--rq-ink)] sm:text-3xl">
+              {t.home.howTitle}
+            </h2>
+            <p className="mt-2 text-[var(--rq-slate)]">{t.home.howBody}</p>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {howSteps.map((step, index) => (
+              <div
+                key={step.title}
+                className="rounded-xl border border-[var(--rq-border)] bg-[var(--rq-surface)] p-6"
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
+                    {index + 1}
+                  </span>
+                  <step.icon className="h-6 w-6 text-orange-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-[var(--rq-ink)]">
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-sm text-[var(--rq-slate)]">{step.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* GLOBAL NETWORK MAP — early scale signal */}
+      <section className="border-y border-[var(--rq-border)] bg-[var(--rq-navy)] py-14 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mb-6 max-w-3xl">
+            <div className="mb-3 inline-flex items-center gap-2 text-orange-300">
+              <Globe2 className="h-5 w-5" />
+              <span className="text-xs font-semibold uppercase tracking-[0.2em]">
+                {t.home.networkCountries}
+              </span>
+            </div>
+            <h2 className="text-2xl font-bold sm:text-3xl">
+              {t.home.networkTitle}
+            </h2>
+            <p className="mt-2 text-slate-300">{t.home.networkBody}</p>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-4 sm:p-6">
+            <svg
+              viewBox="0 0 1000 500"
+              className="h-auto w-full"
+              role="img"
+              aria-label={t.home.networkTitle}
+            >
+              <rect width="1000" height="500" fill="#0b1220" />
+              <path
+                d="M120 140c40-30 90-40 140-20 55 22 70 18 120-10 45-25 95-20 130 10 30 25 70 35 110 20 50-18 95 5 130 35 40 35 85 40 130 15 35-20 75-15 100 15v40c-45 10-85-5-120-25-40-22-85-15-120 10-45 30-95 25-140-5-40-25-85-20-120 8-45 35-100 30-150-5-35-25-80-20-110 10-20 20-55 25-80 5z"
+                fill="#1e293b"
+                opacity="0.9"
+              />
+              <path
+                d="M180 280c55-15 100 5 140 35 35 25 80 30 120 10 50-25 100-10 140 20 30 22 75 25 110 5 40-22 90-10 120 25v35c-55 5-100-20-145-35-40-12-85 0-120 25-45 30-100 20-145-5-40-22-90-15-125 15-25 20-65 18-95-5z"
+                fill="#1e293b"
+                opacity="0.75"
+              />
+              {NETWORK_COUNTRIES.map((country) => (
+                <g key={country.code} className="rq-map-pin">
+                  <circle
+                    cx={country.x}
+                    cy={country.y}
+                    r="10"
+                    fill="rgba(249,115,22,0.2)"
+                  />
+                  <circle
+                    cx={country.x}
+                    cy={country.y}
+                    r="4.5"
+                    fill="#f97316"
+                  />
+                  <title>{country.name}</title>
+                </g>
+              ))}
+            </svg>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {NETWORK_COUNTRIES.map((country) => (
+                <Badge key={country.code} variant="muted">
+                  {country.name}
+                </Badge>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -289,7 +441,7 @@ export function HomePageClient({
         </div>
       </section>
 
-      {/* SUPPLIERS + REPUTATION */}
+      {/* SUPPLIERS + REPUTATION (deep evidence) */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -306,7 +458,7 @@ export function HomePageClient({
         </div>
 
         {evidenceCompany ? (
-          <div className="mb-8 grid gap-6 overflow-hidden rounded-2xl border border-[var(--rq-border)] bg-[var(--rq-card)] lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="grid gap-6 overflow-hidden rounded-2xl border border-[var(--rq-border)] bg-[var(--rq-card)] lg:grid-cols-[1.1fr_0.9fr]">
             <div className="bg-[var(--rq-navy)] p-6 text-white sm:p-8">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -365,19 +517,10 @@ export function HomePageClient({
             </div>
           </div>
         ) : null}
-
-        <div className="rq-stagger grid gap-5 md:grid-cols-3">
-          {featured.map((company) => (
-            <SupplierCard key={company.id} company={company} />
-          ))}
-        </div>
       </section>
 
       {/* REPUTATION DIFFERENTIATOR */}
-      <section
-        id="how-it-works"
-        className="border-y border-[var(--rq-border)] bg-[var(--rq-navy)] py-16 text-white"
-      >
+      <section className="border-y border-[var(--rq-border)] bg-[var(--rq-navy)] py-16 text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-orange-300">
@@ -387,34 +530,6 @@ export function HomePageClient({
               {t.home.reputationTitle}
             </h2>
             <p className="mt-4 text-lg text-slate-300">{t.home.reputationBody}</p>
-          </div>
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                icon: Search,
-                title: t.home.discoverTitle,
-                body: t.home.discoverBody,
-              },
-              {
-                icon: FileText,
-                title: t.home.requestTitle,
-                body: t.home.requestBody,
-              },
-              {
-                icon: ShieldCheck,
-                title: t.home.verifyTitle,
-                body: t.home.verifyBody,
-              },
-            ].map((step) => (
-              <div
-                key={step.title}
-                className="rounded-xl border border-white/10 bg-white/5 p-5"
-              >
-                <step.icon className="mb-4 h-8 w-8 text-orange-400" />
-                <h3 className="text-lg font-semibold">{step.title}</h3>
-                <p className="mt-2 text-sm text-slate-300">{step.body}</p>
-              </div>
-            ))}
           </div>
           <div className="mt-8">
             <Button asChild>
@@ -642,7 +757,7 @@ export function HomePageClient({
               Find → Compare → RFQ → Connect → Procure
             </p>
             <Button asChild className="mt-6">
-              <Link href="/sign-up">{t.home.buyerCta}</Link>
+              <Link href="/requests/new">{t.home.buyerCta}</Link>
             </Button>
           </div>
           <div className="rounded-2xl border border-[var(--rq-border)] bg-[var(--rq-navy)] p-6 text-white sm:p-8">
@@ -656,7 +771,7 @@ export function HomePageClient({
               Grow
             </p>
             <Button asChild className="mt-6">
-              <Link href="/sign-up">{t.home.supplierCta}</Link>
+              <Link href="/companies/search">{t.home.supplierCta}</Link>
             </Button>
           </div>
         </div>
@@ -707,63 +822,6 @@ export function HomePageClient({
               Welcome benefits for invited businesses. Inviter rewards unlock
               when partners join and participate — not for spam invites.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* GLOBAL NETWORK MAP */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-3xl">
-            <div className="mb-3 inline-flex items-center gap-2 text-orange-600">
-              <Globe2 className="h-5 w-5" />
-              <span className="text-xs font-semibold uppercase tracking-[0.2em]">
-                {t.home.networkCountries}
-              </span>
-            </div>
-            <h2 className="text-2xl font-bold text-[var(--rq-ink)] sm:text-3xl">
-              {t.home.networkTitle}
-            </h2>
-            <p className="mt-2 text-[var(--rq-slate)]">{t.home.networkBody}</p>
-          </div>
-        </div>
-        <div className="overflow-hidden rounded-2xl border border-[var(--rq-border)] bg-[var(--rq-navy)] p-4 sm:p-6">
-          <svg
-            viewBox="0 0 1000 500"
-            className="h-auto w-full"
-            role="img"
-            aria-label={t.home.networkTitle}
-          >
-            <rect width="1000" height="500" fill="#0b1220" />
-            <path
-              d="M120 140c40-30 90-40 140-20 55 22 70 18 120-10 45-25 95-20 130 10 30 25 70 35 110 20 50-18 95 5 130 35 40 35 85 40 130 15 35-20 75-15 100 15v40c-45 10-85-5-120-25-40-22-85-15-120 10-45 30-95 25-140-5-40-25-85-20-120 8-45 35-100 30-150-5-35-25-80-20-110 10-20 20-55 25-80 5z"
-              fill="#1e293b"
-              opacity="0.9"
-            />
-            <path
-              d="M180 280c55-15 100 5 140 35 35 25 80 30 120 10 50-25 100-10 140 20 30 22 75 25 110 5 40-22 90-10 120 25v35c-55 5-100-20-145-35-40-12-85 0-120 25-45 30-100 20-145-5-40-22-90-15-125 15-25 20-65 18-95-5z"
-              fill="#1e293b"
-              opacity="0.75"
-            />
-            {NETWORK_COUNTRIES.map((country) => (
-              <g key={country.code} className="rq-map-pin">
-                <circle
-                  cx={country.x}
-                  cy={country.y}
-                  r="10"
-                  fill="rgba(249,115,22,0.2)"
-                />
-                <circle cx={country.x} cy={country.y} r="4.5" fill="#f97316" />
-                <title>{country.name}</title>
-              </g>
-            ))}
-          </svg>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {NETWORK_COUNTRIES.map((country) => (
-              <Badge key={country.code} variant="muted">
-                {country.name}
-              </Badge>
-            ))}
           </div>
         </div>
       </section>

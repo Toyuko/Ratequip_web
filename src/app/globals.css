@@ -178,7 +178,12 @@ html[data-locale="zh"] body {
   inset: 0;
   opacity: 0;
   animation: rq-hero-crossfade 18s ease-in-out infinite;
-  transform: scale(1.06);
+}
+
+.rq-hero-montage__slide img {
+  object-fit: cover;
+  filter: blur(3px) saturate(0.7) brightness(0.45);
+  transform: scale(1.12);
 }
 
 .rq-hero-montage__slide:nth-child(1) {
@@ -200,14 +205,14 @@ html[data-locale="zh"] body {
   background:
     linear-gradient(
       105deg,
-      rgba(8, 12, 20, 0.88) 0%,
-      rgba(8, 12, 20, 0.72) 38%,
-      rgba(8, 12, 20, 0.45) 68%,
-      rgba(8, 12, 20, 0.28) 100%
+      rgba(6, 10, 18, 0.94) 0%,
+      rgba(6, 10, 18, 0.88) 42%,
+      rgba(6, 10, 18, 0.78) 72%,
+      rgba(6, 10, 18, 0.7) 100%
     ),
     radial-gradient(
       circle at 78% 28%,
-      rgba(249, 115, 22, 0.18),
+      rgba(249, 115, 22, 0.12),
       transparent 42%
     );
 }
@@ -215,21 +220,18 @@ html[data-locale="zh"] body {
 @keyframes rq-hero-crossfade {
   0% {
     opacity: 0;
-    transform: scale(1.06);
   }
   8% {
     opacity: 1;
   }
   30% {
     opacity: 1;
-    transform: scale(1);
   }
   38% {
     opacity: 0;
   }
   100% {
     opacity: 0;
-    transform: scale(1.06);
   }
 }
 
