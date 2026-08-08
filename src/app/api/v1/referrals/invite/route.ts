@@ -2,6 +2,10 @@ import { NextRequest } from "next/server";
 import { sendReferralInvite } from "@/lib/actions/referrals";
 import { ok, err } from "@/lib/api/envelope";
 import { apiResponse, handleOptions } from "@/lib/api/respond";
+import {
+  isInvitationReason,
+  type InvitationReason,
+} from "@/lib/referrals/invitation-reasons";
 import { REFERRAL_KINDS, type ReferralKind } from "@/lib/referrals/types";
 
 export function OPTIONS(req: NextRequest) {
@@ -15,6 +19,9 @@ export async function POST(req: NextRequest) {
     recipientName?: string;
     companyName?: string;
     personalNote?: string;
+    invitationReason?: string;
+    inviterName?: string;
+    inviterEmail?: string;
   };
   try {
     body = await req.json();
@@ -29,12 +36,23 @@ export async function POST(req: NextRequest) {
     return apiResponse(req, err("Email is required"));
   }
 
+  let invitationReason: InvitationReason | undefined;
+  if (body.invitationReason) {
+    if (!isInvitationReason(body.invitationReason)) {
+      return apiResponse(req, err("Invalid invitation reason"));
+    }
+    invitationReason = body.invitationReason;
+  }
+
   const result = await sendReferralInvite({
     kind: body.kind as ReferralKind,
     email: body.email,
     recipientName: body.recipientName,
     companyName: body.companyName,
     personalNote: body.personalNote,
+    invitationReason,
+    inviterName: body.inviterName,
+    inviterEmail: body.inviterEmail,
   });
 
   if (!result.ok) {

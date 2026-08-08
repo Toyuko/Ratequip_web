@@ -10,11 +10,16 @@ import { config } from "dotenv";
 import { resolve } from "node:path";
 import { mintClaimInviteToken } from "../src/lib/organic-growth/claim-token";
 import { renderClaimInviteEmail } from "../src/lib/organic-growth/claim-invite-email";
+import {
+  renderClaimDecisionEmail,
+  renderClaimOpsAlertEmail,
+  renderClaimSubmittedEmail,
+} from "../src/lib/organic-growth/claim-lifecycle-emails";
+import { renderQuoteSubmittedEmail } from "../src/lib/marketplace/quote-email";
 import { createEmailInvite, markInviteSent } from "../src/lib/referrals/store";
 import { renderJoinInviteEmail } from "../src/lib/referrals/join-invite-email";
 import { sendTransactionalEmail } from "../src/lib/email";
 import {
-  emailLink,
   emailParagraph,
   renderEmailDocument,
 } from "../src/lib/email-template";
@@ -76,8 +81,9 @@ function cases(): Case[] {
     emailPreferencesUrl: `${baseUrl}/email/preferences/${encodeURIComponent(claimToken)}`,
     supportUrl: `${baseUrl}/contact`,
     recipientName: "Alex Supplier",
-    inviterDisplay: "A RateQuip user",
-    personalNote: "Platform email test — claim invitation with a live claim link.",
+    inviterDisplay: "Jordan Lee at PackLine Nordic",
+    personalNote:
+      "Hi Alex — we added NordicFill so buyers in our network can find you on RateQuip. Claim the free profile and take a look at the opportunities.",
   });
 
   const invite = createEmailInvite({
@@ -85,9 +91,12 @@ function cases(): Case[] {
     email: to.includes("@") ? to : "delivered@resend.dev",
     recipientName: "Email Tester",
     companyName,
-    personalNote: "Platform email test — referral invite with a live join link.",
-    inviterName: "RateQuip Ops",
-    inviterOrg: "RateQuip",
+    invitationReason: "industry_connection",
+    personalNote:
+      "Hi — we thought your business would be a good fit for the RateQuip network and we’d like to connect with you there. We’ve sent this invitation so you can take a look at the platform and the opportunities available.",
+    inviterName: "Alex Bergman",
+    inviterOrg: companyName,
+    inviterEmail: "ops@ratequip.com",
   });
   const sentInvite = markInviteSent(invite.id) ?? invite;
 
@@ -97,21 +106,55 @@ function cases(): Case[] {
 
   const referral = renderJoinInviteEmail({
     kindLabel: "Partner invite",
-    title: `${companyName} invited you to RateQuip`,
-    body: `${companyName} invited you to RateQuip — claim your free company profile, get discovered by industrial buyers, rate and compare suppliers, and grow real opportunities with partners who already trust the network.`,
+    title: `${companyName} has invited you to connect on RateQuip`,
     joinUrl,
     signUpUrl,
-    inviterName: "RateQuip Ops",
+    inviterName: "Alex Bergman",
     inviterOrg: companyName,
     companyName,
+    invitationReason: "industry_connection",
     personalNote:
-      "We’d love you on RateQuip so we can compare suppliers together and open warm introductions in our network.",
+      "Hi — we thought your business would be a good fit for the RateQuip network and we’d like to connect with you there. We’ve sent this invitation so you can take a look at the platform and the opportunities available.",
     recipientName: "Email Tester",
     supportUrl: `${baseUrl}/contact`,
   });
 
   const profileUrl = `${baseUrl}/companies/${companySlug}`;
   const adminUrl = `${baseUrl}/dashboard/admin`;
+
+  const claimSubmitted = renderClaimSubmittedEmail({
+    companyName,
+    profileUrl,
+    claimFormUrl: `${baseUrl}/companies/claim`,
+  });
+  const claimOps = renderClaimOpsAlertEmail({
+    companyName,
+    claimant: "tester@example.com",
+    claimId,
+    notes: "Platform email test evidence notes.",
+    adminUrl,
+    profileUrl,
+  });
+  const claimApproved = renderClaimDecisionEmail({
+    companyName,
+    approved: true,
+    profileUrl,
+    supportUrl: `${baseUrl}/contact`,
+  });
+  const claimRejected = renderClaimDecisionEmail({
+    companyName,
+    approved: false,
+    profileUrl,
+    supportUrl: `${baseUrl}/contact`,
+  });
+  const quoteEmail = renderQuoteSubmittedEmail({
+    requestId,
+    amount: 12500,
+    leadTimeDays: 14,
+    notes: "Includes commissioning support.",
+    requestUrl: `${baseUrl}/requests/${requestId}`,
+    supplierLabel: "NordicFill Systems",
+  });
 
   return [
     {
@@ -122,105 +165,50 @@ function cases(): Case[] {
     },
     {
       name: "claim_submitted_claimer",
-      subject: `[TEST] We received your claim for ${companyName}`,
-      html: renderEmailDocument({
-        preheader: `Your claim for ${companyName} is queued for review.`,
-        heading: "Claim received",
-        bodyHtml: `
-          ${emailParagraph("Thanks — your company profile claim is queued for review.")}
-          ${emailParagraph(`Company: <strong style="color:#0F172A">${companyName}</strong>`)}
-          ${emailParagraph(
-            `${emailLink(profileUrl, "View the public profile")} · ${emailLink(`${baseUrl}/companies/claim`, "Open claim form")}`,
-          )}
-          ${emailParagraph("We will email you when the claim is approved or rejected.")}
-        `.trim(),
-        cta: { label: "View the public profile", href: profileUrl },
-      }),
+      subject: `[TEST] ${claimSubmitted.subject}`,
+      html: claimSubmitted.html,
       tag: "claim_submitted",
     },
     {
       name: "claim_ops_alert",
-      subject: `[TEST] New company claim: ${companyName}`,
-      html: renderEmailDocument({
-        preheader: `New claim submitted for ${companyName}`,
-        heading: "New company claim",
-        bodyHtml: `
-          ${emailParagraph("A new company claim was submitted.")}
-          ${emailParagraph(`Company: <strong style="color:#0F172A">${companyName}</strong>`)}
-          ${emailParagraph("Claimant: tester@example.com")}
-          ${emailParagraph(`Claim id: ${claimId}`)}
-          ${emailParagraph("Notes: Platform email test evidence notes.")}
-          ${emailParagraph(
-            `${emailLink(adminUrl, "Open admin")} · ${emailLink(profileUrl, "View profile")}`,
-          )}
-        `.trim(),
-        cta: { label: "Open admin", href: adminUrl },
-      }),
+      subject: `[TEST] ${claimOps.subject}`,
+      html: claimOps.html,
       tag: "claim_ops_alert",
     },
     {
       name: "claim_approved",
-      subject: `[TEST] Your claim for ${companyName} was approved`,
-      html: renderEmailDocument({
-        preheader: `Your claim for ${companyName} was approved.`,
-        heading: "Claim approved",
-        bodyHtml: `
-          ${emailParagraph(
-            `Your company profile claim for <strong style="color:#0F172A">${companyName}</strong> was <strong style="color:#0F172A">approved</strong>.`,
-          )}
-          ${emailParagraph(
-            `You can manage the profile here: ${emailLink(profileUrl, "Open company profile")}`,
-          )}
-        `.trim(),
-        cta: { label: "Manage profile", href: profileUrl },
-      }),
+      subject: `[TEST] ${claimApproved.subject}`,
+      html: claimApproved.html,
       tag: "claim_decision",
     },
     {
       name: "claim_rejected",
-      subject: `[TEST] Update on your claim for ${companyName}`,
-      html: renderEmailDocument({
-        preheader: `Your claim for ${companyName} was rejected.`,
-        heading: "Claim update",
-        bodyHtml: `
-          ${emailParagraph(
-            `Your company profile claim for <strong style="color:#0F172A">${companyName}</strong> was <strong style="color:#0F172A">rejected</strong>.`,
-          )}
-          ${emailParagraph(
-            `If you believe this was in error, contact support via ${emailLink(`${baseUrl}/contact`, "Contact")}.`,
-          )}
-        `.trim(),
-        cta: { label: "Contact support", href: `${baseUrl}/contact` },
-      }),
+      subject: `[TEST] ${claimRejected.subject}`,
+      html: claimRejected.html,
       tag: "claim_decision",
     },
     {
       name: "moderation_ops",
-      subject: `[TEST] Moderation approved: claim`,
+      subject: `[TEST] Moderation approved: claim · ${companyName}`,
       html: renderEmailDocument({
-        preheader: `claim ${claimId} was approved`,
+        preheader: `claim for ${companyName} was approved`,
         heading: "Moderation approved",
-        bodyHtml: emailParagraph(
-          `claim ${claimId} (${companyName}) was approved by admin@ratequip.com.`,
-        ),
+        bodyHtml: `
+          ${emailParagraph(
+            `<strong style="color:#0F172A">claim</strong> ${claimId} (<strong style="color:#0F172A">${companyName}</strong>) was <strong style="color:#0F172A">approved</strong> by admin@ratequip.com.`,
+          )}
+          ${emailParagraph(
+            "If this was a company claim, the business can now manage their profile and get discovered on RateQuip.",
+          )}
+        `.trim(),
         cta: { label: "Open admin", href: adminUrl },
       }),
       tag: "moderation_ops",
     },
     {
       name: "quote_submitted",
-      subject: `[TEST] New quote on RFQ ${requestId}`,
-      html: renderEmailDocument({
-        preheader: `New quote of 12500 on RFQ ${requestId}`,
-        heading: "New quote received",
-        bodyHtml: `
-          ${emailParagraph(
-            'A supplier submitted a quote of <strong style="color:#0F172A">12500</strong> (14 days lead time).',
-          )}
-          ${emailParagraph("Includes commissioning support.")}
-        `.trim(),
-        cta: { label: "View RFQs", href: `${baseUrl}/requests` },
-      }),
+      subject: `[TEST] ${quoteEmail.subject}`,
+      html: quoteEmail.html,
       tag: "quote_submitted",
     },
     {

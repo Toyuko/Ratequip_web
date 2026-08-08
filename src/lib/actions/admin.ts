@@ -10,10 +10,10 @@ import {
   sendTransactionalEmail,
 } from "@/lib/email";
 import {
-  emailLink,
   emailParagraph,
   renderEmailDocument,
 } from "@/lib/email-template";
+import { renderClaimDecisionEmail } from "@/lib/organic-growth/claim-lifecycle-emails";
 
 export async function moderateEntity(input: {
   entityType: "review" | "claim";
@@ -49,13 +49,20 @@ export async function moderateEntity(input: {
 
     await sendTransactionalEmail({
       to: opsEmail(),
-      subject: `Moderation ${input.decision}: ${input.entityType}`,
+      subject: `Moderation ${input.decision}: ${input.entityType} · ${companyLabel}`,
       html: renderEmailDocument({
-        preheader: `${input.entityType} ${input.entityId} was ${input.decision}`,
+        preheader: `${input.entityType} for ${companyLabel} was ${input.decision}`,
         heading: `Moderation ${input.decision}`,
-        bodyHtml: emailParagraph(
-          `<strong style="color:#0F172A">${input.entityType}</strong> ${input.entityId} (${companyLabel}) was <strong style="color:#0F172A">${input.decision}</strong> by ${actor}.`,
-        ),
+        bodyHtml: `
+          ${emailParagraph(
+            `<strong style="color:#0F172A">${input.entityType}</strong> ${input.entityId} (<strong style="color:#0F172A">${companyLabel}</strong>) was <strong style="color:#0F172A">${input.decision}</strong> by ${actor}.`,
+          )}
+          ${emailParagraph(
+            input.decision === "approved"
+              ? "If this was a company claim, the business can now manage their profile and get discovered on RateQuip."
+              : "If this was a company claim, the claimant has been notified with next-step guidance.",
+          )}
+        `.trim(),
         cta: { label: "Open admin", href: `${baseUrl}/admin` },
       }),
       tags: [
@@ -69,33 +76,16 @@ export async function moderateEntity(input: {
       "claimantEmail" in result &&
       looksLikeEmail(result.claimantEmail)
     ) {
-      const approved = input.decision === "approved";
+      const decision = renderClaimDecisionEmail({
+        companyName: String(companyLabel),
+        approved: input.decision === "approved",
+        profileUrl,
+        supportUrl: `${baseUrl}/contact`,
+      });
       await sendTransactionalEmail({
         to: result.claimantEmail,
-        subject: approved
-          ? `Your claim for ${companyLabel} was approved`
-          : `Update on your claim for ${companyLabel}`,
-        html: renderEmailDocument({
-          preheader: `Your claim for ${companyLabel} was ${input.decision}.`,
-          heading: approved ? "Claim approved" : "Claim update",
-          bodyHtml: `
-            ${emailParagraph(
-              `Your company profile claim for <strong style="color:#0F172A">${companyLabel}</strong> was <strong style="color:#0F172A">${input.decision}</strong>.`,
-            )}
-            ${
-              approved
-                ? emailParagraph(
-                    `You can manage the profile here: ${emailLink(profileUrl, "Open company profile")}`,
-                  )
-                : emailParagraph(
-                    `If you believe this was in error, reply to this email or contact support via ${emailLink(`${baseUrl}/contact`, "Contact")}.`,
-                  )
-            }
-          `.trim(),
-          cta: approved
-            ? { label: "Manage profile", href: profileUrl }
-            : { label: "Contact support", href: `${baseUrl}/contact` },
-        }),
+        subject: decision.subject,
+        html: decision.html,
         tags: [
           { name: "category", value: "claim_decision" },
           { name: "decision", value: input.decision },

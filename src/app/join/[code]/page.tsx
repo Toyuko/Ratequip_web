@@ -1,42 +1,47 @@
 import Link from "next/link";
+import { InviteReplyPanel } from "@/components/referrals/invite-reply-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { resolveReferralCode } from "@/lib/actions/referrals";
+import {
+  invitationReasonExplanation,
+  INVITATION_REASON_LABELS,
+} from "@/lib/referrals/invitation-reasons";
 import { referralCopy } from "@/lib/referrals/share";
 import type { ReferralKind } from "@/lib/referrals/types";
 
-export const metadata = { title: "Join RateQuip" };
+export const metadata = { title: "Your RateQuip invitation" };
 
 const KIND_CTAS: Record<
   ReferralKind,
   {
     primaryHref: (code: string) => string;
-    primaryLabel: string;
+    primaryLabel: (org: string) => string;
     secondaryHref: string;
     secondaryLabel: string;
   }
 > = {
   join_platform: {
     primaryHref: (code) => `/sign-up?ref=${code}`,
-    primaryLabel: "Accept invite — join free",
+    primaryLabel: (org) => `Accept ${org}'s invitation & explore RateQuip`,
     secondaryHref: "/sign-in",
-    secondaryLabel: "Sign in",
+    secondaryLabel: "Already on RateQuip? Sign in",
   },
   join_company: {
     primaryHref: (code) => `/sign-up?ref=${code}&intent=join_company`,
-    primaryLabel: "Join organisation",
+    primaryLabel: (org) => `Join ${org} on RateQuip`,
     secondaryHref: "/onboarding",
     secondaryLabel: "Continue onboarding",
   },
   refer_company: {
     primaryHref: (code) => `/companies/search?ref=${code}`,
-    primaryLabel: "Find or add company",
+    primaryLabel: () => "Claim your free company profile",
     secondaryHref: "/companies/claim",
-    secondaryLabel: "Claim a profile",
+    secondaryLabel: "Open claim form",
   },
   refer_contractor: {
     primaryHref: (code) => `/sign-up?ref=${code}&role=contractor`,
-    primaryLabel: "Join as contractor",
+    primaryLabel: () => "Join as a service provider",
     secondaryHref: "/onboarding",
     secondaryLabel: "Start onboarding",
   },
@@ -51,7 +56,6 @@ export default async function JoinReferralPage({
 }) {
   const { code: rawCode } = await params;
   const sp = await searchParams;
-  // Path params are decoded once by Next; keep raw for signed tokens (case-sensitive).
   const result = await resolveReferralCode(rawCode);
 
   if (!result.ok) {
@@ -77,67 +81,113 @@ export default async function JoinReferralPage({
       ? (sp.kind as ReferralKind)
       : invite.kind;
 
+  const fromOrg = invite.companyName || invite.inviterOrg || "your partner";
+  const fromPerson =
+    invite.inviterName && !invite.inviterName.includes("@")
+      ? invite.inviterName
+      : fromOrg;
+
   const copy = referralCopy(kind, {
     inviterName: invite.inviterName,
     inviterOrg: invite.inviterOrg,
     companyName: invite.companyName,
+    invitationReason: invite.invitationReason,
   });
   const cta = KIND_CTAS[kind];
-
-  const fromOrg = invite.companyName || invite.inviterOrg;
+  const reasonLabel = invite.invitationReason
+    ? INVITATION_REASON_LABELS[invite.invitationReason]
+    : null;
+  const belief = invitationReasonExplanation(
+    invite.invitationReason,
+    fromOrg,
+  );
+  const joinKey = invite.token || invite.code;
+  const canReply = Boolean(invite.canReplyToInviter);
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-16">
-      <Badge variant="orange">Partner invite</Badge>
-      <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
+    <div className="mx-auto max-w-xl px-4 py-14">
+      <Badge variant="orange">Opportunity invitation</Badge>
+      <h1 className="mt-3 text-3xl font-bold tracking-tight text-[var(--rq-ink)]">
         {copy.title}
       </h1>
-      <p className="mt-3 text-[var(--rq-slate)]">{copy.text}</p>
+      <p className="mt-3 text-[var(--rq-slate)]">{belief}</p>
 
-      <div className="mt-5 rounded-lg border border-[var(--rq-border)] border-l-4 border-l-[var(--rq-orange)] bg-[var(--rq-card)] px-4 py-3">
+      <div
+        id="why"
+        className="mt-6 rounded-lg border border-[var(--rq-border)] border-l-4 border-l-[var(--rq-orange)] bg-[var(--rq-card)] px-4 py-4"
+      >
         <p className="text-xs font-bold uppercase tracking-wide text-[var(--rq-orange)]">
-          Why {fromOrg || "they"} invited you
+          {reasonLabel
+            ? `Why ${fromOrg} invited you · ${reasonLabel}`
+            : `Why ${fromOrg} invited you`}
         </p>
         {invite.personalNote ? (
-          <p className="mt-2 text-sm italic text-[var(--rq-ink)]">
-            “{invite.personalNote}”
-          </p>
+          <>
+            <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[var(--rq-muted)]">
+              Personal message from {fromPerson}
+            </p>
+            <p className="mt-2 text-base italic text-[var(--rq-ink)]">
+              “{invite.personalNote}”
+            </p>
+          </>
         ) : (
-          <p className="mt-2 text-sm text-[var(--rq-slate)]">
-            This is a deliberate invite to connect on RateQuip — claim your free
-            profile, get discovered by industrial buyers, and grow opportunities
-            with partners who already trust the network.
-          </p>
+          <p className="mt-2 text-sm text-[var(--rq-slate)]">{belief}</p>
         )}
+        <p className="mt-3 text-sm text-[var(--rq-slate)]">
+          This is a business introduction from {fromOrg} — not a random account
+          activation. They want to connect with you through RateQuip.
+        </p>
       </div>
 
-      <ul className="mt-5 space-y-2 text-sm text-[var(--rq-slate)]">
-        <li>✓ Free company profile you control</li>
-        <li>✓ Get discovered by verified buyers and partners</li>
-        <li>✓ Rate, compare and connect with trusted suppliers</li>
-        <li>✓ Win more work through introductions and RFQs</li>
-      </ul>
+      <section className="mt-8 space-y-3">
+        <h2 className="text-lg font-semibold text-[var(--rq-ink)]">
+          What is RateQuip?
+        </h2>
+        <p className="text-sm leading-relaxed text-[var(--rq-slate)]">
+          RateQuip is a B2B equipment and industry platform designed to connect
+          buyers, suppliers, manufacturers and industry partners — helping
+          businesses discover equipment, receive relevant opportunities, respond
+          to enquiries/RFQs, build industry connections and generate new
+          business.
+        </p>
+      </section>
 
-      <div className="mt-4 flex flex-wrap gap-2 text-sm text-[var(--rq-muted)]">
-        {invite.inviterName ? <span>From {invite.inviterName}</span> : null}
-        {invite.inviterOrg ? <span>· {invite.inviterOrg}</span> : null}
-        {invite.companyName ? <span>· {invite.companyName}</span> : null}
-      </div>
+      <section className="mt-8 space-y-3">
+        <h2 className="text-lg font-semibold text-[var(--rq-ink)]">Why join?</h2>
+        <ul className="space-y-2 text-sm text-[var(--rq-slate)]">
+          <li>✓ Claim and manage your company profile</li>
+          <li>✓ Showcase your products, equipment and capabilities</li>
+          <li>✓ Connect with {fromOrg} and other industry businesses</li>
+          <li>✓ Receive relevant customer enquiries and RFQs</li>
+          <li>✓ Discover potential referral and partnership opportunities</li>
+          <li>✓ Build visibility with buyers looking for equipment and solutions</li>
+        </ul>
+      </section>
 
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Button asChild>
-          <Link href={cta.primaryHref(invite.code)}>{cta.primaryLabel}</Link>
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <Button asChild size="lg">
+          <Link href={cta.primaryHref(joinKey)}>
+            {cta.primaryLabel(fromOrg)}
+          </Link>
         </Button>
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" size="lg">
           <Link href={cta.secondaryHref}>{cta.secondaryLabel}</Link>
         </Button>
       </div>
 
+      <div className="mt-8">
+        <InviteReplyPanel
+          inviteCode={joinKey}
+          orgLabel={fromOrg}
+          canReply={canReply}
+        />
+      </div>
+
       <p className="mt-6 text-xs text-[var(--rq-muted)]">
         Valid invite
-        {invite.emailMasked ? ` for ${invite.emailMasked}` : ""}. After you
-        join, complete the AI company questionnaire so RateQuip can suggest
-        relevant suppliers and partners.
+        {invite.emailMasked ? ` for ${invite.emailMasked}` : ""}. No sign-up is
+        required to read why you were invited or to send {fromOrg} a quick
+        question.
       </p>
     </div>
   );

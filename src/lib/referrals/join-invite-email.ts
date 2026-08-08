@@ -1,30 +1,31 @@
 import {
-  emailBenefits,
+  emailOpportunityBenefits,
+  emailWhatIsRateQuip,
+  escapeHtml,
+} from "@/lib/email-copy";
+import {
   emailCallout,
   emailLink,
   emailMeta,
   emailParagraph,
   renderEmailDocument,
 } from "@/lib/email-template";
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+import {
+  invitationReasonExplanation,
+  INVITATION_REASON_LABELS,
+  type InvitationReason,
+} from "@/lib/referrals/invitation-reasons";
 
 export function renderJoinInviteEmail(vars: {
   kindLabel: string;
   title: string;
-  body: string;
   joinUrl: string;
   signUpUrl: string;
   inviterName?: string;
   inviterOrg?: string;
   companyName?: string;
   personalNote?: string;
+  invitationReason?: InvitationReason;
   supportUrl: string;
   recipientName?: string;
 }) {
@@ -33,74 +34,73 @@ export function renderJoinInviteEmail(vars: {
   const companyName = vars.companyName?.trim();
   const personalNote = vars.personalNote?.trim();
   const recipientName = vars.recipientName?.trim();
+  const invitationReason = vars.invitationReason;
 
-  const who =
-    [inviterName, inviterOrg || companyName].filter(Boolean).join(" at ") ||
-    companyName ||
-    "A RateQuip partner";
-  const orgLabel = companyName || inviterOrg || "their organisation";
+  const orgLabel = companyName || inviterOrg || "A RateQuip partner";
+  const fromPerson =
+    inviterName && !inviterName.includes("@") ? inviterName : orgLabel;
   const greeting = recipientName
-    ? `Hello ${escapeHtml(recipientName)},`
+    ? `Hey ${escapeHtml(recipientName)},`
     : "Hello,";
 
-  const whyBody = personalNote
-    ? `<p style="margin:0 0 10px"><em style="color:#0F172A">“${escapeHtml(personalNote)}”</em></p>
-       <p style="margin:0;font-size:14px;line-height:1.55;color:#334155">${escapeHtml(who)} sent this so you know exactly why you’re here — not a random add, a deliberate invite to connect on RateQuip.</p>`
-    : `<p style="margin:0">${escapeHtml(who)} wants you on RateQuip so you can collaborate with confidence: build reputation, get discovered by industrial buyers, compare suppliers, and grow opportunities together — far more than “just another RFQ tool”.</p>`;
+  const belief = invitationReasonExplanation(invitationReason, orgLabel);
+  const reasonLabel = invitationReason
+    ? INVITATION_REASON_LABELS[invitationReason]
+    : null;
 
-  const benefits = [
-    `<strong style="color:#0F172A">Claim your free company profile</strong> and control how buyers see you`,
-    `<strong style="color:#0F172A">Get discovered</strong> by verified industrial buyers and partners`,
-    `<strong style="color:#0F172A">Rate, compare and connect</strong> with suppliers you can trust`,
-    `<strong style="color:#0F172A">Win more work</strong> through warm introductions, RFQs and pipeline visibility`,
-  ];
+  const messageBody = personalNote
+    ? `<p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#EA580C">Personal message from ${escapeHtml(fromPerson)}</p>
+       <p style="margin:0;font-size:16px;line-height:1.6;color:#0F172A"><em>“${escapeHtml(personalNote)}”</em></p>`
+    : `<p style="margin:0;font-size:15px;line-height:1.6;color:#0F172A">${escapeHtml(belief)}</p>`;
 
   const subject = vars.title;
-  const preheader = personalNote
-    ? `${orgLabel} invited you — see why, then join free on RateQuip.`
-    : `${who} invited you to RateQuip — claim your free profile and unlock buyer discovery.`;
+  const preheader = `${orgLabel} invited you to connect on RateQuip — see why, what you gain, and explore the opportunity.`;
+  const ctaLabel = `Accept ${orgLabel}'s invitation & explore RateQuip`;
 
   const html = renderEmailDocument({
     preheader,
     heading: vars.title,
     bodyHtml: `
       ${emailParagraph(greeting)}
-      ${emailParagraph(vars.body)}
+      ${emailParagraph(
+        `<strong style="color:#0F172A">${escapeHtml(orgLabel)}</strong> has invited you to connect on RateQuip.`,
+      )}
+      ${emailParagraph(escapeHtml(belief))}
       ${emailCallout({
-        label: `Why ${escapeHtml(orgLabel)} invited you`,
-        bodyHtml: whyBody,
+        label: reasonLabel
+          ? `Why they invited you · ${escapeHtml(reasonLabel)}`
+          : "Why they invited you",
+        bodyHtml: messageBody,
       })}
+      ${emailWhatIsRateQuip()}
+      ${emailParagraph(`<strong style="color:#0F172A">Why join?</strong>`)}
+      ${emailOpportunityBenefits(orgLabel)}
       ${emailParagraph(
-        `<strong style="color:#0F172A">What you unlock when you accept</strong> — free to start:`,
+        `Have a question for ${escapeHtml(orgLabel)} before you join? Open the invitation page to send them a quick reply — no account required.`,
       )}
-      ${emailBenefits(benefits)}
-      ${emailParagraph(
-        "Accept below to create your account with this invite. It takes a minute — and you’ll immediately see the opportunity they opened for you.",
+      ${emailMeta(
+        [
+          fromPerson !== orgLabel
+            ? `Invited by: <strong style="color:#0F172A">${escapeHtml(fromPerson)}</strong> at <strong style="color:#0F172A">${escapeHtml(orgLabel)}</strong>`
+            : `Invited by: <strong style="color:#0F172A">${escapeHtml(orgLabel)}</strong>`,
+          reasonLabel
+            ? `Invitation reason: <strong style="color:#0F172A">${escapeHtml(reasonLabel)}</strong>`
+            : null,
+          `Invite type: ${escapeHtml(vars.kindLabel)}`,
+        ]
+          .filter(Boolean)
+          .join("<br/>"),
       )}
-      ${
-        inviterName || companyName || inviterOrg
-          ? emailMeta(
-              [
-                inviterName
-                  ? `Invited by: <strong style="color:#0F172A">${escapeHtml(inviterName)}</strong>`
-                  : null,
-                companyName || inviterOrg
-                  ? `Company: <strong style="color:#0F172A">${escapeHtml(companyName || inviterOrg || "")}</strong>`
-                  : null,
-                `Invite type: ${escapeHtml(vars.kindLabel)}`,
-              ]
-                .filter(Boolean)
-                .join("<br/>"),
-            )
-          : emailMeta(`Invite type: ${escapeHtml(vars.kindLabel)}`)
-      }
     `.trim(),
-    cta: { label: "Accept invite — join free", href: vars.joinUrl },
+    cta: { label: ctaLabel, href: vars.signUpUrl },
     secondaryLink: {
-      label: "Or create an account with this referral",
-      href: vars.signUpUrl,
+      label: `View why ${orgLabel} invited you (no sign-up required)`,
+      href: vars.joinUrl,
     },
-    footerNote: emailLink(vars.supportUrl, "Questions? Contact support"),
+    footerNote: emailLink(
+      vars.supportUrl,
+      "Questions about RateQuip? Contact support",
+    ),
   });
 
   return { subject, html };

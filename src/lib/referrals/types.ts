@@ -1,3 +1,5 @@
+import type { InvitationReason } from "./invitation-reasons";
+
 export const REFERRAL_KINDS = [
   "join_platform",
   "join_company",
@@ -40,8 +42,16 @@ export type ReferralInvite = {
   recipientName?: string;
   companyName?: string;
   personalNote?: string;
+  invitationReason?: InvitationReason;
   inviterName?: string;
   inviterOrg?: string;
+  /**
+   * Inviter contact for reply routing. Prefer omitting from list UIs;
+   * use `canReplyToInviter` for invitee-facing pages.
+   */
+  inviterEmail?: string;
+  /** True when the invitee can message the inviter before joining. */
+  canReplyToInviter?: boolean;
   channel: ReferralChannel;
   createdAt: string;
   updatedAt: string;

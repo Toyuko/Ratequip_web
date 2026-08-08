@@ -12,6 +12,11 @@ import {
   sendReferralInvite,
   trackReferralShare,
 } from "@/lib/actions/referrals";
+import {
+  INVITATION_REASON_LABELS,
+  INVITATION_REASONS,
+  type InvitationReason,
+} from "@/lib/referrals/invitation-reasons";
 import type {
   ReferralInvite,
   ReferralKind,
@@ -22,7 +27,7 @@ const KINDS: Array<{ id: ReferralKind; title: string; body: string }> = [
   {
     id: "join_platform",
     title: "Invite to RateQuip",
-    body: "Invite a partner and tell them why — so the email feels like an opportunity, not a mystery.",
+    body: "Introduce a partner to a business opportunity — with a clear reason and personal message.",
   },
   {
     id: "join_company",
@@ -58,6 +63,10 @@ export function ShareInvitePanel({
   const [email, setEmail] = useState("");
   const [recipientName, setRecipientName] = useState("");
   const [companyName, setCompanyName] = useState(defaultCompanyName);
+  const [inviterName, setInviterName] = useState("");
+  const [inviterEmail, setInviterEmail] = useState("");
+  const [invitationReason, setInvitationReason] =
+    useState<InvitationReason>("industry_connection");
   const [personalNote, setPersonalNote] = useState("");
   const [share, setShare] = useState<ReferralShareBundle | null>(null);
   const [invites, setInvites] = useState<ReferralInvite[]>([]);
@@ -82,21 +91,25 @@ export function ShareInvitePanel({
         getOrCreateShareLink({
           kind,
           companyName: companyName.trim() || undefined,
+          invitationReason,
+          personalNote: personalNote.trim() || undefined,
         }),
         listReferralInvites(),
       ]);
       if (link.ok) setShare(link.share);
       if (listed.ok) setInvites(listed.invites);
     });
-    // Refresh share link when kind changes; company name edits use refresh button / send.
+    // Refresh share link when kind/reason changes; note/company edits use refresh / send.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind]);
+  }, [kind, invitationReason]);
 
   function refreshShare() {
     startTransition(async () => {
       const link = await getOrCreateShareLink({
         kind,
         companyName: companyName.trim() || undefined,
+        invitationReason,
+        personalNote: personalNote.trim() || undefined,
       });
       if (!link.ok) {
         setMessage(link.message);
@@ -115,6 +128,9 @@ export function ShareInvitePanel({
         recipientName: recipientName.trim() || undefined,
         companyName: companyName.trim() || undefined,
         personalNote: personalNote.trim() || undefined,
+        invitationReason,
+        inviterName: inviterName.trim() || undefined,
+        inviterEmail: inviterEmail.trim() || undefined,
       });
       if (!result.ok) {
         setMessage(result.message);
@@ -243,27 +259,71 @@ export function ShareInvitePanel({
           kind === "join_company" ||
           kind === "join_platform") && (
           <div>
-            <Label htmlFor="ref-company">Company name</Label>
+            <Label htmlFor="ref-company">Your company name</Label>
             <Input
               id="ref-company"
               className="mt-1"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Acme Packaging"
+              placeholder="NordicFill Systems"
             />
           </div>
         )}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="ref-inviter-name">Your name (shown as inviter)</Label>
+            <Input
+              id="ref-inviter-name"
+              className="mt-1"
+              value={inviterName}
+              onChange={(e) => setInviterName(e.target.value)}
+              placeholder="Alex Bergman"
+            />
+          </div>
+          <div>
+            <Label htmlFor="ref-inviter-email">Your email (for their replies)</Label>
+            <Input
+              id="ref-inviter-email"
+              type="email"
+              className="mt-1"
+              value={inviterEmail}
+              onChange={(e) => setInviterEmail(e.target.value)}
+              placeholder="you@company.com"
+            />
+          </div>
+        </div>
         <div>
-          <Label htmlFor="ref-note">Why you’re inviting them</Label>
+          <Label htmlFor="ref-reason">Reason for invitation</Label>
+          <select
+            id="ref-reason"
+            className="mt-1 flex h-11 w-full rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 py-2 text-sm text-[var(--rq-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rq-orange)]"
+            value={invitationReason}
+            onChange={(e) =>
+              setInvitationReason(e.target.value as InvitationReason)
+            }
+          >
+            {INVITATION_REASONS.map((reason) => (
+              <option key={reason} value={reason}>
+                {INVITATION_REASON_LABELS[reason]}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-[var(--rq-muted)]">
+            Shown in the email so they instantly understand the opportunity.
+          </p>
+        </div>
+        <div>
+          <Label htmlFor="ref-note">Personal message</Label>
           <Textarea
             id="ref-note"
-            className="mt-1 min-h-20"
+            className="mt-1 min-h-24"
             value={personalNote}
             onChange={(e) => setPersonalNote(e.target.value)}
-            placeholder="e.g. We’d like you on RateQuip so we can compare suppliers together and introduce you to buyers in our network."
+            placeholder="Hi Rob, we thought your business would be a good fit for the RateQuip network and we’d like to connect with you there. We’ve sent you this invitation so you can take a look at the platform and the opportunities available."
           />
           <p className="mt-1 text-xs text-[var(--rq-muted)]">
-            Shown prominently in the email so they know exactly why you sent it.
+            Featured prominently as a message from you / your company — not from
+            RateQuip Ops.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -272,7 +332,7 @@ export function ShareInvitePanel({
             disabled={pending || !email.trim()}
             onClick={sendEmail}
           >
-            {pending ? "Sending…" : "Send email invite"}
+            {pending ? "Sending…" : "Send opportunity invite"}
           </Button>
           <Button
             type="button"
@@ -289,7 +349,7 @@ export function ShareInvitePanel({
         <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-medium text-[var(--rq-ink)]">
-              Share to join
+              Share invitation
             </p>
             <Badge variant="muted">code {share.code}</Badge>
           </div>
@@ -342,6 +402,9 @@ export function ShareInvitePanel({
                 <span className="text-[var(--rq-slate)]">
                   {inv.emailMasked ?? inv.code}
                   {inv.companyName ? ` · ${inv.companyName}` : ""}
+                  {inv.invitationReason
+                    ? ` · ${INVITATION_REASON_LABELS[inv.invitationReason]}`
+                    : ""}
                   {" · "}
                   {inv.kind.replace(/_/g, " ")}
                 </span>

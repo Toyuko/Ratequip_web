@@ -1,4 +1,8 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import {
+  isInvitationReason,
+  type InvitationReason,
+} from "./invitation-reasons";
 import type { ReferralInvite, ReferralKind } from "./types";
 import { REFERRAL_KINDS } from "./types";
 
@@ -9,8 +13,10 @@ type InvitePayload = {
   kind: ReferralKind;
   inviterName?: string;
   inviterOrg?: string;
+  inviterEmail?: string;
   companyName?: string;
   personalNote?: string;
+  invitationReason?: InvitationReason;
   emailMasked?: string;
   recipientName?: string;
   status?: ReferralInvite["status"];
@@ -45,8 +51,10 @@ export function mintInviteToken(
     | "kind"
     | "inviterName"
     | "inviterOrg"
+    | "inviterEmail"
     | "companyName"
     | "personalNote"
+    | "invitationReason"
     | "emailMasked"
     | "recipientName"
     | "status"
@@ -62,8 +70,10 @@ export function mintInviteToken(
     kind: invite.kind,
     inviterName: invite.inviterName,
     inviterOrg: invite.inviterOrg,
+    inviterEmail: invite.inviterEmail,
     companyName: invite.companyName,
-    personalNote: invite.personalNote?.slice(0, 280),
+    personalNote: invite.personalNote?.slice(0, 500),
+    invitationReason: invite.invitationReason,
     emailMasked: invite.emailMasked,
     recipientName: invite.recipientName,
     status: invite.status,
@@ -105,6 +115,11 @@ export function verifyInviteToken(token: string): ReferralInvite | null {
     }
     if (typeof raw.exp !== "number" || raw.exp < Date.now()) return null;
 
+    const invitationReason =
+      raw.invitationReason && isInvitationReason(raw.invitationReason)
+        ? raw.invitationReason
+        : undefined;
+
     return {
       id: raw.id,
       code: raw.code || raw.id.slice(0, 10),
@@ -115,8 +130,10 @@ export function verifyInviteToken(token: string): ReferralInvite | null {
       recipientName: raw.recipientName,
       companyName: raw.companyName,
       personalNote: raw.personalNote,
+      invitationReason,
       inviterName: raw.inviterName,
       inviterOrg: raw.inviterOrg,
+      inviterEmail: raw.inviterEmail,
       channel: raw.channel ?? "copy_link",
       createdAt: raw.createdAt,
       updatedAt: raw.createdAt,

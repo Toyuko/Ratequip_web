@@ -29,11 +29,11 @@ import {
   opsEmail,
   sendTransactionalEmail,
 } from "@/lib/email";
+import { renderQuoteSubmittedEmail } from "@/lib/marketplace/quote-email";
 import {
-  emailLink,
-  emailParagraph,
-  renderEmailDocument,
-} from "@/lib/email-template";
+  renderClaimOpsAlertEmail,
+  renderClaimSubmittedEmail,
+} from "@/lib/organic-growth/claim-lifecycle-emails";
 import { validateRfqContent } from "@/lib/rfq/validation";
 
 async function requireMutationActor(): Promise<
@@ -149,23 +149,17 @@ export async function submitQuote(input: {
   if (result.ok) {
     const buyerEmail = jar.get("rq_email")?.value;
     if (looksLikeEmail(buyerEmail)) {
+      const quoteEmail = renderQuoteSubmittedEmail({
+        requestId: input.requestId,
+        amount: input.amount,
+        leadTimeDays: input.leadTimeDays,
+        notes: input.notes,
+        requestUrl: `${publicAppUrl()}/requests/${input.requestId}`,
+      });
       await sendTransactionalEmail({
         to: buyerEmail,
-        subject: `New quote on RFQ ${input.requestId}`,
-        html: renderEmailDocument({
-          preheader: `New quote of ${input.amount} on RFQ ${input.requestId}`,
-          heading: "New quote received",
-          bodyHtml: `
-            ${emailParagraph(
-              `A supplier submitted a quote of <strong style="color:#0F172A">${input.amount}</strong> (${input.leadTimeDays} days lead time).`,
-            )}
-            ${input.notes ? emailParagraph(input.notes) : ""}
-          `.trim(),
-          cta: {
-            label: "View RFQ",
-            href: `${publicAppUrl()}/requests/${input.requestId}`,
-          },
-        }),
+        subject: quoteEmail.subject,
+        html: quoteEmail.html,
         tags: [{ name: "category", value: "quote_submitted" }],
       });
     } else {
@@ -414,19 +408,15 @@ export async function submitClaim(input: {
     const adminUrl = `${baseUrl}/admin`;
 
     if (looksLikeEmail(gate.actor)) {
+      const submitted = renderClaimSubmittedEmail({
+        companyName: companyLabel,
+        profileUrl,
+        claimFormUrl: `${baseUrl}/companies/claim`,
+      });
       await sendTransactionalEmail({
         to: gate.actor,
-        subject: `We received your claim for ${companyLabel}`,
-        html: renderEmailDocument({
-          preheader: `Your claim for ${companyLabel} is queued for review.`,
-          heading: "Claim received",
-          bodyHtml: `
-            ${emailParagraph("Thanks — your company profile claim is queued for review.")}
-            ${emailParagraph(`Company: <strong style="color:#0F172A">${companyLabel}</strong>`)}
-            ${emailParagraph("We will email you when the claim is approved or rejected.")}
-          `.trim(),
-          cta: { label: "View the public profile", href: profileUrl },
-        }),
+        subject: submitted.subject,
+        html: submitted.html,
         tags: [
           { name: "category", value: "claim_submitted" },
           { name: "company", value: input.companySlug.slice(0, 256) },
@@ -434,24 +424,18 @@ export async function submitClaim(input: {
       });
     }
 
+    const opsAlert = renderClaimOpsAlertEmail({
+      companyName: companyLabel,
+      claimant: gate.actor,
+      claimId: result.id,
+      notes: input.notes,
+      adminUrl,
+      profileUrl,
+    });
     await sendTransactionalEmail({
       to: opsEmail(),
-      subject: `New company claim: ${companyLabel}`,
-      html: renderEmailDocument({
-        preheader: `New claim submitted for ${companyLabel}`,
-        heading: "New company claim",
-        bodyHtml: `
-          ${emailParagraph("A new company claim was submitted.")}
-          ${emailParagraph(`Company: <strong style="color:#0F172A">${companyLabel}</strong>`)}
-          ${emailParagraph(`Claimant: ${gate.actor}`)}
-          ${emailParagraph(`Claim id: ${result.id}`)}
-          ${emailParagraph(`Notes: ${input.notes || "(none)"}`)}
-          ${emailParagraph(
-            `${emailLink(adminUrl, "Open admin")} · ${emailLink(profileUrl, "View profile")}`,
-          )}
-        `.trim(),
-        cta: { label: "Open admin", href: adminUrl },
-      }),
+      subject: opsAlert.subject,
+      html: opsAlert.html,
       tags: [
         { name: "category", value: "claim_ops_alert" },
         { name: "company", value: input.companySlug.slice(0, 256) },

@@ -1,5 +1,7 @@
 import { randomBytes } from "crypto";
+import { looksLikeEmail } from "@/lib/email";
 import { maskEmail, normalizeEmail } from "@/lib/organic-growth/privacy";
+import type { InvitationReason } from "./invitation-reasons";
 import { mintInviteToken, verifyInviteToken } from "./token";
 import type {
   ReferralChannel,
@@ -47,7 +49,10 @@ export function createShareCode(input: {
   kind: ReferralKind;
   inviterName?: string;
   inviterOrg?: string;
+  inviterEmail?: string;
   companyName?: string;
+  personalNote?: string;
+  invitationReason?: InvitationReason;
   channel?: ReferralChannel;
 }): ReferralInvite {
   const now = new Date().toISOString();
@@ -59,7 +64,10 @@ export function createShareCode(input: {
     status: "queued",
     inviterName: input.inviterName,
     inviterOrg: input.inviterOrg,
+    inviterEmail: input.inviterEmail,
     companyName: input.companyName,
+    personalNote: input.personalNote?.trim() || undefined,
+    invitationReason: input.invitationReason,
     channel: input.channel ?? "copy_link",
     createdAt: now,
     updatedAt: now,
@@ -77,8 +85,10 @@ export function createEmailInvite(input: {
   recipientName?: string;
   companyName?: string;
   personalNote?: string;
+  invitationReason?: InvitationReason;
   inviterName?: string;
   inviterOrg?: string;
+  inviterEmail?: string;
 }): StoredInvite {
   const now = new Date().toISOString();
   const email = normalizeEmail(input.email);
@@ -93,8 +103,12 @@ export function createEmailInvite(input: {
     recipientName: input.recipientName?.trim() || undefined,
     companyName: input.companyName?.trim() || undefined,
     personalNote: input.personalNote?.trim() || undefined,
+    invitationReason: input.invitationReason,
     inviterName: input.inviterName,
     inviterOrg: input.inviterOrg,
+    inviterEmail: input.inviterEmail
+      ? normalizeEmail(input.inviterEmail)
+      : undefined,
     channel: "email",
     createdAt: now,
     updatedAt: now,
@@ -130,17 +144,30 @@ export function getInviteByCode(code: string) {
   // Self-contained signed token — works when memory store is cold on another instance.
   const fromToken = verifyInviteToken(raw);
   if (fromToken) {
-    // Hydrate local store so subsequent channel tracking can update status.
-    if (!invites().has(fromToken.id)) {
+    // Hydrate local store so subsequent channel tracking / replies can update status.
+    const existing = invites().get(fromToken.id);
+    if (!existing) {
       const stored: StoredInvite = { ...fromToken };
       invites().set(fromToken.id, stored);
       codes().set(fromToken.code, fromToken.id);
       codes().set(fromToken.token, fromToken.id);
+      return publicInvite(stored);
     }
-    return fromToken;
+    return publicInvite(existing);
   }
 
   return null;
+}
+
+/** Full stored invite including inviter/recipient emails (for reply routing). */
+export function getStoredInviteByCode(code: string): StoredInvite | null {
+  const resolved = getInviteByCode(code);
+  if (!resolved) return null;
+  const stored = invites().get(resolved.id);
+  if (stored) return stored;
+  // Token-only cold start: recover inviterEmail from the signed token.
+  const fromToken = verifyInviteToken(resolved.token);
+  return fromToken ?? resolved;
 }
 
 export function listRecentInvites(limit = 20): ReferralInvite[] {
@@ -178,6 +205,13 @@ export function recordChannelOpen(code: string, channel: ReferralChannel) {
 }
 
 function publicInvite(invite: StoredInvite): ReferralInvite {
-  const { email: _email, ...rest } = invite;
-  return rest;
+  const { email: _email, inviterEmail, ...rest } = invite;
+  return {
+    ...rest,
+    canReplyToInviter: Boolean(
+      inviterEmail && looksLikeEmail(inviterEmail),
+    ),
+    // Keep email only for token-hydrated reply routing via getStoredInviteByCode.
+    inviterEmail: undefined,
+  };
 }
