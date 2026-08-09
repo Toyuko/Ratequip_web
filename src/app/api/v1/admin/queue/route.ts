@@ -14,9 +14,9 @@ export async function GET(req: NextRequest) {
     return apiResponse(req, err(authResult.error!, authResult.status));
   }
 
-  const [pendingReviews, pendingClaims] = await Promise.all([
+  const [pendingReviews, conflictClaims] = await Promise.all([
     listPendingReviews(),
-    listPendingClaims(),
+    listPendingClaims(), // conflict/audit claims only
   ]);
 
   const reviews = pendingReviews.map((r) => ({
@@ -29,20 +29,24 @@ export async function GET(req: NextRequest) {
     createdAt: r.createdAt,
   }));
 
-  const claims = pendingClaims.map((c) => ({
-    entityType: "claim" as const,
+  const claims = conflictClaims.map((c) => ({
+    entityType: "claim_conflict" as const,
     entityId: c.id,
-    title: `Claim: ${c.companySlug}`,
+    title: `Conflict: ${c.companySlug}`,
     companySlug: c.companySlug,
     notes: c.notes,
+    status: c.status,
     createdAt: c.createdAt,
+    actionable: false,
   }));
 
   return apiResponse(
     req,
     ok({
-      items: [...reviews, ...claims],
+      items: reviews,
       reviews,
+      claimConflicts: claims,
+      /** @deprecated Use claimConflicts — claims are no longer moderated. */
       claims,
     }),
   );

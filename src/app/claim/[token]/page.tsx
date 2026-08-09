@@ -211,7 +211,8 @@ export default function ClaimTokenPage() {
 
       <p className="mt-6 text-xs text-[var(--rq-muted)]">
         Possession of this link proves invitation access — not company authority.
-        RateQuip will verify your email and authority before granting access.
+        RateQuip verifies your connection with automated company-control checks
+        before granting access.
       </p>
     </div>
   );

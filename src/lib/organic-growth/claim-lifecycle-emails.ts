@@ -1,102 +1,55 @@
-import { emailOpportunityBenefits, emailWhatIsRateQuip, escapeHtml } from "@/lib/email-copy";
 import {
   emailLink,
   emailParagraph,
   renderEmailDocument,
 } from "@/lib/email-template";
+import { emailOpportunityBenefits, emailWhatIsRateQuip, escapeHtml } from "@/lib/email-copy";
+import type { ClaimOutcome } from "@/lib/claims/types";
 
-export function renderClaimSubmittedEmail(vars: {
+export function renderClaimOutcomeEmail(vars: {
   companyName: string;
+  outcome: ClaimOutcome;
   profileUrl: string;
   claimFormUrl?: string;
-}) {
-  const company = escapeHtml(vars.companyName);
-  const subject = `We received your claim for ${vars.companyName} — next steps`;
-  const html = renderEmailDocument({
-    preheader: `Your claim for ${vars.companyName} is in review. Once approved, you can showcase capabilities and get discovered by buyers.`,
-    heading: "Your claim is in review",
-    bodyHtml: `
-      ${emailParagraph("Thanks — we’ve received your company profile claim.")}
-      ${emailParagraph(
-        `Company: <strong style="color:#0F172A">${company}</strong>`,
-      )}
-      ${emailParagraph(
-        "Our team will verify your authority to represent the business. We’ll email you as soon as it’s approved or if we need anything else.",
-      )}
-      ${emailParagraph(
-        `<strong style="color:#0F172A">Once approved, you’ll be able to:</strong>`,
-      )}
-      ${emailOpportunityBenefits()}
-      ${
-        vars.claimFormUrl
-          ? emailParagraph(
-              `${emailLink(vars.profileUrl, "View the public profile")} · ${emailLink(vars.claimFormUrl, "Open claim form")}`,
-            )
-          : emailParagraph(emailLink(vars.profileUrl, "View the public profile"))
-      }
-    `.trim(),
-    cta: { label: "View your public profile", href: vars.profileUrl },
-  });
-  return { subject, html };
-}
-
-export function renderClaimOpsAlertEmail(vars: {
-  companyName: string;
-  claimant: string;
-  claimId: string;
-  notes?: string;
-  adminUrl: string;
-  profileUrl: string;
-}) {
-  const company = escapeHtml(vars.companyName);
-  const subject = `New company claim to review: ${vars.companyName}`;
-  const html = renderEmailDocument({
-    preheader: `${vars.claimant} claimed ${vars.companyName} — review and unlock their profile opportunity.`,
-    heading: "New company claim to review",
-    bodyHtml: `
-      ${emailParagraph(
-        `A business has requested to claim <strong style="color:#0F172A">${company}</strong> on RateQuip.`,
-      )}
-      ${emailParagraph(`Claimant: <strong style="color:#0F172A">${escapeHtml(vars.claimant)}</strong>`)}
-      ${emailParagraph(`Claim id: ${escapeHtml(vars.claimId)}`)}
-      ${emailParagraph(`Notes: ${escapeHtml(vars.notes || "(none)")}`)}
-      ${emailParagraph(
-        "Approving unlocks their ability to manage the profile, get discovered by buyers, and respond to opportunities.",
-      )}
-      ${emailParagraph(
-        `${emailLink(vars.adminUrl, "Open admin")} · ${emailLink(vars.profileUrl, "View profile")}`,
-      )}
-    `.trim(),
-    cta: { label: "Review claim in admin", href: vars.adminUrl },
-  });
-  return { subject, html };
-}
-
-export function renderClaimDecisionEmail(vars: {
-  companyName: string;
-  approved: boolean;
-  profileUrl: string;
   supportUrl: string;
 }) {
   const company = escapeHtml(vars.companyName);
-  if (vars.approved) {
-    const subject = `${vars.companyName} is yours on RateQuip — start getting discovered`;
+
+  if (vars.outcome === "verified_representative") {
+    const subject = `You’re verified to represent ${vars.companyName} on RateQuip`;
     const html = renderEmailDocument({
-      preheader: `Your claim for ${vars.companyName} was approved. Showcase capabilities, connect with buyers, and grow opportunities.`,
-      heading: `Welcome — ${vars.companyName} is live`,
+      preheader: `Manage the public profile for ${vars.companyName}. Ownership transfer and billing stay locked.`,
+      heading: "Verified representative access",
       bodyHtml: `
         ${emailParagraph(
-          `Great news — your claim for <strong style="color:#0F172A">${company}</strong> was <strong style="color:#0F172A">approved</strong>.`,
+          `You’re verified to represent <strong style="color:#0F172A">${company}</strong> on RateQuip.`,
         )}
         ${emailParagraph(
-          "You now control the company profile. This is your opportunity to show buyers what you offer and grow through RateQuip’s industry network.",
+          "You can manage the public profile, products and buyer-facing details. Ownership transfer, removing other administrators, and billing controls stay locked until a stronger company-control check passes.",
         )}
         ${emailWhatIsRateQuip()}
         ${emailParagraph(`<strong style="color:#0F172A">What to do next</strong>`)}
         ${emailOpportunityBenefits()}
+      `.trim(),
+      cta: { label: "Open your company profile", href: vars.profileUrl },
+    });
+    return { subject, html };
+  }
+
+  if (vars.outcome === "verified_controller") {
+    const subject = `${vars.companyName} controller access is active on RateQuip`;
+    const html = renderEmailDocument({
+      preheader: `You can manage the ${vars.companyName} profile and administrators.`,
+      heading: "Company controller access",
+      bodyHtml: `
         ${emailParagraph(
-          emailLink(vars.profileUrl, "Open your company profile"),
+          `You’re verified as a company controller for <strong style="color:#0F172A">${company}</strong>.`,
         )}
+        ${emailParagraph(
+          "You can manage the public profile and administrators. Keep verification methods current so buyers continue to trust the listing.",
+        )}
+        ${emailWhatIsRateQuip()}
+        ${emailOpportunityBenefits()}
       `.trim(),
       cta: {
         label: "Open your profile & get discovered",
@@ -106,27 +59,131 @@ export function renderClaimDecisionEmail(vars: {
     return { subject, html };
   }
 
-  const subject = `Update on your claim for ${vars.companyName}`;
+  if (vars.outcome === "blocked_conflict") {
+    const subject = `Claim blocked for ${vars.companyName}`;
+    const html = renderEmailDocument({
+      preheader: `A conflict or risk signal blocked automatic verification for ${vars.companyName}.`,
+      heading: "Claim blocked",
+      bodyHtml: `
+        ${emailParagraph(
+          `Your claim for <strong style="color:#0F172A">${company}</strong> is blocked because of a conflict or risk signal.`,
+        )}
+        ${emailParagraph(
+          "Complete a stronger company-control method (website ownership, director registry match, or approval from an existing verified administrator) to continue. RateQuip does not staff a document-review queue for claims.",
+        )}
+        ${emailParagraph(emailLink(vars.supportUrl, "Contact support if you need help"))}
+      `.trim(),
+      cta: { label: "Try another verification method", href: vars.claimFormUrl ?? vars.profileUrl },
+      secondaryLink: { label: "View public profile", href: vars.profileUrl },
+    });
+    return { subject, html };
+  }
+
+  const subject = `Stronger verification needed for ${vars.companyName}`;
   const html = renderEmailDocument({
-    preheader: `Your claim for ${vars.companyName} needs attention. Contact us if you believe this was in error.`,
-    heading: "Claim update",
+    preheader: `Automatic checks need a stronger company-control method for ${vars.companyName}.`,
+    heading: "Stronger proof required",
     bodyHtml: `
       ${emailParagraph(
-        `Your company profile claim for <strong style="color:#0F172A">${company}</strong> was not approved.`,
+        `We couldn’t complete automatic verification for <strong style="color:#0F172A">${company}</strong> yet.`,
       )}
       ${emailParagraph(
-        "This can happen when we can’t verify authority, or when company details need correcting. If you represent this business, reply or contact support and we’ll help you sort it out.",
+        "Try company-domain email, website ownership, published phone, or director registry matching. You can still prepare a draft profile — it stays unpublished until verification succeeds.",
       )}
-      ${emailParagraph(
-        `We’re still here if there’s a better path — RateQuip is built to help industry businesses get discovered and grow connections.`,
-      )}
-      ${emailParagraph(emailLink(vars.supportUrl, "Contact support"))}
+      ${
+        vars.claimFormUrl
+          ? emailParagraph(
+              `${emailLink(vars.claimFormUrl, "Continue verification")} · ${emailLink(vars.profileUrl, "View profile")}`,
+            )
+          : emailParagraph(emailLink(vars.profileUrl, "View profile"))
+      }
     `.trim(),
-    cta: { label: "Contact support", href: vars.supportUrl },
-    secondaryLink: {
-      label: "View the public profile",
-      href: vars.profileUrl,
+    cta: {
+      label: "Continue verification",
+      href: vars.claimFormUrl ?? vars.profileUrl,
     },
   });
   return { subject, html };
+}
+
+/** @deprecated Prefer renderClaimOutcomeEmail — kept for admin override paths. */
+export function renderClaimSubmittedEmail(vars: {
+  companyName: string;
+  profileUrl: string;
+  claimFormUrl?: string;
+}) {
+  return renderClaimOutcomeEmail({
+    companyName: vars.companyName,
+    outcome: "stronger_proof_required",
+    profileUrl: vars.profileUrl,
+    claimFormUrl: vars.claimFormUrl,
+    supportUrl: vars.profileUrl,
+  });
+}
+
+export function renderClaimConflictOpsEmail(vars: {
+  companyName: string;
+  claimant: string;
+  claimId: string;
+  riskFlags: string[];
+  adminUrl: string;
+  profileUrl: string;
+}) {
+  const company = escapeHtml(vars.companyName);
+  const subject = `Claim conflict audit: ${vars.companyName}`;
+  const html = renderEmailDocument({
+    preheader: `${vars.claimant} hit a blocked_conflict outcome for ${vars.companyName}.`,
+    heading: "Claim conflict (audit only)",
+    bodyHtml: `
+      ${emailParagraph(
+        `Automated verification blocked a claim for <strong style="color:#0F172A">${company}</strong>.`,
+      )}
+      ${emailParagraph(`Claimant: <strong style="color:#0F172A">${escapeHtml(vars.claimant)}</strong>`)}
+      ${emailParagraph(`Claim id: ${escapeHtml(vars.claimId)}`)}
+      ${emailParagraph(
+        `Risk flags: ${escapeHtml(vars.riskFlags.join(", ") || "(none)")}`,
+      )}
+      ${emailParagraph(
+        "This is an audit notification only — RateQuip does not staff a claim review queue. The claimant must complete a stronger method.",
+      )}
+      ${emailParagraph(
+        `${emailLink(vars.adminUrl, "Open admin audit")} · ${emailLink(vars.profileUrl, "View profile")}`,
+      )}
+    `.trim(),
+    cta: { label: "Open admin audit", href: vars.adminUrl },
+  });
+  return { subject, html };
+}
+
+/** @deprecated Ops staffing alerts removed — conflicts use renderClaimConflictOpsEmail. */
+export function renderClaimOpsAlertEmail(vars: {
+  companyName: string;
+  claimant: string;
+  claimId: string;
+  notes?: string;
+  adminUrl: string;
+  profileUrl: string;
+}) {
+  return renderClaimConflictOpsEmail({
+    companyName: vars.companyName,
+    claimant: vars.claimant,
+    claimId: vars.claimId,
+    riskFlags: vars.notes ? [vars.notes] : [],
+    adminUrl: vars.adminUrl,
+    profileUrl: vars.profileUrl,
+  });
+}
+
+export function renderClaimDecisionEmail(vars: {
+  companyName: string;
+  approved: boolean;
+  profileUrl: string;
+  supportUrl: string;
+}) {
+  return renderClaimOutcomeEmail({
+    companyName: vars.companyName,
+    outcome: vars.approved ? "verified_controller" : "blocked_conflict",
+    profileUrl: vars.profileUrl,
+    supportUrl: vars.supportUrl,
+  });
 }

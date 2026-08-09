@@ -26,19 +26,10 @@ import {
 } from "@/lib/db/phase2";
 import {
   looksLikeEmail,
-  opsEmail,
   sendTransactionalEmail,
 } from "@/lib/email";
 import { renderQuoteSubmittedEmail } from "@/lib/marketplace/quote-email";
-import {
-  renderClaimOpsAlertEmail,
-  renderClaimSubmittedEmail,
-} from "@/lib/organic-growth/claim-lifecycle-emails";
 import { releaseReferralReward } from "@/lib/actions/referrals";
-import {
-  bindClaimAttribution,
-  REFERRAL_COOKIE,
-} from "@/lib/referrals/reward-engine";
 import { validateRfqContent } from "@/lib/rfq/validation";
 
 async function requireMutationActor(): Promise<
@@ -405,85 +396,70 @@ export async function submitReview(input: {
 
 export async function submitClaim(input: {
   companySlug: string;
-  notes: string;
+  notes?: string;
   evidenceName?: string;
   evidenceFile?: File | null;
+  relationship?: import("@/lib/claims/types").ClaimRelationship;
+  method?: import("@/lib/claims/types").ClaimMethod;
+  workEmail?: string;
+  emailCode?: string;
+  selectedSourceIds?: string[];
+  stubVerifiedSignals?: import("@/lib/claims/types").VerificationSignal[];
 }) {
+  // Prefer the automated claim path when structured fields are present.
+  if (input.relationship && input.method) {
+    const { completeAutomatedClaim } = await import("@/lib/actions/claims");
+    return completeAutomatedClaim({
+      companySlug: input.companySlug,
+      relationship: input.relationship,
+      method: input.method,
+      workEmail: input.workEmail,
+      emailCode: input.emailCode,
+      selectedSourceIds: input.selectedSourceIds,
+      stubVerifiedSignals: input.stubVerifiedSignals,
+    });
+  }
+
   const gate = await requireMutationActor();
   if (!gate.ok) return { ok: false as const, message: gate.message };
 
-  let evidenceUrl: string | undefined;
-  if (input.evidenceFile && input.evidenceFile.size > 0) {
-    const uploaded = await uploadEvidence(
-      input.evidenceFile,
-      `claims/${input.companySlug}`,
-    );
-    evidenceUrl = uploaded.url;
-  } else if (input.evidenceName) {
-    evidenceUrl = `demo://evidence/${input.evidenceName}`;
-  }
-
+  // Legacy callers without structured verification land in stronger_proof_required.
   const result = await persistClaim({
     companySlug: input.companySlug,
-    notes: input.notes,
+    notes: input.notes || "Legacy claim submission without automated verification.",
     claimant: gate.actor,
-    evidenceUrl,
+    status: "stronger_proof_required",
+    method: "supporting_sources",
   });
 
-  if (result.ok) {
-    const jar = await cookies();
-    const ref = jar.get(REFERRAL_COOKIE)?.value?.trim();
-    const orgId = jar.get("rq_org_id")?.value?.trim();
-    if (ref && result.id) {
-      bindClaimAttribution(result.id, {
-        inviteCode: ref,
-        organisationId: orgId,
-        claimantEmail: looksLikeEmail(gate.actor) ? gate.actor : undefined,
-      });
-    }
-
+  if (result.ok && looksLikeEmail(gate.actor)) {
     const baseUrl = publicAppUrl();
-    const companyLabel = input.companySlug;
-    const profileUrl = `${baseUrl}/companies/${input.companySlug}`;
-    const adminUrl = `${baseUrl}/admin`;
-
-    if (looksLikeEmail(gate.actor)) {
-      const submitted = renderClaimSubmittedEmail({
-        companyName: companyLabel,
-        profileUrl,
-        claimFormUrl: `${baseUrl}/companies/claim`,
-      });
-      await sendTransactionalEmail({
-        to: gate.actor,
-        subject: submitted.subject,
-        html: submitted.html,
-        tags: [
-          { name: "category", value: "claim_submitted" },
-          { name: "company", value: input.companySlug.slice(0, 256) },
-        ],
-      });
-    }
-
-    const opsAlert = renderClaimOpsAlertEmail({
-      companyName: companyLabel,
-      claimant: gate.actor,
-      claimId: result.id,
-      notes: input.notes,
-      adminUrl,
-      profileUrl,
+    const { renderClaimOutcomeEmail } = await import(
+      "@/lib/organic-growth/claim-lifecycle-emails"
+    );
+    const mail = renderClaimOutcomeEmail({
+      companyName: result.companyName ?? input.companySlug,
+      outcome: "stronger_proof_required",
+      profileUrl: `${baseUrl}/companies/${input.companySlug}`,
+      claimFormUrl: `${baseUrl}/companies/claim?company=${input.companySlug}`,
+      supportUrl: `${baseUrl}/contact`,
     });
     await sendTransactionalEmail({
-      to: opsEmail(),
-      subject: opsAlert.subject,
-      html: opsAlert.html,
-      tags: [
-        { name: "category", value: "claim_ops_alert" },
-        { name: "company", value: input.companySlug.slice(0, 256) },
-      ],
+      to: gate.actor,
+      subject: mail.subject,
+      html: mail.html,
+      tags: [{ name: "category", value: "claim_outcome" }],
     });
   }
 
-  return result;
+  return {
+    ...result,
+    outcome: "stronger_proof_required" as const,
+    message:
+      result.ok
+        ? `Stronger verification is required for ${result.companyName ?? input.companySlug}. Use the claim form to verify with company email or another company-control method.`
+        : result.message,
+  };
 }
 
 export async function createProject(input: {

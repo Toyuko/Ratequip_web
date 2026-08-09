@@ -19,7 +19,13 @@ function isPublicUrl(url: string) {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
-export async function CompanyProfile({ slug }: { slug: string }) {
+export async function CompanyProfile({
+  slug,
+  draftMode = false,
+}: {
+  slug: string;
+  draftMode?: boolean;
+}) {
   const company = await getCompanyBySlug(slug);
   if (!company) notFound();
 
@@ -55,6 +61,21 @@ export async function CompanyProfile({ slug }: { slug: string }) {
 
   return (
     <div>
+      {draftMode && unclaimed ? (
+        <div className="border-b border-amber-500/40 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950/40 dark:text-amber-100">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+            <p>
+              <strong>Draft mode</strong> — edits stay unpublished until a
+              company-control verification succeeds.
+            </p>
+            <Button asChild size="sm">
+              <Link href={`/companies/claim?company=${company.slug}`}>
+                Continue verification
+              </Link>
+            </Button>
+          </div>
+        </div>
+      ) : null}
       <section className="border-b border-[var(--rq-border)] bg-[var(--rq-navy)] text-white">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
           <div className="flex flex-wrap items-start justify-between gap-6">

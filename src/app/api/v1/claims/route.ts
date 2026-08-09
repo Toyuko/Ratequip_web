@@ -3,7 +3,8 @@ import { z } from "zod";
 import { requireApiUser } from "@/lib/api/auth";
 import { ok, err } from "@/lib/api/envelope";
 import { apiResponse, handleOptions } from "@/lib/api/respond";
-import { submitClaim } from "@/lib/actions/marketplace";
+import { completeAutomatedClaim } from "@/lib/actions/claims";
+import { CLAIM_METHODS, CLAIM_RELATIONSHIPS } from "@/lib/claims/types";
 
 export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
@@ -11,8 +12,25 @@ export function OPTIONS(req: NextRequest) {
 
 const schema = z.object({
   companySlug: z.string().min(1),
-  notes: z.string().min(1),
-  evidenceName: z.string().optional(),
+  relationship: z.enum(CLAIM_RELATIONSHIPS),
+  method: z.enum(CLAIM_METHODS),
+  workEmail: z.string().email().optional(),
+  emailCode: z.string().optional(),
+  selectedSourceIds: z.array(z.string()).optional(),
+  stubVerifiedSignals: z
+    .array(
+      z.enum([
+        "company_domain_email",
+        "website_dns_control",
+        "published_phone",
+        "director_registry",
+        "admin_approval",
+        "business_profile_match",
+        "registration_match",
+        "supporting_public_source",
+      ]),
+    )
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -27,10 +45,7 @@ export async function POST(req: NextRequest) {
     return apiResponse(req, err("Invalid claim payload"));
   }
 
-  const result = await submitClaim({
-    ...parsed.data,
-    evidenceFile: null,
-  });
+  const result = await completeAutomatedClaim(parsed.data);
   if (!result.ok) {
     return apiResponse(req, err(result.message));
   }

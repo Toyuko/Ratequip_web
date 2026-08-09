@@ -13,6 +13,22 @@ export type DemoCompanyMedia = {
   createdAt: string;
 };
 
+export type DemoPublicProfile = {
+  kind:
+    | "website"
+    | "email_domain"
+    | "phone"
+    | "abn"
+    | "linkedin"
+    | "google_business"
+    | "alibaba"
+    | "youtube"
+    | "social"
+    | "other";
+  label: string;
+  value: string;
+};
+
 export type DemoCompany = {
   id: string;
   name: string;
@@ -31,6 +47,12 @@ export type DemoCompany = {
   categories: string[];
   logoUrl?: string;
   coverUrl?: string;
+  /** Optional claim-enrichment fields (AI / registry / contact). */
+  legalName?: string;
+  phone?: string;
+  abn?: string;
+  emailDomain?: string;
+  publicProfiles?: DemoPublicProfile[];
 };
 
 export type DemoCategory = {
@@ -159,14 +181,26 @@ export type DemoProject = {
   memberCount: number;
 };
 
+export type DemoClaimStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "verified_representative"
+  | "verified_controller"
+  | "stronger_proof_required"
+  | "blocked_conflict";
+
 export type DemoClaim = {
   id: string;
   companyName: string;
   companySlug: string;
   claimant: string;
-  status: "pending" | "approved" | "rejected";
+  status: DemoClaimStatus;
   notes: string;
   createdAt: string;
+  relationship?: string;
+  method?: string;
+  verificationPayload?: Record<string, unknown>;
 };
 
 export type DemoPlan = {
@@ -529,12 +563,16 @@ export const demoCompanies: DemoCompany[] = [
     id: "co-inkjetprint",
     name: "InkjetPrint",
     slug: "inkjetprint",
+    legalName: "INKJETPRINT Pty Ltd",
     headline: "Batch coding, labelling and packaging equipment for Australian industry",
     description:
       "INKJETPRINT PTY LTD supplies industrial inkjet coding, thermal inkjet, laser marking, print-and-apply labelling and packaging line equipment across Australia, with installation, training and after-sales support for food, beverage, pharma and industrial plants.",
     country: "Australia",
     city: "Lane Cove West",
     website: "https://inkjetprint.com.au/",
+    phone: "+61 2 9418 8100",
+    abn: "12 345 678 901",
+    emailDomain: "inkjetprint.com.au",
     verified: false,
     claimed: false,
     trustScore: 0,
@@ -550,6 +588,28 @@ export const demoCompanies: DemoCompany[] = [
       "labellers",
       "vertical-form-fill-seal",
       "conveyors",
+    ],
+    publicProfiles: [
+      {
+        kind: "linkedin",
+        label: "LinkedIn company page",
+        value: "https://www.linkedin.com/company/inkjetprint",
+      },
+      {
+        kind: "google_business",
+        label: "Google Business Profile",
+        value: "https://maps.google.com/?q=InkjetPrint+Lane+Cove+West",
+      },
+      {
+        kind: "alibaba",
+        label: "Alibaba supplier profile",
+        value: "https://inkjetprint.en.alibaba.com",
+      },
+      {
+        kind: "youtube",
+        label: "YouTube channel",
+        value: "https://www.youtube.com/@inkjetprint",
+      },
     ],
   },
   {
@@ -1425,18 +1485,30 @@ export const demoClaims: DemoClaim[] = [
     companyName: "Harbor Heavy Freight",
     companySlug: "harbor-heavy-freight",
     claimant: "ops@harbor.example",
-    status: "pending",
-    notes: "Business registration and domain WHOIS attached.",
+    status: "blocked_conflict",
+    notes: "Competing claim while verified admins exist.",
     createdAt: "2026-07-08",
+    relationship: "employee",
+    method: "supporting_sources",
+    verificationPayload: {
+      riskFlags: ["existing_verified_admins", "competing_open_claims"],
+      recommendedPermission: "blocked_conflict",
+    },
   },
   {
     id: "claim-2",
     companyName: "CleanAir Plant Solutions",
     companySlug: "cleanair-plant-solutions",
     claimant: "admin@cleanair.example",
-    status: "pending",
-    notes: "Company stamp letter and LinkedIn company admin proof.",
+    status: "stronger_proof_required",
+    notes: "Supporting public links only — stronger method required.",
     createdAt: "2026-07-09",
+    relationship: "other",
+    method: "supporting_sources",
+    verificationPayload: {
+      riskFlags: [],
+      recommendedPermission: "stronger_proof_required",
+    },
   },
 ];
 

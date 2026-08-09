@@ -126,7 +126,7 @@ export function renderClaimInviteEmail(vars: {
           : ""
       }
       ${emailParagraph(
-        `The profile is currently <strong style="color:#0F172A">Unclaimed</strong>. If you are authorised to represent ${companyName}, claim it free, control how you appear, and start getting discovered. RateQuip will verify your email and authority before granting access.`,
+        `The profile is currently <strong style="color:#0F172A">Unclaimed</strong>. If you are authorised to represent ${companyName}, claim it free, control how you appear, and start getting discovered. RateQuip verifies your connection with automated company-control checks before granting access.`,
       )}
       ${emailMeta(
         `This secure invitation expires on ${escapeHtml(vars.expiresDate)}. Do not forward the claim link.`,

@@ -13,9 +13,12 @@ export async function generateMetadata({
 
 export default async function CompanyPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ draft?: string }>;
 }) {
   const { slug } = await params;
-  return <CompanyProfile slug={slug} />;
+  const { draft } = await searchParams;
+  return <CompanyProfile slug={slug} draftMode={draft === "1"} />;
 }

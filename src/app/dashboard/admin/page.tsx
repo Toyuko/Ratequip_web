@@ -4,7 +4,7 @@ import { AdminModerationClient } from "@/components/dashboard/admin-moderation-c
 import { requireServerAdmin } from "@/lib/api/auth";
 import {
   getRuntimeAudit,
-  listPendingClaimsAsync,
+  listConflictClaimsAsync,
   listPendingReviewsAsync,
 } from "@/lib/db/phase2";
 import { getInviteRewardSettings } from "@/lib/referrals/invite-rewards";
@@ -18,9 +18,9 @@ export default async function AdminDashboardPage() {
     redirect("/dashboard/buyer");
   }
 
-  const [pendingReviews, pendingClaims] = await Promise.all([
+  const [pendingReviews, conflictClaims] = await Promise.all([
     listPendingReviewsAsync(),
-    listPendingClaimsAsync(),
+    listConflictClaimsAsync(),
   ]);
   const audit = getRuntimeAudit();
   const inviteRewards = getInviteRewardSettings();
@@ -29,7 +29,7 @@ export default async function AdminDashboardPage() {
     <DashboardShell role="admin" title="Admin moderation">
       <AdminModerationClient
         initialReviews={pendingReviews}
-        initialClaims={pendingClaims}
+        initialClaims={conflictClaims}
         initialAudit={audit}
         initialInviteRewards={inviteRewards}
       />

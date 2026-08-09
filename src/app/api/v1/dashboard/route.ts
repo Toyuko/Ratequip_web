@@ -104,11 +104,13 @@ export async function GET(req: NextRequest) {
       ...base,
       tiles: [
         { label: "Pending reviews", value: pendingReviews.length },
-        { label: "Pending claims", value: pendingClaims.length },
+        { label: "Claim conflicts", value: pendingClaims.length },
         { label: "Companies", value: companies.length },
         { label: "Open RFQs", value: requests.filter((r) => r.status === "open").length },
       ],
       pendingReviews,
+      claimConflicts: pendingClaims,
+      /** @deprecated Use claimConflicts */
       pendingClaims,
     }),
   );

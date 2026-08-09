@@ -22,6 +22,10 @@ export const claimStatusEnum = pgEnum("claim_status", [
   "pending",
   "approved",
   "rejected",
+  "verified_representative",
+  "verified_controller",
+  "stronger_proof_required",
+  "blocked_conflict",
 ]);
 
 export const moderationStatusEnum = pgEnum("moderation_status", [
@@ -183,6 +187,7 @@ export const companyClaims = pgTable("company_claims", {
   evidenceUrl: text("evidence_url"),
   notes: text("notes"),
   status: claimStatusEnum("status").notNull().default("pending"),
+  verificationPayload: jsonb("verification_payload").$type<Record<string, unknown>>(),
   reviewedBy: uuid("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   ...timestamps,

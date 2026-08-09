@@ -303,7 +303,7 @@ async function neonCreditCredits(
 }
 
 function mapCompanyRow(row: typeof companies.$inferSelect, cats: string[] = []): DemoCompany {
-  return {
+  const base: DemoCompany = {
     id: row.id,
     name: row.name,
     slug: row.slug,
@@ -321,6 +321,20 @@ function mapCompanyRow(row: typeof companies.$inferSelect, cats: string[] = []):
     categories: cats,
     logoUrl: row.logoUrl ?? undefined,
     coverUrl: row.coverUrl ?? undefined,
+  };
+  return mergeDemoCompanyEnrichment(base);
+}
+
+function mergeDemoCompanyEnrichment(company: DemoCompany): DemoCompany {
+  const seed = demoCompanies.find((c) => c.slug === company.slug);
+  if (!seed) return company;
+  return {
+    ...company,
+    legalName: company.legalName ?? seed.legalName,
+    phone: company.phone ?? seed.phone,
+    abn: company.abn ?? seed.abn,
+    emailDomain: company.emailDomain ?? seed.emailDomain,
+    publicProfiles: company.publicProfiles ?? seed.publicProfiles,
   };
 }
 
@@ -574,7 +588,8 @@ export async function getCompanyBySlugAsync(
       console.warn("[phase2] Neon getCompany failed", error);
     }
   }
-  return getStore().companies.find((c) => c.slug === slug) ?? null;
+  const local = getStore().companies.find((c) => c.slug === slug) ?? null;
+  return local ? mergeDemoCompanyEnrichment(local) : null;
 }
 
 export async function getCompanyProductsAsync(slug: string) {
@@ -806,6 +821,11 @@ export async function listPendingReviewsAsync(): Promise<DemoReview[]> {
 }
 
 export async function listPendingClaimsAsync(): Promise<DemoClaim[]> {
+  // Legacy name kept for callers — now returns conflict/audit claims only.
+  return listConflictClaimsAsync();
+}
+
+export async function listConflictClaimsAsync(): Promise<DemoClaim[]> {
   const db = getDb();
   if (db) {
     try {
@@ -819,7 +839,7 @@ export async function listPendingClaimsAsync(): Promise<DemoClaim[]> {
         .from(companyClaims)
         .leftJoin(companies, eq(companyClaims.companyId, companies.id))
         .leftJoin(users, eq(companyClaims.claimantUserId, users.id))
-        .where(eq(companyClaims.status, "pending"))
+        .where(eq(companyClaims.status, "blocked_conflict"))
         .orderBy(desc(companyClaims.createdAt));
       if (rows.length > 0) {
         return rows.map((r) => ({
@@ -827,16 +847,30 @@ export async function listPendingClaimsAsync(): Promise<DemoClaim[]> {
           companyName: r.companyName ?? r.claim.companyId,
           companySlug: r.companySlug ?? r.claim.companyId,
           claimant: r.claimantEmail ?? "claimant",
-          status: r.claim.status,
+          status: r.claim.status as DemoClaim["status"],
           notes: r.claim.notes ?? "",
           createdAt: r.claim.createdAt.toISOString().slice(0, 10),
+          verificationPayload:
+            (r.claim.verificationPayload as Record<string, unknown> | null) ??
+            undefined,
         }));
       }
     } catch (error) {
-      console.warn("[phase2] Neon pending claims failed", error);
+      console.warn("[phase2] Neon conflict claims failed", error);
     }
   }
-  return getStore().claims.filter((c) => c.status === "pending");
+  return getStore().claims.filter((c) => c.status === "blocked_conflict");
+}
+
+export async function countOpenClaimsForCompanyAsync(companySlug: string) {
+  const storeCount = getStore().claims.filter(
+    (c) =>
+      c.companySlug === companySlug &&
+      (c.status === "stronger_proof_required" ||
+        c.status === "pending" ||
+        c.status === "blocked_conflict"),
+  ).length;
+  return storeCount;
 }
 
 export async function getProfileByClerkId(clerkUserId: string): Promise<{
@@ -1316,9 +1350,13 @@ export async function deleteCompanyMedia(input: {
 
 export async function persistClaim(input: {
   companySlug: string;
-  notes: string;
+  notes?: string;
   claimant: string;
   evidenceUrl?: string;
+  status?: DemoClaim["status"];
+  relationship?: string;
+  method?: string;
+  verificationPayload?: Record<string, unknown>;
 }) {
   if (!getDb() && runtimeWriteBlocked("persistClaim: no database")) {
     return { ok: false as const, message: "Database unavailable." };
@@ -1328,6 +1366,13 @@ export async function persistClaim(input: {
   if (!company) {
     return { ok: false as const, message: "Company not found." };
   }
+
+  const status = input.status ?? "stronger_proof_required";
+  const notes =
+    input.notes ??
+    `Automated claim · ${input.method ?? "unknown"} · ${status}`;
+  const verified =
+    status === "verified_representative" || status === "verified_controller";
 
   const db = getDb();
   if (db && hasDatabase()) {
@@ -1343,15 +1388,31 @@ export async function persistClaim(input: {
             })
           ).id,
           evidenceUrl: input.evidenceUrl,
-          notes: input.notes,
-          status: "pending",
+          notes,
+          status: status as typeof companyClaims.$inferInsert.status,
+          verificationPayload: input.verificationPayload ?? null,
         })
         .returning();
-      appendAudit("claim.submitted", "company_claim", input.claimant);
+
+      if (verified) {
+        await db
+          .update(companies)
+          .set({
+            claimed: true,
+            verified: status === "verified_controller",
+            updatedAt: new Date(),
+          })
+          .where(eq(companies.id, company.id));
+      }
+
+      appendAudit(`claim.${status}`, "company_claim", input.claimant);
       return {
         ok: true as const,
         id: claim.id,
-        message: `Claim for ${company.name} queued for admin review.`,
+        status,
+        companyName: company.name,
+        companySlug: company.slug,
+        message: `Claim for ${company.name} recorded as ${status}.`,
         demo: false,
       };
     } catch (error) {
@@ -1366,15 +1427,28 @@ export async function persistClaim(input: {
     companyName: company.name,
     companySlug: company.slug,
     claimant: input.claimant,
-    status: "pending",
-    notes: input.notes,
+    status,
+    notes,
     createdAt: new Date().toISOString().slice(0, 10),
+    relationship: input.relationship,
+    method: input.method,
+    verificationPayload: input.verificationPayload,
   });
-  appendAudit("claim.submitted", "company_claim", input.claimant);
+
+  const runtime = store.companies.find((c) => c.slug === company.slug);
+  if (runtime && verified) {
+    runtime.claimed = true;
+    runtime.verified = status === "verified_controller";
+  }
+
+  appendAudit(`claim.${status}`, "company_claim", input.claimant);
   return {
     ok: true as const,
     id,
-    message: `Claim for ${company.name} queued for admin review.`,
+    status,
+    companyName: company.name,
+    companySlug: company.slug,
+    message: `Claim for ${company.name} recorded as ${status}.`,
     demo: true,
   };
 }

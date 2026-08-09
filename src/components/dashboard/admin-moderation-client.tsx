@@ -25,7 +25,7 @@ export function AdminModerationClient({
 }) {
   const router = useRouter();
   const [reviews, setReviews] = useState(initialReviews);
-  const [claims, setClaims] = useState(initialClaims);
+  const [claims] = useState(initialClaims);
   const [audit, setAudit] = useState(initialAudit);
   const [welcomeCredits, setWelcomeCredits] = useState(
     String(initialInviteRewards.welcomeCredits),
@@ -39,22 +39,14 @@ export function AdminModerationClient({
   const [pending, startTransition] = useTransition();
   const [note, setNote] = useState<string | null>(null);
 
-  function afterModerate(
-    entityType: "review" | "claim",
-    entityId: string,
-    message: string,
-  ) {
+  function afterModerate(entityId: string, message: string) {
     setNote(message);
-    if (entityType === "review") {
-      setReviews((prev) => prev.filter((r) => r.id !== entityId));
-    } else {
-      setClaims((prev) => prev.filter((c) => c.id !== entityId));
-    }
+    setReviews((prev) => prev.filter((r) => r.id !== entityId));
     setAudit((prev) => [
       {
         id: `aud-local-${Date.now()}`,
-        action: `${entityType}.moderated`,
-        entityType,
+        action: "review.moderated",
+        entityType: "review",
         actor: "admin",
         createdAt: new Date().toISOString(),
       },
@@ -69,7 +61,7 @@ export function AdminModerationClient({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="Pending reviews" value={String(reviews.length)} />
-        <Stat label="Pending claims" value={String(claims.length)} />
+        <Stat label="Claim conflicts" value={String(claims.length)} />
         <Stat label="Audit events" value={String(audit.length)} />
       </div>
 
@@ -86,7 +78,7 @@ export function AdminModerationClient({
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div>
             <Label htmlFor="welcome-credits">
-              Invitee credits (on claim approved)
+              Invitee credits (on claim verified)
             </Label>
             <Input
               id="welcome-credits"
@@ -99,7 +91,7 @@ export function AdminModerationClient({
           </div>
           <div>
             <Label htmlFor="inviter-credits">
-              Inviter credits (on claim approved)
+              Inviter credits (on claim verified)
             </Label>
             <Input
               id="inviter-credits"
@@ -180,7 +172,7 @@ export function AdminModerationClient({
                         entityId: r.id,
                         decision: "approved",
                       });
-                      if (res.ok) afterModerate("review", r.id, res.message);
+                      if (res.ok) afterModerate(r.id, res.message);
                       else setNote(res.message);
                     })
                   }
@@ -198,7 +190,7 @@ export function AdminModerationClient({
                         entityId: r.id,
                         decision: "rejected",
                       });
-                      if (res.ok) afterModerate("review", r.id, res.message);
+                      if (res.ok) afterModerate(r.id, res.message);
                       else setNote(res.message);
                     })
                   }
@@ -215,60 +207,46 @@ export function AdminModerationClient({
       </section>
 
       <section className="mt-10">
-        <h2 className="font-semibold text-[var(--rq-ink)]">Company claims</h2>
+        <h2 className="font-semibold text-[var(--rq-ink)]">
+          Claim conflicts / audit
+        </h2>
+        <p className="mt-1 text-sm text-[var(--rq-slate)]">
+          Claims are decided automatically. This panel lists{" "}
+          <code className="text-xs">blocked_conflict</code> outcomes for audit
+          only — there is no Approve/Reject staffing queue.
+        </p>
         <ul className="mt-3 space-y-3">
           {claims.map((c) => (
             <li
               key={c.id}
               className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-4"
             >
-              <div className="font-medium text-[var(--rq-ink)]">
-                {c.companyName}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-medium text-[var(--rq-ink)]">
+                  {c.companyName}
+                </div>
+                <Badge variant="warning">{c.status}</Badge>
               </div>
-              <p className="text-sm text-[var(--rq-muted)]">
-                {c.claimant} · {c.notes}
+              <p className="mt-1 text-sm text-[var(--rq-muted)]">
+                {c.claimant}
+                {c.method ? ` · ${c.method}` : ""}
+                {c.relationship ? ` · ${c.relationship}` : ""}
               </p>
-              <div className="mt-3 flex gap-2">
-                <Button
-                  size="sm"
-                  disabled={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      const res = await moderateEntity({
-                        entityType: "claim",
-                        entityId: c.id,
-                        decision: "approved",
-                      });
-                      if (res.ok) afterModerate("claim", c.id, res.message);
-                      else setNote(res.message);
-                    })
-                  }
-                >
-                  Approve claim
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      const res = await moderateEntity({
-                        entityType: "claim",
-                        entityId: c.id,
-                        decision: "rejected",
-                      });
-                      if (res.ok) afterModerate("claim", c.id, res.message);
-                      else setNote(res.message);
-                    })
-                  }
-                >
-                  Reject
-                </Button>
-              </div>
+              <p className="mt-2 text-sm text-[var(--rq-slate)]">{c.notes}</p>
+              {c.verificationPayload?.riskFlags ? (
+                <p className="mt-2 text-xs text-[var(--rq-muted)]">
+                  Risk flags:{" "}
+                  {Array.isArray(c.verificationPayload.riskFlags)
+                    ? c.verificationPayload.riskFlags.join(", ")
+                    : String(c.verificationPayload.riskFlags)}
+                </p>
+              ) : null}
             </li>
           ))}
           {claims.length === 0 ? (
-            <p className="text-sm text-[var(--rq-muted)]">No pending claims.</p>
+            <p className="text-sm text-[var(--rq-muted)]">
+              No blocked conflicts.
+            </p>
           ) : null}
         </ul>
       </section>
