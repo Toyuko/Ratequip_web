@@ -59,7 +59,7 @@ export default function AddSuccessPage() {
     <AddCompanyWizardShell
       step="success"
       title="Company created"
-      description="The unclaimed profile is live. Delivery does not mean the company has claimed the profile yet."
+      description="The unclaimed profile is live. Claim it yourself now, or invite company contacts to claim later."
       submissionId={submission.id}
     >
       <div className="space-y-6">
@@ -122,7 +122,14 @@ export default function AddSuccessPage() {
         </p>
 
         <div className="flex flex-wrap gap-3">
-          <Button asChild>
+          {slug ? (
+            <Button asChild>
+              <Link href={`/companies/claim?company=${encodeURIComponent(slug)}`}>
+                Claim this company now
+              </Link>
+            </Button>
+          ) : null}
+          <Button asChild variant={slug ? "outline" : "default"}>
             <Link
               href={`/v12/activation?company=${encodeURIComponent(submission.companyName ?? "")}&from=listing`}
             >

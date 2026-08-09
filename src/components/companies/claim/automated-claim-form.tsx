@@ -7,6 +7,7 @@ import {
   ClaimWizardShell,
   claimProgressStep,
 } from "@/components/companies/claim/claim-wizard-shell";
+import { CompanyDiscoverySearch } from "@/components/companies/company-discovery-search";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,6 @@ import { Label } from "@/components/ui/label";
 import {
   completeAutomatedClaim,
   getClaimCompanyContext,
-  resolveClaimCompanyByName,
   sendClaimEmailCode,
 } from "@/lib/actions/claims";
 import type {
@@ -129,11 +129,9 @@ export function AutomatedClaimForm({
     initialSlug ? "confirm" : "lookup",
   );
   const [error, setError] = useState<string | null>(null);
-  const [searchUrl, setSearchUrl] = useState<string | null>(null);
   const [companyQuery, setCompanyQuery] = useState(
     initialQuery || initialSlug || "",
   );
-  const [searching, setSearching] = useState(false);
   const [company, setCompany] = useState<ClaimCompany | null>(null);
   const [sources, setSources] = useState<DiscoveredSource[]>([]);
   const [loading, setLoading] = useState(Boolean(initialSlug));
@@ -214,23 +212,19 @@ export function AutomatedClaimForm({
     );
   }
 
-  function findCompany(e?: React.FormEvent) {
-    e?.preventDefault();
+  function selectDirectoryCompany(slug: string) {
     setError(null);
-    setSearchUrl(null);
-    setSearching(true);
     startTransition(async () => {
-      const result = await resolveClaimCompanyByName({ query: companyQuery });
-      setSearching(false);
+      const result = await getClaimCompanyContext(slug);
       if (!result.ok) {
         setError(result.message);
-        if ("searchUrl" in result && result.searchUrl) {
-          setSearchUrl(result.searchUrl);
-        }
         return;
       }
       applyCompanyResult(result);
       setStage("confirm");
+      router.replace(`/companies/claim?company=${encodeURIComponent(slug)}`, {
+        scroll: false,
+      });
     });
   }
 
@@ -273,7 +267,7 @@ export function AutomatedClaimForm({
 
   const shellDescription =
     stage === "lookup" || stage === "confirm"
-      ? "Tell us which company you represent. We'll pull together what's publicly known about it so you don't have to."
+      ? "Search RateQuip and public sources for the company you represent. Claim an existing profile, or add it first if it’s missing."
       : stage === "relationship"
         ? "This determines what level of access you can be granted."
         : stage === "verify"
@@ -302,48 +296,14 @@ export function AutomatedClaimForm({
     >
       {stage === "lookup" ? (
         <section className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-6">
-          <form onSubmit={findCompany} className="space-y-4">
-            <div>
-              <Label
-                htmlFor="companyName"
-                className="text-xs font-bold uppercase tracking-wide text-[var(--rq-slate)]"
-              >
-                Company name
-              </Label>
-              <Input
-                id="companyName"
-                className="mt-2"
-                placeholder="e.g. InkJetPrint"
-                value={companyQuery}
-                onChange={(e) => setCompanyQuery(e.target.value)}
-                autoFocus
-              />
-              <p className="mt-2 text-sm text-[var(--rq-muted)]">
-                We&apos;ll search public sources (registry, website,
-                marketplaces, socials) to find this business.
-              </p>
-            </div>
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-            {searchUrl ? (
-              <p className="text-sm text-[var(--rq-slate)]">
-                <Link
-                  href={searchUrl}
-                  className="font-medium text-orange-600 hover:underline"
-                >
-                  Add this company to RateQuip
-                </Link>{" "}
-                first, then return here to claim it.
-              </p>
-            ) : null}
-            <Button
-              type="submit"
-              disabled={pending || searching || companyQuery.trim().length < 2}
-            >
-              {searching || pending
-                ? "Searching public sources…"
-                : "Find my company"}
-            </Button>
-          </form>
+          {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
+          <CompanyDiscoverySearch
+            intent="claim"
+            initialQuery={companyQuery || initialQuery}
+            embedded
+            autoSearch={Boolean(initialQuery && !initialSlug)}
+            onSelectDirectoryCompany={selectDirectoryCompany}
+          />
         </section>
       ) : null}
 

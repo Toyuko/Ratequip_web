@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { publishListingSubmission } from "@/lib/actions/organic-growth";
 import type { DisclosurePreference } from "@/lib/organic-growth/types";
+import { CLAIM_AFTER_PUBLISH_KEY } from "@/components/companies/company-discovery-search";
 
 export default function AddConfirmPage() {
   const router = useRouter();
@@ -59,6 +60,14 @@ export default function AddConfirmPage() {
       save(result.submission as never);
       clearLocalDraft();
       writePublishedId(result.submission.id);
+      const claimAfter = readClaimAfterPublish();
+      if (claimAfter && result.companySlug) {
+        clearClaimAfterPublish();
+        router.push(
+          `/companies/claim?company=${encodeURIComponent(result.companySlug)}`,
+        );
+        return;
+      }
       router.push(`/companies/add/success/${result.submission.id}`);
     });
   }
@@ -187,6 +196,22 @@ function Row({ label, value }: { label: string; value?: string }) {
 function writePublishedId(id: string) {
   try {
     window.sessionStorage.setItem("rq-og-last-published", id);
+  } catch {
+    /* ignore */
+  }
+}
+
+function readClaimAfterPublish() {
+  try {
+    return window.sessionStorage.getItem(CLAIM_AFTER_PUBLISH_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function clearClaimAfterPublish() {
+  try {
+    window.sessionStorage.removeItem(CLAIM_AFTER_PUBLISH_KEY);
   } catch {
     /* ignore */
   }
