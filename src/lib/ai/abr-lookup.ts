@@ -298,28 +298,28 @@ async function searchNameViaJson(name: string): Promise<AbrNameMatch[]> {
     console.warn("[abr-lookup] JSON name search message", data.Message);
     return [];
   }
-  return (data.Names ?? [])
-    .map((row) => {
-      const abn = String(row.Abn || "").replace(/\D/g, "");
-      const entityName = String(row.Name || "").trim();
-      if (abn.length !== 11 || !entityName) return null;
-      const active =
-        row.IsActive === true ||
-        String(row.IsActive || "").toLowerCase() === "y" ||
-        String(row.IsActive || "").toLowerCase() === "true";
-      return {
-        abn,
-        abnFormatted: formatAbn(abn),
-        entityName,
-        status: active ? "Active" : "Unknown",
-        nameType: row.NameType ? String(row.NameType) : undefined,
-        state: row.State ? String(row.State) : undefined,
-        postcode: row.Postcode ? String(row.Postcode) : undefined,
-        score: typeof row.Score === "number" ? row.Score : undefined,
-        sourceUrl: `${ABR_ORIGIN}/ABN/View?abn=${abn}`,
-      } satisfies AbrNameMatch;
-    })
-    .filter((m): m is AbrNameMatch => Boolean(m));
+  const matches: AbrNameMatch[] = [];
+  for (const row of data.Names ?? []) {
+    const abn = String(row.Abn || "").replace(/\D/g, "");
+    const entityName = String(row.Name || "").trim();
+    if (abn.length !== 11 || !entityName) continue;
+    const active =
+      row.IsActive === true ||
+      String(row.IsActive || "").toLowerCase() === "y" ||
+      String(row.IsActive || "").toLowerCase() === "true";
+    matches.push({
+      abn,
+      abnFormatted: formatAbn(abn),
+      entityName,
+      status: active ? "Active" : "Unknown",
+      nameType: row.NameType ? String(row.NameType) : undefined,
+      state: row.State ? String(row.State) : undefined,
+      postcode: row.Postcode ? String(row.Postcode) : undefined,
+      score: typeof row.Score === "number" ? row.Score : undefined,
+      sourceUrl: `${ABR_ORIGIN}/ABN/View?abn=${abn}`,
+    });
+  }
+  return matches;
 }
 
 async function searchNameViaHtml(name: string): Promise<AbrNameMatch[]> {
