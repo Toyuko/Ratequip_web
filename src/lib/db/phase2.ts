@@ -1002,6 +1002,8 @@ export async function persistOnboarding(input: {
   clerkUserId?: string | null;
   role: "buyer" | "supplier" | "contractor";
   orgName: string;
+  orgNameLocal?: string;
+  orgNameLocalLocale?: string;
   email: string;
   contactName: string;
   phone: string;
@@ -1012,6 +1014,11 @@ export async function persistOnboarding(input: {
   }
 
   const orgSlug = slugify(input.orgName);
+  const nameLocal = input.orgNameLocal?.trim() || null;
+  const nameLocalLocale =
+    nameLocal && input.orgNameLocalLocale?.trim()
+      ? input.orgNameLocalLocale.trim()
+      : null;
   const db = getDb();
 
   if (db) {
@@ -1028,6 +1035,8 @@ export async function persistOnboarding(input: {
         .insert(organisations)
         .values({
           name: input.orgName,
+          nameLocal,
+          nameLocalLocale,
           slug: `${orgSlug}-${Date.now().toString(36)}`,
           type: input.role,
           contactEmail: input.email,
@@ -1069,6 +1078,8 @@ export async function persistOnboarding(input: {
   store.orgs.push({
     id: orgId,
     name: input.orgName,
+    nameLocal: nameLocal ?? undefined,
+    nameLocalLocale: nameLocalLocale ?? undefined,
     slug: orgSlug,
     type: input.role,
     contactEmail: input.email,

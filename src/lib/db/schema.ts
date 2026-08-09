@@ -93,6 +93,10 @@ export const enterpriseAccounts = pgTable("enterprise_accounts", {
 export const organisations = pgTable("organisations", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  /** Optional organisation name in a non-English script (Thai, Chinese, …). */
+  nameLocal: varchar("name_local", { length: 255 }),
+  /** Locale code for `nameLocal` (e.g. th, zh). */
+  nameLocalLocale: varchar("name_local_locale", { length: 16 }),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
   type: accountRoleEnum("type").notNull().default("buyer"),
   country: varchar("country", { length: 100 }),

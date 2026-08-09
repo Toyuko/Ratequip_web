@@ -39,6 +39,10 @@ export type RuntimeAudit = {
 export type RuntimeOrg = {
   id: string;
   name: string;
+  /** Optional name in another language/script. */
+  nameLocal?: string;
+  /** Locale for `nameLocal` (e.g. th, zh). */
+  nameLocalLocale?: string;
   slug: string;
   type: "buyer" | "supplier" | "contractor" | "admin";
   contactEmail: string;

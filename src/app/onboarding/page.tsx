@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { completeOnboarding } from "@/lib/actions/onboarding";
+import { localeNames } from "@/lib/i18n/config";
 
 const roles = [
   {
@@ -28,10 +29,20 @@ const roles = [
   },
 ] as const;
 
+const LOCAL_NAME_LOCALES = ["th", "zh"] as const;
+type LocalNameLocale = (typeof LOCAL_NAME_LOCALES)[number];
+
+const selectClassName =
+  "mt-1 h-11 w-full rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 text-sm text-[var(--rq-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rq-orange)]";
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [role, setRole] = useState<(typeof roles)[number]["id"]>("buyer");
   const [orgName, setOrgName] = useState("");
+  const [showLocalName, setShowLocalName] = useState(false);
+  const [orgNameLocal, setOrgNameLocal] = useState("");
+  const [orgNameLocalLocale, setOrgNameLocalLocale] =
+    useState<LocalNameLocale>("th");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
@@ -39,8 +50,10 @@ export default function OnboardingPage() {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
+  const localNameReady =
+    !showLocalName || !orgNameLocal.trim() || Boolean(orgNameLocalLocale);
   const canContinue =
-    orgName.trim() && contactName.trim() && email.trim();
+    orgName.trim() && contactName.trim() && email.trim() && localNameReady;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
@@ -93,6 +106,9 @@ export default function OnboardingPage() {
           <Label htmlFor="org">
             Organisation name <span className="text-orange-600">*</span>
           </Label>
+          <p className="mt-0.5 text-xs text-[var(--rq-slate)]">
+            English / Latin script (used for search and profiles).
+          </p>
           <Input
             id="org"
             className="mt-1"
@@ -102,6 +118,68 @@ export default function OnboardingPage() {
             required
             aria-required="true"
           />
+
+          {!showLocalName ? (
+            <button
+              type="button"
+              className="mt-2 text-sm font-medium text-orange-700 hover:underline dark:text-orange-400"
+              onClick={() => setShowLocalName(true)}
+            >
+              + Add name in another language
+            </button>
+          ) : (
+            <div className="mt-3 grid gap-3 rounded-md border border-[var(--rq-border)] bg-[var(--rq-hover)]/40 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium text-[var(--rq-ink)]">
+                  Name in another language
+                </p>
+                <button
+                  type="button"
+                  className="text-xs text-[var(--rq-slate)] hover:underline"
+                  onClick={() => {
+                    setShowLocalName(false);
+                    setOrgNameLocal("");
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+              <div>
+                <Label htmlFor="org-local-locale">Language</Label>
+                <select
+                  id="org-local-locale"
+                  className={selectClassName}
+                  value={orgNameLocalLocale}
+                  onChange={(e) =>
+                    setOrgNameLocalLocale(e.target.value as LocalNameLocale)
+                  }
+                >
+                  {LOCAL_NAME_LOCALES.map((code) => (
+                    <option key={code} value={code}>
+                      {localeNames[code]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="org-local">
+                  Organisation name ({localeNames[orgNameLocalLocale]})
+                </Label>
+                <Input
+                  id="org-local"
+                  className="mt-1"
+                  value={orgNameLocal}
+                  onChange={(e) => setOrgNameLocal(e.target.value)}
+                  placeholder={
+                    orgNameLocalLocale === "th"
+                      ? "บริษัท แอคมี โปรเคียวเมนต์ จำกัด"
+                      : "艾克米采购有限公司"
+                  }
+                  lang={orgNameLocalLocale}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div>
@@ -176,6 +254,12 @@ export default function OnboardingPage() {
               const result = await completeOnboarding({
                 role,
                 orgName: orgName.trim(),
+                orgNameLocal: showLocalName
+                  ? orgNameLocal.trim() || undefined
+                  : undefined,
+                orgNameLocalLocale: showLocalName
+                  ? orgNameLocalLocale
+                  : undefined,
                 phone: phone.trim(),
                 email: email.trim(),
                 address: address.trim(),

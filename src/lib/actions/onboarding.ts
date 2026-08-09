@@ -7,9 +7,15 @@ import { persistOnboarding } from "@/lib/db/phase2";
 import { releaseReferralReward } from "@/lib/actions/referrals";
 import { slugify } from "@/lib/utils";
 
+const LOCAL_NAME_LOCALES = ["th", "zh"] as const;
+
 export async function completeOnboarding(input: {
   role: "buyer" | "supplier" | "contractor";
   orgName: string;
+  /** Optional organisation name in another language/script. */
+  orgNameLocal?: string;
+  /** Locale for `orgNameLocal` (th | zh). */
+  orgNameLocalLocale?: string;
   phone: string;
   email: string;
   address: string;
@@ -26,10 +32,23 @@ export async function completeOnboarding(input: {
   const orgName = input.orgName.trim();
   const email = input.email.trim();
   const contactName = input.contactName.trim();
+  const orgNameLocal = input.orgNameLocal?.trim() || "";
+  const orgNameLocalLocale = LOCAL_NAME_LOCALES.includes(
+    input.orgNameLocalLocale as (typeof LOCAL_NAME_LOCALES)[number],
+  )
+    ? (input.orgNameLocalLocale as (typeof LOCAL_NAME_LOCALES)[number])
+    : undefined;
 
   if (!orgName || !email || !contactName) {
     return {
       message: "Organisation name, contact name, and email are required.",
+      redirectTo: "/onboarding",
+    };
+  }
+
+  if (orgNameLocal && !orgNameLocalLocale) {
+    return {
+      message: "Choose a language for the alternate organisation name.",
       redirectTo: "/onboarding",
     };
   }
@@ -48,6 +67,8 @@ export async function completeOnboarding(input: {
     clerkUserId,
     role: input.role,
     orgName,
+    orgNameLocal: orgNameLocal || undefined,
+    orgNameLocalLocale: orgNameLocal ? orgNameLocalLocale : undefined,
     email,
     contactName,
     phone: input.phone.trim(),
@@ -61,6 +82,16 @@ export async function completeOnboarding(input: {
     path: "/",
     httpOnly: false,
   });
+  if (orgNameLocal && orgNameLocalLocale) {
+    jar.set("rq_org_local", orgNameLocal, { path: "/", httpOnly: false });
+    jar.set("rq_org_local_locale", orgNameLocalLocale, {
+      path: "/",
+      httpOnly: false,
+    });
+  } else {
+    jar.delete("rq_org_local");
+    jar.delete("rq_org_local_locale");
+  }
   jar.set("rq_phone", input.phone.trim(), { path: "/", httpOnly: false });
   jar.set("rq_email", email, { path: "/", httpOnly: false });
   jar.set("rq_address", input.address.trim(), { path: "/", httpOnly: false });
