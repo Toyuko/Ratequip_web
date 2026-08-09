@@ -355,6 +355,80 @@ export async function CompanyProfile({
               </p>
             )}
           </div>
+          {(company.phone ||
+            company.phones?.length ||
+            company.emails?.length ||
+            company.addressLine ||
+            company.abn) && (
+            <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
+              <h3 className="font-semibold text-[var(--rq-ink)]">
+                Public contact details
+              </h3>
+              <dl className="mt-3 space-y-2 text-sm text-[var(--rq-slate)]">
+                {(company.phones?.length
+                  ? company.phones
+                  : company.phone
+                    ? [company.phone]
+                    : []
+                ).map((phone) => (
+                  <div key={phone}>
+                    <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+                      Phone
+                    </dt>
+                    <dd>
+                      <a
+                        href={`tel:${phone.replace(/\s+/g, "")}`}
+                        className="text-orange-600 hover:underline"
+                      >
+                        {phone}
+                      </a>
+                    </dd>
+                  </div>
+                ))}
+                {(company.emails ?? []).map((email) => (
+                  <div key={email}>
+                    <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+                      Email
+                    </dt>
+                    <dd>
+                      <a
+                        href={`mailto:${email}`}
+                        className="text-orange-600 hover:underline"
+                      >
+                        {email}
+                      </a>
+                    </dd>
+                  </div>
+                ))}
+                {company.addressLine ? (
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+                      Address
+                    </dt>
+                    <dd>
+                      {[
+                        company.addressLine,
+                        company.city,
+                        company.region,
+                        company.postalCode,
+                        company.country,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </dd>
+                  </div>
+                ) : null}
+                {company.abn ? (
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-[var(--rq-muted)]">
+                      ABN / registry
+                    </dt>
+                    <dd>{company.abn}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </div>
+          )}
         </aside>
       </div>
     </div>

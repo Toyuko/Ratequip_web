@@ -90,7 +90,11 @@ function heuristicDiscover(input: {
     sources.push({
       id: "src-abn",
       kind: "abn",
-      label: "Business registration / ABN",
+      label:
+        input.country?.toLowerCase().includes("australia") ||
+        /\b\d{2}\s?\d{3}\s?\d{3}\s?\d{3}\b/.test(input.abn)
+          ? "ASIC / ABN registry record"
+          : "Business registration / ABN",
       value: input.abn,
       strength: "strong",
       confidence: 0.8,

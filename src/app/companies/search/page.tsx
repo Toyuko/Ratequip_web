@@ -14,8 +14,42 @@ import {
   searchCompaniesForAdd,
   startListingSubmission,
 } from "@/lib/actions/organic-growth";
-import type { DuplicateCandidate } from "@/lib/organic-growth/types";
+import type { CompanyType, DuplicateCandidate } from "@/lib/organic-growth/types";
 import { isPublicWebsiteUrl } from "@/lib/utils";
+
+type WebEnrichmentCard = {
+  companyName: string;
+  websiteUrl?: string;
+  companyTypes: CompanyType[];
+  countryCode?: string;
+  locality?: string;
+  region?: string;
+  addressLine?: string;
+  postalCode?: string;
+  phoneDisplay?: string;
+  phoneNumbers?: string[];
+  emailCandidates?: string[];
+  publicSourceUrl?: string;
+  privateNotes?: string;
+  categories: string[];
+  enrichmentMeta?: {
+    source: string;
+    usedAi: boolean;
+    confidence: number;
+    matchReasons: string[];
+    abnOrRegistry?: string;
+    fetchedUrl?: string;
+    phones?: string[];
+    emails?: string[];
+    addresses?: Array<{
+      line?: string;
+      locality?: string;
+      region?: string;
+      postalCode?: string;
+      country?: string;
+    }>;
+  };
+};
 
 function SearchForm() {
   const router = useRouter();
@@ -26,6 +60,8 @@ function SearchForm() {
   const [candidates, setCandidates] = useState<DuplicateCandidate[] | null>(
     initialQ ? null : [],
   );
+  const [webEnrichments, setWebEnrichments] = useState<WebEnrichmentCard[]>([]);
+  const [webMessage, setWebMessage] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -33,25 +69,60 @@ function SearchForm() {
   function runSearch(e?: React.FormEvent) {
     e?.preventDefault();
     startTransition(async () => {
-      const result = await searchCompaniesForAdd({ q, country });
+      const result = await searchCompaniesForAdd({
+        q,
+        country,
+        includeWeb: true,
+      });
       if (!result.ok) {
         setMessage(result.message);
         setCandidates([]);
+        setWebEnrichments([]);
+        setWebMessage(null);
         setSearched(false);
         return;
       }
       setMessage(null);
       setCandidates(result.candidates);
+      setWebEnrichments(result.webEnrichments ?? []);
+      setWebMessage(result.webMessage ?? null);
       setSearched(true);
     });
   }
 
-  function startAdd() {
+  function startAdd(enrichment?: WebEnrichmentCard) {
     startTransition(async () => {
-      const result = await startListingSubmission({ searchQuery: q });
+      const result = await startListingSubmission({
+        searchQuery: enrichment?.companyName || q,
+        enrichment: enrichment
+          ? {
+              companyName: enrichment.companyName,
+              websiteUrl: enrichment.websiteUrl,
+              companyTypes: enrichment.companyTypes,
+              countryCode: enrichment.countryCode,
+              locality: enrichment.locality,
+              region: enrichment.region,
+              addressLine: enrichment.addressLine,
+              postalCode: enrichment.postalCode,
+              phoneDisplay: enrichment.phoneDisplay,
+              phoneNumbers:
+                enrichment.phoneNumbers ?? enrichment.enrichmentMeta?.phones,
+              emailCandidates:
+                enrichment.emailCandidates ?? enrichment.enrichmentMeta?.emails,
+              abnOrRegistry: enrichment.enrichmentMeta?.abnOrRegistry,
+              publicSourceUrl: enrichment.publicSourceUrl,
+              privateNotes: enrichment.privateNotes,
+              categories: enrichment.categories,
+            }
+          : undefined,
+      });
       if (!result.ok) return;
       writeLocalDraft(result.submission as never);
-      router.push(`/companies/add/duplicates?submissionId=${result.submission.id}`);
+      // Skip duplicates when we already scraped a concrete web company.
+      const next = enrichment
+        ? `/companies/add/details?submissionId=${result.submission.id}`
+        : `/companies/add/duplicates?submissionId=${result.submission.id}`;
+      router.push(next);
     });
   }
 
@@ -63,7 +134,7 @@ function SearchForm() {
     <AddCompanyWizardShell
       step="search"
       title="Search before adding"
-      description="Prevent duplicate profiles. Search by company name, website or location before creating a listing."
+      description="Search RateQuip’s directory and the open web. AI reads public websites and pre-fills company details — you review before publishing."
     >
       <CaptureReferralRef />
       <form onSubmit={runSearch} className="space-y-4">
@@ -74,7 +145,7 @@ function SearchForm() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="mt-1"
-            placeholder="e.g. Apex Conveyors or apexconveyors.com"
+            placeholder="e.g. InkjetPrint or inkjetprint.com.au"
             required
             minLength={2}
           />
@@ -90,28 +161,136 @@ function SearchForm() {
           />
         </div>
         <Button type="submit" disabled={pending || q.trim().length < 2}>
-          {pending ? "Searching…" : "Search companies"}
+          {pending ? "Searching directory + web…" : "Search companies"}
         </Button>
         {message ? <p className="text-sm text-amber-700">{message}</p> : null}
       </form>
 
       {searched ? (
         <div className="mt-8 space-y-6">
-          <ResultGroup title="Exact matches" items={exact} />
-          <ResultGroup title="Likely matches" items={likely} />
-          <ResultGroup title="Other results" items={other} />
+          <ResultGroup title="Exact matches on RateQuip" items={exact} />
+          <ResultGroup title="Likely matches on RateQuip" items={likely} />
+          <ResultGroup title="Other RateQuip results" items={other} />
+
+          <section>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--rq-muted)]">
+              Found on the web (AI-assisted)
+            </h2>
+            {webMessage ? (
+              <p className="mt-2 text-sm text-[var(--rq-slate)]">{webMessage}</p>
+            ) : null}
+            {webEnrichments.length === 0 ? (
+              <p className="mt-2 text-sm text-[var(--rq-muted)]">
+                No enrichable public websites found yet. Try a full website URL.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-3">
+                {webEnrichments.map((item, index) => (
+                  <li
+                    key={`${item.websiteUrl ?? item.companyName}-${index}`}
+                    className="rounded-md border border-[var(--rq-border)] p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-[var(--rq-ink)]">
+                          {item.companyName}
+                        </p>
+                        <p className="mt-1 text-sm text-[var(--rq-slate)]">
+                          {[item.locality, item.region, item.countryCode]
+                            .filter(Boolean)
+                            .join(", ") || "Location unknown"}
+                          {item.websiteUrl
+                            ? ` · ${item.websiteUrl.replace(/^https?:\/\//, "")}`
+                            : ""}
+                        </p>
+                        {(item.phoneNumbers?.length || item.phoneDisplay) ? (
+                          <p className="mt-1 text-sm text-[var(--rq-slate)]">
+                            Phone ·{" "}
+                            {(item.phoneNumbers?.length
+                              ? item.phoneNumbers
+                              : [item.phoneDisplay]
+                            )
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        ) : null}
+                        {item.emailCandidates?.length ? (
+                          <p className="mt-1 text-sm text-[var(--rq-slate)]">
+                            Email · {item.emailCandidates.join(" · ")}
+                          </p>
+                        ) : null}
+                        {item.addressLine ? (
+                          <p className="mt-1 text-sm text-[var(--rq-slate)]">
+                            Address ·{" "}
+                            {[
+                              item.addressLine,
+                              item.locality,
+                              item.region,
+                              item.postalCode,
+                            ]
+                              .filter(Boolean)
+                              .join(", ")}
+                          </p>
+                        ) : null}
+                        {item.enrichmentMeta?.abnOrRegistry ? (
+                          <p className="mt-1 text-xs text-[var(--rq-muted)]">
+                            Registry / ABN · {item.enrichmentMeta.abnOrRegistry}
+                          </p>
+                        ) : null}
+                        <p className="mt-1 text-xs text-[var(--rq-muted)]">
+                          {(item.enrichmentMeta?.matchReasons ?? []).join(" · ")}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="success">
+                          {item.enrichmentMeta?.usedAi ? "AI extracted" : "Web scrape"}
+                        </Badge>
+                        {typeof item.enrichmentMeta?.confidence === "number" ? (
+                          <Badge variant="muted">
+                            {Math.round(item.enrichmentMeta.confidence * 100)}%
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {item.websiteUrl && isPublicWebsiteUrl(item.websiteUrl) ? (
+                        <Button asChild size="sm" variant="outline">
+                          <a
+                            href={item.websiteUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Open website
+                          </a>
+                        </Button>
+                      ) : null}
+                      <Button
+                        size="sm"
+                        disabled={pending}
+                        onClick={() => startAdd(item)}
+                      >
+                        Use data — add company
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
           <div className="rounded-md border border-dashed border-[var(--rq-border)] bg-[var(--rq-surface)] p-4">
             <p className="text-sm text-[var(--rq-slate)]">
               You can review an unclaimed company and RateQuip will invite them
-              to claim it. Contact emails you supply stay private.
+              to claim it. Contact emails you supply stay private. Web-scraped
+              fields are public facts only — always review before publishing.
             </p>
             <Button
               className="mt-4"
-              onClick={startAdd}
+              onClick={() => startAdd()}
               disabled={pending || q.trim().length < 2}
+              variant="outline"
             >
-              None of these — add a company
+              None of these — add manually
             </Button>
           </div>
         </div>

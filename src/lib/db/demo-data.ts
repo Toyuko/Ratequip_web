@@ -50,6 +50,11 @@ export type DemoCompany = {
   /** Optional claim-enrichment fields (AI / registry / contact). */
   legalName?: string;
   phone?: string;
+  phones?: string[];
+  emails?: string[];
+  addressLine?: string;
+  region?: string;
+  postalCode?: string;
   abn?: string;
   emailDomain?: string;
   publicProfiles?: DemoPublicProfile[];
@@ -570,15 +575,20 @@ export const demoCompanies: DemoCompany[] = [
     country: "Australia",
     city: "Lane Cove West",
     website: "https://inkjetprint.com.au/",
-    phone: "+61 2 9418 8100",
-    abn: "12 345 678 901",
+    phone: "(61) 02 9427 3270",
+    phones: ["(61) 02 9427 3270", "0402 028 140"],
+    emails: ["sales@inkjetprint.com.au"],
+    addressLine: "7/27 Mars Rd, Lane Cove West NSW 2066",
+    region: "NSW",
+    postalCode: "2066",
+    abn: "70 604 909 711",
     emailDomain: "inkjetprint.com.au",
     verified: false,
     claimed: false,
     trustScore: 0,
     reviewCount: 0,
     employeeRange: "1-10",
-    yearFounded: 2014,
+    yearFounded: 2015,
     categories: [
       "packaging-machinery",
       "coding-and-marking",
@@ -609,6 +619,51 @@ export const demoCompanies: DemoCompany[] = [
         kind: "youtube",
         label: "YouTube channel",
         value: "https://www.youtube.com/@inkjetprint",
+      },
+    ],
+  },
+  {
+    id: "co-bega-group",
+    name: "Bega Group",
+    slug: "bega-group",
+    legalName: "Bega Cheese Limited",
+    headline: "Australian dairy and food company",
+    description:
+      "Bega Group is an Australian dairy and food company. Public company profile auto-built from begagroup.com.au contact pages (phones, emails, HQ address, and public social profiles).",
+    country: "Australia",
+    city: "Bega",
+    region: "NSW",
+    postalCode: "2550",
+    addressLine: "45 Ridge Street, Bega NSW 2550",
+    website: "https://begagroup.com.au/",
+    phone: "(02) 6491 7777",
+    phones: [
+      "(02) 6491 7777",
+      "(02) 6491 7762",
+      "(03) 5824 6200",
+      "(03) 9243 5200",
+      "(03) 9243 5300",
+      "(03) 5561 9700",
+    ],
+    emails: ["consumercare@bega.com.au", "customerservice@bega.com.au"],
+    emailDomain: "bega.com.au",
+    verified: false,
+    claimed: false,
+    trustScore: 0,
+    reviewCount: 0,
+    employeeRange: "1001-5000",
+    yearFounded: 1899,
+    categories: ["packaging-machinery"],
+    publicProfiles: [
+      {
+        kind: "linkedin",
+        label: "LinkedIn company page",
+        value: "https://www.linkedin.com/company/bega-group",
+      },
+      {
+        kind: "website",
+        label: "Corporate website",
+        value: "https://begagroup.com.au/",
       },
     ],
   },

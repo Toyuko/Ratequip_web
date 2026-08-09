@@ -27,6 +27,55 @@ import type {
 } from "@/lib/organic-growth/types";
 import { publicAppUrl } from "@/lib/config";
 import { sendTransactionalEmail } from "@/lib/email";
+import {
+  discoverCompaniesFromWeb,
+  enrichCompanyFromWeb,
+  enrichmentToListingFields,
+  type CompanyEnrichment,
+} from "@/lib/ai/company-web-enrich";
+import { demoCategories } from "@/lib/db/demo-data";
+import { allowAiRequest } from "@/lib/ai/assist-guard";
+
+function mapCategoryHints(hints: string[] | undefined) {
+  if (!hints?.length) return [] as string[];
+  const cats = demoCategories;
+  const matched: string[] = [];
+  for (const hint of hints) {
+    const needle = hint.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const hit =
+      cats.find((c) => c.slug === needle) ||
+      cats.find((c) => c.slug.includes(needle) || needle.includes(c.slug)) ||
+      cats.find(
+        (c) =>
+          c.name.toLowerCase().includes(hint.toLowerCase()) ||
+          hint.toLowerCase().includes(c.name.toLowerCase()),
+      );
+    if (hit && !matched.includes(hit.slug)) matched.push(hit.slug);
+  }
+  return matched;
+}
+
+function serializeEnrichment(enrichment: CompanyEnrichment) {
+  const fields = enrichmentToListingFields(enrichment);
+  const categories = mapCategoryHints(enrichment.categoryHints);
+  return {
+    ...fields,
+    categories,
+    enrichmentMeta: {
+      source: enrichment.source,
+      usedAi: enrichment.usedAi,
+      confidence: enrichment.confidence,
+      matchReasons: enrichment.matchReasons,
+      abnOrRegistry: enrichment.abnOrRegistry,
+      fetchedUrl: enrichment.fetchedUrl,
+      phones: fields.phoneNumbers ?? [],
+      emails: fields.emailCandidates ?? [],
+      addresses: enrichment.addresses ?? [],
+      publicProfiles: enrichment.publicProfiles ?? [],
+      registryMeta: enrichment.registryMeta,
+    },
+  };
+}
 
 function sanitizeContacts(
   contacts: ContactCandidateDraft[],
@@ -68,6 +117,7 @@ export async function searchCompaniesForAdd(input: {
   q: string;
   country?: string;
   websiteUrl?: string;
+  includeWeb?: boolean;
 }) {
   const q = input.q.trim();
   if (q.length < 2) {
@@ -80,12 +130,83 @@ export async function searchCompaniesForAdd(input: {
     country: input.country,
   });
 
-  return { ok: true as const, candidates };
+  let web: Awaited<ReturnType<typeof discoverCompaniesFromWeb>> | null = null;
+  if (input.includeWeb !== false) {
+    if (!allowAiRequest(`og-web-search:${q.slice(0, 40).toLowerCase()}`, 8, 60_000)) {
+      return {
+        ok: true as const,
+        candidates,
+        webEnrichments: [] as ReturnType<typeof serializeEnrichment>[],
+        webMessage:
+          "Web enrichment rate-limited — RateQuip directory results only. Try again shortly.",
+        webSearchHits: [] as Array<{ title: string; url: string; snippet: string }>,
+      };
+    }
+    try {
+      web = await discoverCompaniesFromWeb({
+        query: q,
+        country: input.country,
+        limit: 4,
+      });
+    } catch (error) {
+      console.warn("[organic-growth] web discovery failed", error);
+    }
+  }
+
+  return {
+    ok: true as const,
+    candidates,
+    webEnrichments: (web?.enrichments ?? []).map(serializeEnrichment),
+    webMessage: web?.message,
+    webSearchHits: web?.searchHits ?? [],
+  };
+}
+
+export async function enrichCompanyListingFromWeb(input: {
+  query: string;
+  websiteUrl?: string;
+  country?: string;
+}) {
+  if (!allowAiRequest(`og-enrich:${(input.websiteUrl || input.query).slice(0, 48)}`, 12)) {
+    return {
+      ok: false as const,
+      message: "Too many enrichment requests. Wait a minute and try again.",
+    };
+  }
+
+  const result = await enrichCompanyFromWeb(input);
+  if (!result.ok) return result;
+
+  return {
+    ok: true as const,
+    enrichment: serializeEnrichment(result.enrichment),
+    searchHits: result.searchHits,
+    message: result.enrichment.usedAi
+      ? "Details extracted from the public website with AI."
+      : "Details filled from the public website.",
+  };
 }
 
 export async function startListingSubmission(input: {
   searchQuery: string;
   idempotencyKey?: string;
+  enrichment?: Partial<ReturnType<typeof serializeEnrichment>> & {
+    companyName?: string;
+    websiteUrl?: string;
+    companyTypes?: ListingSubmissionDraft["companyTypes"];
+    countryCode?: string;
+    locality?: string;
+    region?: string;
+    addressLine?: string;
+    postalCode?: string;
+    phoneDisplay?: string;
+    phoneNumbers?: string[];
+    emailCandidates?: string[];
+    abnOrRegistry?: string;
+    publicSourceUrl?: string;
+    privateNotes?: string;
+    categories?: string[];
+  };
 }) {
   if (input.idempotencyKey) {
     const existing = getSubmissionByIdempotencyKey(input.idempotencyKey);
@@ -94,9 +215,43 @@ export async function startListingSubmission(input: {
     }
   }
 
+  const enrichment = input.enrichment;
+  const domain = registrableDomainFromUrl(enrichment?.websiteUrl);
+  const seededContacts = sanitizeContacts(
+    (enrichment?.emailCandidates ?? []).slice(0, 5).map((email, index) => ({
+      id: `web-email-${index + 1}`,
+      email,
+      emailMasked: maskEmail(email),
+      role: index === 0 ? "General enquiries" : undefined,
+      sourceType: "company_website" as const,
+      sourceUrl: enrichment?.websiteUrl || enrichment?.publicSourceUrl,
+      sourceNote: "Discovered from public company website",
+      sendAfterPublish: true,
+      domainMatchCategory: "unknown" as const,
+      sendEligibility: "pending" as const,
+    })),
+    domain,
+  );
+
   const submission = createEmptySubmission({
     searchQuery: input.searchQuery,
-    companyName: input.searchQuery,
+    companyName: enrichment?.companyName || input.searchQuery,
+    websiteUrl: enrichment?.websiteUrl,
+    companyTypes: enrichment?.companyTypes ?? [],
+    countryCode: enrichment?.countryCode,
+    locality: enrichment?.locality,
+    region: enrichment?.region,
+    addressLine: enrichment?.addressLine,
+    postalCode: enrichment?.postalCode,
+    phoneDisplay: enrichment?.phoneDisplay,
+    phoneNumbers: enrichment?.phoneNumbers,
+    emailCandidates: enrichment?.emailCandidates,
+    abnOrRegistry: enrichment?.abnOrRegistry,
+    publicSourceUrl: enrichment?.publicSourceUrl,
+    privateNotes: enrichment?.privateNotes,
+    categories: enrichment?.categories ?? [],
+    contacts: seededContacts,
+    skipContacts: seededContacts.length === 0,
     idempotencyKey: input.idempotencyKey,
     status: "draft",
   });

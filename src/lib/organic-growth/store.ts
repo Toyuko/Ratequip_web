@@ -1,4 +1,5 @@
-import { demoCompanies, type DemoCompany } from "@/lib/db/demo-data";
+import { type DemoCompany } from "@/lib/db/demo-data";
+import { getStore } from "@/lib/db/runtime-store";
 import { slugify } from "@/lib/utils";
 import { mintClaimInviteToken } from "./claim-token";
 import {
@@ -161,8 +162,9 @@ export function publishSubmission(submissionId: string) {
     return { ok: false as const, message: "Accept the declarations to publish." };
   }
 
+  const store = getStore();
   let slug = slugify(name);
-  const taken = new Set(demoCompanies.map((c) => c.slug));
+  const taken = new Set(store.companies.map((c) => c.slug));
   if (taken.has(slug)) {
     slug = `${slug}-${Date.now().toString(36)}`;
   }
@@ -171,6 +173,7 @@ export function publishSubmission(submissionId: string) {
     id: `co-og-${existing.id}`,
     name,
     slug,
+    legalName: name,
     headline: `${existing.companyTypes[0]} listed by a RateQuip contributor`,
     description:
       existing.privateNotes?.trim() ||
@@ -182,6 +185,14 @@ export function publishSubmission(submissionId: string) {
       : existing.websiteUrl
         ? `https://${existing.websiteUrl}`
         : "",
+    phone: existing.phoneDisplay,
+    phones: existing.phoneNumbers,
+    emails: existing.emailCandidates,
+    addressLine: existing.addressLine,
+    region: existing.region,
+    postalCode: existing.postalCode,
+    abn: existing.abnOrRegistry,
+    emailDomain: existing.registrableDomain,
     verified: false,
     claimed: false,
     trustScore: 0,
@@ -191,7 +202,7 @@ export function publishSubmission(submissionId: string) {
     categories: existing.categories,
   };
 
-  demoCompanies.unshift(company);
+  store.companies.unshift(company);
 
   const sendContacts = existing.skipContacts
     ? []

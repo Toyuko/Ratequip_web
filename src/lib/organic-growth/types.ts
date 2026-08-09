@@ -124,6 +124,11 @@ export type ListingSubmissionDraft = {
   region?: string;
   postalCode?: string;
   phoneDisplay?: string;
+  /** Extra public phones discovered during web enrichment. */
+  phoneNumbers?: string[];
+  /** Public emails discovered during web enrichment (also seed contacts). */
+  emailCandidates?: string[];
+  abnOrRegistry?: string;
   publicSourceUrl?: string;
   privateNotes?: string;
   categories: string[];

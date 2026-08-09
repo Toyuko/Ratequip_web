@@ -99,6 +99,38 @@ async function actorFromCookies() {
   );
 }
 
+export async function resolveClaimCompanyByName(input: {
+  query: string;
+  country?: string;
+}) {
+  const query = input.query.trim();
+  if (query.length < 2) {
+    return {
+      ok: false as const,
+      message: "Enter a company name to search public sources.",
+    };
+  }
+
+  const { findDuplicateCandidates } = await import(
+    "@/lib/organic-growth/search"
+  );
+  const candidates = await findDuplicateCandidates({
+    query,
+    country: input.country,
+  });
+  const best = candidates[0];
+  if (!best) {
+    return {
+      ok: false as const,
+      message:
+        "No RateQuip company matched that name yet. Add the company first, then claim it.",
+      searchUrl: `/companies/search?q=${encodeURIComponent(query)}`,
+    };
+  }
+
+  return getClaimCompanyContext(best.companySlug);
+}
+
 export async function getClaimCompanyContext(companySlug: string) {
   const company = await getCompanyBySlugAsync(companySlug);
   if (!company) {

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { updateListingSubmission } from "@/lib/actions/organic-growth";
+import { updateListingSubmission, enrichCompanyListingFromWeb } from "@/lib/actions/organic-growth";
 import { demoCategories } from "@/lib/db/demo-data";
 import {
   COMPANY_TYPES,
@@ -32,7 +32,9 @@ export default function AddDetailsPage() {
   const router = useRouter();
   const { draft, ready, save } = useListingDraft();
   const [pending, startTransition] = useTransition();
+  const [enriching, startEnrich] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [enrichNote, setEnrichNote] = useState<string | null>(null);
   const categories = demoCategories.filter((c) => !c.parentId);
 
   const [form, setForm] = useState({
@@ -125,13 +127,83 @@ export default function AddDetailsPage() {
     });
   }
 
+  function autoFillFromWeb() {
+    const query = form.companyName.trim() || draft?.searchQuery || "";
+    if (query.length < 2 && !form.websiteUrl.trim()) {
+      setError("Enter a company name or website before auto-fill.");
+      return;
+    }
+    setError(null);
+    setEnrichNote(null);
+    startEnrich(async () => {
+      const result = await enrichCompanyListingFromWeb({
+        query,
+        websiteUrl: form.websiteUrl.trim() || undefined,
+        country: form.countryCode.trim() || undefined,
+      });
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      const e = result.enrichment;
+      setForm((prev) => ({
+        ...prev,
+        companyName: e.companyName || prev.companyName,
+        websiteUrl: e.websiteUrl || prev.websiteUrl,
+        companyTypes:
+          e.companyTypes.length > 0 ? e.companyTypes : prev.companyTypes,
+        countryCode: e.countryCode || prev.countryCode,
+        locality: e.locality || prev.locality,
+        addressLine: e.addressLine || prev.addressLine,
+        phoneDisplay: e.phoneDisplay || e.phoneNumbers?.[0] || prev.phoneDisplay,
+        category: e.categories[0] || prev.category,
+        publicSourceUrl: e.publicSourceUrl || prev.publicSourceUrl,
+        privateNotes: e.privateNotes || prev.privateNotes,
+      }));
+      const contactBits = [
+        e.phoneNumbers?.length
+          ? `${e.phoneNumbers.length} phone(s)`
+          : e.phoneDisplay
+            ? "phone"
+            : null,
+        e.emailCandidates?.length
+          ? `${e.emailCandidates.length} email(s)`
+          : null,
+        e.addressLine ? "address" : null,
+        e.abnOrRegistry ? "ABN/registry" : null,
+      ].filter(Boolean);
+      setEnrichNote(
+        `${result.message}${
+          contactBits.length ? ` Found ${contactBits.join(", ")}.` : ""
+        }`,
+      );
+    });
+  }
+
   return (
     <AddCompanyWizardShell
       step="details"
       title="Company details"
-      description="Capture enough public facts for a useful unclaimed profile. Private notes never appear on the public page."
+      description="Capture enough public facts for a useful unclaimed profile. Use AI web fill to scrape a public website, then review. Private notes never appear on the public page."
       submissionId={draft.id}
     >
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-[var(--rq-border)] bg-[var(--rq-surface)] p-3">
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={enriching || pending}
+          onClick={autoFillFromWeb}
+        >
+          {enriching ? "Scraping website…" : "Auto-fill from website / web search"}
+        </Button>
+        <p className="text-xs text-[var(--rq-muted)]">
+          Fetches the public site (or searches for it), then AI extracts name,
+          location, phone and more.
+        </p>
+      </div>
+      {enrichNote ? (
+        <p className="mb-4 text-sm text-emerald-700">{enrichNote}</p>
+      ) : null}
       <form onSubmit={onContinue} className="space-y-4">
         <div>
           <Label htmlFor="companyName">Legal or trading name</Label>
