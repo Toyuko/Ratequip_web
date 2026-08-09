@@ -41,7 +41,7 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
-              <Link href="/modules/intelligence" className="hover:text-white">
+              <Link href="/modules" className="hover:text-white">
                 {t.footer.comingModules}
               </Link>
             </li>

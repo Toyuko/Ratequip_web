@@ -47,7 +47,7 @@ export default async function BuyerDashboardPage() {
             <Link href="/projects/new">New project</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/quotes/compare?request=req-1">Compare quotes</Link>
+            <Link href="/quotes/compare">Compare quotes</Link>
           </Button>
           <Button asChild variant="outline">
             <Link href="/v12/activation">AI company questionnaire</Link>

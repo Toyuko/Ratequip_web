@@ -181,7 +181,7 @@ export function publishSubmission(submissionId: string) {
       ? existing.websiteUrl
       : existing.websiteUrl
         ? `https://${existing.websiteUrl}`
-        : "https://example.com",
+        : "",
     verified: false,
     claimed: false,
     trustScore: 0,

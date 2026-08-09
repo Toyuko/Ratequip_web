@@ -15,6 +15,7 @@ import {
   startListingSubmission,
 } from "@/lib/actions/organic-growth";
 import type { DuplicateCandidate } from "@/lib/organic-growth/types";
+import { isPublicWebsiteUrl } from "@/lib/utils";
 
 function SearchForm() {
   const router = useRouter();
@@ -157,7 +158,10 @@ function ResultGroup({
                   {item.name}
                 </Link>
                 <p className="mt-1 text-sm text-[var(--rq-slate)]">
-                  {item.city}, {item.country} · {item.website.replace(/^https?:\/\//, "")}
+                  {item.city}, {item.country}
+                  {isPublicWebsiteUrl(item.website)
+                    ? ` · ${item.website.replace(/^https?:\/\//, "")}`
+                    : ""}
                 </p>
                 <p className="mt-1 text-xs text-[var(--rq-muted)]">
                   {item.matchReasons.join(" · ")}

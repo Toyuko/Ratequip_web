@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
+import { AuthGateLink } from "@/components/auth/auth-gate-link";
 import { useT } from "@/components/i18n/locale-provider";
 import { SupplierCard } from "@/components/suppliers/supplier-card";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +65,11 @@ export function HomePageClient({
   const latest = requests.slice(0, 4);
   const evidenceCompany = featured[0];
   const topVerified = featured.slice(0, 4);
+  const compareHref = spotlight
+    ? `/quotes/compare?request=${spotlight.id}`
+    : "/quotes/compare";
+  const postRfqHref = "/requests/new";
+  const referralsHref = "/referrals";
 
   const filters: { id: SearchFilter; label: string }[] = [
     { id: "equipment", label: t.home.filterEquipment },
@@ -110,7 +116,7 @@ export function HomePageClient({
       icon: FileText,
     },
     {
-      href: "/referrals",
+      href: "/companies/search",
       title: t.home.exploreNetwork,
       body: t.home.exploreNetworkBody,
       icon: Network,
@@ -204,7 +210,9 @@ export function HomePageClient({
                     variant="outline"
                     className="h-12 border-white/35 bg-white/5 text-white hover:bg-white/10"
                   >
-                    <Link href="/requests/new">{t.home.postRfq}</Link>
+                    <AuthGateLink href={postRfqHref}>
+                      {t.home.postRfq}
+                    </AuthGateLink>
                   </Button>
                 </div>
               </div>
@@ -429,9 +437,7 @@ export function HomePageClient({
                       </Link>
                     </Button>
                     <Button asChild size="sm" variant="outline">
-                      <Link href="/quotes/compare?request=req-1">
-                        {t.home.compareAction}
-                      </Link>
+                      <Link href={compareHref}>{t.home.compareAction}</Link>
                     </Button>
                   </div>
                 </div>
@@ -554,7 +560,9 @@ export function HomePageClient({
                 <Link href="/requests">{t.home.browseRfqs}</Link>
               </Button>
               <Button asChild>
-                <Link href="/requests/new">{t.home.createRfq}</Link>
+                <AuthGateLink href={postRfqHref}>
+                  {t.home.createRfq}
+                </AuthGateLink>
               </Button>
             </div>
           </div>
@@ -614,7 +622,9 @@ export function HomePageClient({
                     </Link>
                   </Button>
                   <Button asChild variant="outline" className="border-white/30 text-white hover:bg-white/10">
-                    <Link href="/requests/new">{t.home.createRfq}</Link>
+                    <AuthGateLink href={postRfqHref}>
+                      {t.home.createRfq}
+                    </AuthGateLink>
                   </Button>
                 </div>
               </div>
@@ -696,7 +706,7 @@ export function HomePageClient({
         </div>
         <div className="mt-6">
           <Button asChild>
-            <Link href="/quotes/compare?request=req-1">
+            <Link href={compareHref}>
               {t.home.openCompare} <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
@@ -757,7 +767,7 @@ export function HomePageClient({
               Find → Compare → RFQ → Connect → Procure
             </p>
             <Button asChild className="mt-6">
-              <Link href="/requests/new">{t.home.buyerCta}</Link>
+              <AuthGateLink href={postRfqHref}>{t.home.buyerCta}</AuthGateLink>
             </Button>
           </div>
           <div className="rounded-2xl border border-[var(--rq-border)] bg-[var(--rq-navy)] p-6 text-white sm:p-8">
@@ -803,7 +813,9 @@ export function HomePageClient({
             </ul>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild>
-                <Link href="/referrals">{t.home.creditsCta}</Link>
+                <AuthGateLink href={referralsHref}>
+                  {t.home.creditsCta}
+                </AuthGateLink>
               </Button>
               <Button asChild variant="outline">
                 <Link href="/pricing">{t.home.creditsInvite}</Link>
@@ -860,7 +872,7 @@ export function HomePageClient({
               variant="outline"
               className="border-white/30 bg-white/5 text-white hover:bg-white/10"
             >
-              <Link href="/requests/new">{t.home.postRfq}</Link>
+              <AuthGateLink href={postRfqHref}>{t.home.postRfq}</AuthGateLink>
             </Button>
           </div>
         </div>

@@ -29,7 +29,7 @@ export function SiteHeader() {
     { href: "/suppliers", label: t.nav.suppliers },
     { href: "/requests", label: t.nav.rfqs },
     { href: "/categories", label: t.nav.industries },
-    { href: "/quotes/compare?request=req-1", label: t.nav.compare },
+    { href: "/quotes/compare", label: t.nav.compare },
     { href: "/#how-it-works", label: t.nav.howItWorks },
     { href: "/pricing", label: t.nav.pricing },
   ];

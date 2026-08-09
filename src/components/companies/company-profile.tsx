@@ -13,6 +13,7 @@ import {
   getCompanyProducts,
   getCompanyReviews,
 } from "@/lib/db/queries";
+import { isPublicWebsiteUrl, signUpWithRedirect } from "@/lib/utils";
 
 function isPublicUrl(url: string) {
   return url.startsWith("http://") || url.startsWith("https://");
@@ -101,7 +102,15 @@ export async function CompanyProfile({ slug }: { slug: string }) {
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild>
-              <Link href={`/requests/new?supplier=${company.slug}`}>
+              <Link
+                href={
+                  signedIn
+                    ? `/requests/new?supplier=${company.slug}`
+                    : signUpWithRedirect(
+                        `/requests/new?supplier=${company.slug}`,
+                      )
+                }
+              >
                 Request quote
               </Link>
             </Button>
@@ -110,7 +119,15 @@ export async function CompanyProfile({ slug }: { slug: string }) {
               variant="outline"
               className="border-white/30 bg-transparent text-white hover:bg-white/10"
             >
-              <Link href={`/reviews/new?company=${company.slug}`}>
+              <Link
+                href={
+                  signedIn
+                    ? `/reviews/new?company=${company.slug}`
+                    : signUpWithRedirect(
+                        `/reviews/new?company=${company.slug}`,
+                      )
+                }
+              >
                 Write review
               </Link>
             </Button>
@@ -302,14 +319,20 @@ export async function CompanyProfile({ slug }: { slug: string }) {
           </div>
           <div className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-5">
             <h3 className="font-semibold text-[var(--rq-ink)]">Website</h3>
-            <a
-              href={company.website}
-              className="mt-2 block text-sm text-orange-600 hover:underline"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Visit site
-            </a>
+            {isPublicWebsiteUrl(company.website) ? (
+              <a
+                href={company.website}
+                className="mt-2 block text-sm text-orange-600 hover:underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Visit site
+              </a>
+            ) : (
+              <p className="mt-2 text-sm text-[var(--rq-muted)]">
+                No public website listed yet.
+              </p>
+            )}
           </div>
         </aside>
       </div>

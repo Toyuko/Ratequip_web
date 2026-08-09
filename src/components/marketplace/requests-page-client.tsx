@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AuthGateLink } from "@/components/auth/auth-gate-link";
 import { useT } from "@/components/i18n/locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ export function RequestsPageClient({ requests }: { requests: DemoRequest[] }) {
           <p className="mt-2 text-[var(--rq-slate)]">{t.requests.body}</p>
         </div>
         <Button asChild>
-          <Link href="/requests/new">{t.requests.newRfq}</Link>
+          <AuthGateLink href="/requests/new">{t.requests.newRfq}</AuthGateLink>
         </Button>
       </div>
 

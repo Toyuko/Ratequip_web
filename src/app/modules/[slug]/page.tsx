@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import { Button } from "@/components/ui/button";
+import { hasClerk } from "@/lib/config";
 import { upcomingModules } from "@/lib/db/demo-data";
 
 export async function generateMetadata({
@@ -13,15 +15,33 @@ export async function generateMetadata({
   return { title: mod?.name ?? "Module" };
 }
 
+async function isSignedInUser() {
+  if (!hasClerk()) return false;
+  try {
+    const session = await auth();
+    return Boolean(session.userId);
+  } catch {
+    return false;
+  }
+}
+
 export default async function ModuleComingSoonPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  if (slug === "v12") redirect("/v12");
-  if (slug === "srm") redirect("/v12/srm");
-  if (slug === "intelligence" || slug === "ai-copilot") redirect("/v12/intelligence");
+  const signedIn = await isSignedInUser();
+
+  // Signed-in users can jump into live V12 surfaces; guests stay on public
+  // coming-soon pages so footer/nav links are not dead ends.
+  if (signedIn) {
+    if (slug === "v12") redirect("/v12");
+    if (slug === "srm") redirect("/v12/srm");
+    if (slug === "intelligence" || slug === "ai-copilot") {
+      redirect("/v12/intelligence");
+    }
+  }
 
   const mod = upcomingModules.find((m) => m.slug === slug);
   if (!mod) notFound();
@@ -41,10 +61,12 @@ export default async function ModuleComingSoonPage({
       </p>
       <div className="mt-8 flex justify-center gap-3">
         <Button asChild>
-          <Link href="/dashboard/buyer">Back to dashboard</Link>
+          <Link href="/modules">Browse modules</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/modules/intelligence">Browse modules</Link>
+          <Link href={signedIn ? "/dashboard/buyer" : "/sign-up"}>
+            {signedIn ? "Back to dashboard" : "Get started"}
+          </Link>
         </Button>
       </div>
       <ul className="mt-12 grid gap-3 text-left sm:grid-cols-2">

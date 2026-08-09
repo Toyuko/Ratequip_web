@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { hasDatabase, mayUseRuntimeStore } from "@/lib/config";
 import { calculateTrustScore } from "@/lib/trust-score";
-import { slugify } from "@/lib/utils";
+import { isPublicWebsiteUrl, slugify } from "@/lib/utils";
 import { RFQ_CREDIT_COST, getPlanByCode } from "@/lib/billing/catalog";
 import {
   assertCanCreateRfq,
@@ -311,7 +311,7 @@ function mapCompanyRow(row: typeof companies.$inferSelect, cats: string[] = []):
     description: row.description ?? "",
     country: row.country ?? "",
     city: row.city ?? "",
-    website: row.website ?? "",
+    website: isPublicWebsiteUrl(row.website) ? (row.website as string) : "",
     verified: row.verified,
     claimed: row.claimed,
     trustScore: Number(row.trustScore),
