@@ -15,6 +15,7 @@ const isProtectedRoute = createRouteMatcher([
   "/requests/new(.*)",
   "/requests/(.*)/edit(.*)",
   "/v12(.*)",
+  "/collaborate(.*)",
   "/referrals(.*)",
 ]);
 

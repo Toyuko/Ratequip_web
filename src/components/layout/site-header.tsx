@@ -28,6 +28,7 @@ export function SiteHeader() {
     { href: "/search?type=equipment", label: t.nav.equipment },
     { href: "/suppliers", label: t.nav.suppliers },
     { href: "/requests", label: t.nav.rfqs },
+    { href: "/collaborate", label: "Collaborate" },
     { href: "/categories", label: t.nav.industries },
     { href: "/quotes/compare", label: t.nav.compare },
     { href: "/#how-it-works", label: t.nav.howItWorks },
