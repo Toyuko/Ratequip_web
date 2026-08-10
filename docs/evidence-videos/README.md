@@ -2,6 +2,14 @@
 
 Recorded against **https://ratequip-web.vercel.app** using real Clerk sign-in (not local demo mode).
 
+## Collaborate (Features 61–70)
+
+| File | What it shows |
+|------|----------------|
+| **collaborate-demo** | Live walkthrough: Collaborate hub → publish SessionOffering → book → fee disclosure / event chain → Paid Job create + state machine (~90s) |
+
+Reproduce: `npm run evidence:collaborate`
+
 ## Full UAT walkthrough (Robin’s 10 steps)
 
 | File | What it shows |
