@@ -89,6 +89,34 @@ export default function EngagementDetailPage() {
     if (e.ok) {
       setEngagement(e.engagement);
       setFee(e.feeDisclosure);
+      try {
+        sessionStorage.setItem(
+          "rq_collaborate_last_engagement",
+          JSON.stringify(e.engagement),
+        );
+      } catch {
+        /* ignore */
+      }
+    } else {
+      try {
+        const raw = sessionStorage.getItem("rq_collaborate_last_engagement");
+        if (raw) {
+          const local = JSON.parse(raw) as Engagement;
+          if (local.engagementId === engagementId) {
+            await fetch("/api/v1/collaborate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "ensure_engagement",
+                engagement: local,
+              }),
+            });
+            setEngagement(local);
+          }
+        }
+      } catch {
+        /* ignore */
+      }
     }
     if (c.ok) {
       setEvents(c.events);
@@ -114,6 +142,16 @@ export default function EngagementDetailPage() {
 
   function transition(toState: string, payload?: Record<string, unknown>) {
     startTransition(async () => {
+      if (engagement) {
+        await fetch("/api/v1/collaborate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "ensure_engagement",
+            engagement,
+          }),
+        }).catch(() => undefined);
+      }
       const res = await fetch("/api/v1/collaborate", {
         method: "POST",
         headers: {
@@ -137,6 +175,14 @@ export default function EngagementDetailPage() {
         return;
       }
       setMessage(`Moved to ${toState}`);
+      try {
+        sessionStorage.setItem(
+          "rq_collaborate_last_engagement",
+          JSON.stringify(data.engagement),
+        );
+      } catch {
+        /* ignore */
+      }
       await refresh();
     });
   }

@@ -34,4 +34,6 @@ export {
   snapshot,
   resetCollaborateRuntime,
   getVerificationQueue,
+  ensureOffering,
+  ensureEngagement,
 } from "@/lib/collaborate/engine";

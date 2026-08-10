@@ -24,6 +24,12 @@ type Party = {
   legalName: string;
 };
 
+function mergeOfferings(api: Offering[], local: Offering | null): Offering[] {
+  if (!local) return api;
+  if (api.some((o) => o.offeringId === local.offeringId)) return api;
+  return [local, ...api];
+}
+
 export default function SessionsPage() {
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [parties, setParties] = useState<Party[]>([]);
@@ -36,10 +42,25 @@ export default function SessionsPage() {
       fetch("/api/v1/collaborate?action=list_offerings").then((r) => r.json()),
       fetch("/api/v1/collaborate?action=list_parties").then((r) => r.json()),
     ]);
-    if (o.ok) setOfferings(o.offerings);
+    let localOffering: Offering | null = null;
+    try {
+      const raw = sessionStorage.getItem("rq_collaborate_last_offering");
+      if (raw) localOffering = JSON.parse(raw) as Offering;
+    } catch {
+      localOffering = null;
+    }
+    if (o.ok) setOfferings(mergeOfferings(o.offerings, localOffering));
+    else if (localOffering) setOfferings([localOffering]);
+
     if (p.ok) {
       setParties(p.parties);
-      if (!buyerId && p.parties[0]) setBuyerId(p.parties[0].partyId);
+      const buyer =
+        p.parties.find((x: Party) => /demo buyer/i.test(x.legalName)) ??
+        p.parties.find(
+          (x: Party) => x.partyId !== localOffering?.expertPartyId,
+        );
+      if (!buyerId && buyer) setBuyerId(buyer.partyId);
+      else if (!buyerId && p.parties[0]) setBuyerId(p.parties[0].partyId);
     }
   }
 
@@ -49,11 +70,40 @@ export default function SessionsPage() {
   }, []);
 
   function book(offering: Offering) {
-    if (!buyerId) {
-      setMessage("Create a Party first (via Publish an offering) or select one.");
-      return;
-    }
     startTransition(async () => {
+      let actingBuyer = buyerId;
+      if (!actingBuyer) {
+        const created = await fetch("/api/v1/collaborate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "create_party",
+            kind: "ORGANISATION",
+            legalName: "Demo Buyer Co",
+            jurisdiction: "AU",
+            contactEmail: "buyer@example.com",
+            timezone: "Australia/Brisbane",
+          }),
+        }).then((r) => r.json());
+        if (!created.ok) {
+          setMessage(created.error ?? "Could not create buyer Party");
+          return;
+        }
+        actingBuyer = created.party.partyId as string;
+        setBuyerId(actingBuyer);
+      }
+
+      // Re-hydrate offering + parties on this serverless isolate
+      await fetch("/api/v1/collaborate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ensure_offering",
+          offering,
+          buyerPartyId: actingBuyer,
+        }),
+      }).catch(() => undefined);
+
       const res = await fetch("/api/v1/collaborate", {
         method: "POST",
         headers: {
@@ -64,8 +114,8 @@ export default function SessionsPage() {
           action: "create_engagement",
           mode: "SESSION",
           title: offering.title,
-          buyerPartyId: buyerId,
-          actingAsPartyId: buyerId,
+          buyerPartyId: actingBuyer,
+          actingAsPartyId: actingBuyer,
           offeringId: offering.offeringId,
         }),
       });
@@ -75,7 +125,6 @@ export default function SessionsPage() {
         return;
       }
       const engId = data.engagement.engagementId as string;
-      // Authorise (funds hold) immediately after book
       const t = await fetch("/api/v1/collaborate", {
         method: "POST",
         headers: {
@@ -86,13 +135,21 @@ export default function SessionsPage() {
           action: "transition",
           engagementId: engId,
           toState: "BOOKED",
-          actingAsPartyId: buyerId,
+          actingAsPartyId: actingBuyer,
         }),
       });
       const td = await t.json();
       if (!td.ok) {
         setMessage(td.error ?? "Authorisation failed");
         return;
+      }
+      try {
+        sessionStorage.setItem(
+          "rq_collaborate_last_engagement",
+          JSON.stringify(td.engagement),
+        );
+      } catch {
+        /* ignore */
       }
       window.location.href = `/collaborate/engagements/${engId}`;
     });
@@ -133,11 +190,11 @@ export default function SessionsPage() {
         </label>
       ) : (
         <p className="mt-6 text-sm text-amber-700">
-          No parties yet.{" "}
+          Booking will create a buyer Party automatically if needed.{" "}
           <Link className="underline" href="/collaborate/experts">
-            Publish an expert offering
+            Publish an offering
           </Link>{" "}
-          to create demo parties, then return here to book.
+          first if the list below is empty.
         </p>
       )}
 
@@ -184,7 +241,7 @@ export default function SessionsPage() {
                   <Button
                     className="mt-2"
                     size="sm"
-                    disabled={pending || !buyerId}
+                    disabled={pending}
                     onClick={() => book(o)}
                   >
                     {pending ? "Booking…" : "Book session"}

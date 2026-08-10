@@ -115,6 +115,21 @@ export default function ExpertsPage() {
               return;
             }
             setMessage("Offering published.");
+            try {
+              sessionStorage.setItem(
+                "rq_collaborate_last_offering",
+                JSON.stringify(offData.offering),
+              );
+              sessionStorage.setItem(
+                "rq_collaborate_parties",
+                JSON.stringify({
+                  expertPartyId,
+                  updatedAt: Date.now(),
+                }),
+              );
+            } catch {
+              /* ignore */
+            }
             router.push("/collaborate/sessions");
           });
         }}

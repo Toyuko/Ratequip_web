@@ -19,10 +19,13 @@ import {
   submitMilestoneEvidence,
   escalateSessionToJob,
   postWorkspaceMessage,
+  ensureOffering,
+  ensureEngagement,
 } from "@/lib/collaborate/engine";
 import { getCollaborateStore } from "@/lib/collaborate/store";
 import { matchRequirement } from "@/lib/collaborate/matching";
 import { formatMoney } from "@/lib/collaborate/money";
+import type { Engagement, SessionOffering } from "@/lib/collaborate/types";
 
 export const runtime = "nodejs";
 
@@ -46,7 +49,9 @@ type Action =
   | "reputation"
   | "match"
   | "escalate_session"
-  | "workspace_message";
+  | "workspace_message"
+  | "ensure_offering"
+  | "ensure_engagement";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -348,6 +353,23 @@ export async function POST(req: Request) {
           }),
         });
       }
+
+      case "ensure_offering":
+        return NextResponse.json({
+          ok: true,
+          offering: ensureOffering({
+            offering: body.offering as SessionOffering,
+            buyerPartyId: body.buyerPartyId
+              ? String(body.buyerPartyId)
+              : undefined,
+          }),
+        });
+
+      case "ensure_engagement":
+        return NextResponse.json({
+          ok: true,
+          engagement: await ensureEngagement(body.engagement as Engagement),
+        });
 
       default:
         return bad(`Unknown action ${action}`);

@@ -265,6 +265,138 @@ export function createSessionOffering(input: {
   return offering;
 }
 
+/**
+ * Re-hydrate an offering (and its expert Party) onto this isolate.
+ * Needed on Vercel where the in-memory store is per-instance.
+ */
+export function ensureOffering(input: {
+  offering: SessionOffering;
+  buyerPartyId?: string;
+}): SessionOffering {
+  const store = getCollaborateStore();
+  const existing = store.offerings.find(
+    (o) => o.offeringId === input.offering.offeringId,
+  );
+  if (existing) return existing;
+
+  if (!getParty(input.offering.expertPartyId)) {
+    store.parties.push({
+      partyId: input.offering.expertPartyId,
+      kind: "INDIVIDUAL",
+      legalName: "Expert (restored)",
+      jurisdiction: "AU",
+      contactEmail: "expert@example.com",
+      timezone: "Australia/Brisbane",
+      verificationTier: "T2",
+      createdAt: now(),
+    });
+  }
+  if (input.buyerPartyId && !getParty(input.buyerPartyId)) {
+    store.parties.push({
+      partyId: input.buyerPartyId,
+      kind: "ORGANISATION",
+      legalName: "Demo Buyer Co",
+      jurisdiction: "AU",
+      contactEmail: "buyer@example.com",
+      timezone: "Australia/Brisbane",
+      verificationTier: "T1",
+      createdAt: now(),
+    });
+  }
+
+  const offering: SessionOffering = {
+    ...input.offering,
+    active: true,
+  };
+  store.offerings.push(offering);
+  return offering;
+}
+
+/**
+ * Re-hydrate an engagement onto this isolate for continued transitions.
+ */
+export async function ensureEngagement(
+  engagement: Engagement,
+): Promise<Engagement> {
+  const store = getCollaborateStore();
+  const existing = store.engagements.find(
+    (e) => e.engagementId === engagement.engagementId,
+  );
+  if (existing) return existing;
+
+  for (const actor of engagement.actors) {
+    if (!getParty(actor.partyId)) {
+      store.parties.push({
+        partyId: actor.partyId,
+        kind: actor.role === "BUYER" ? "ORGANISATION" : "INDIVIDUAL",
+        legalName: `${actor.role} (restored)`,
+        jurisdiction: engagement.jurisdiction,
+        contactEmail: `${actor.role.toLowerCase()}@example.com`,
+        timezone: "Australia/Brisbane",
+        verificationTier: "T2",
+        createdAt: now(),
+      });
+    }
+  }
+  if (engagement.feeQuoteId) {
+    const hasFee = store.feeQuotes.some(
+      (f) => f.feeQuoteId === engagement.feeQuoteId,
+    );
+    if (!hasFee && engagement.milestones[0]) {
+      const ms = engagement.milestones[0];
+      const fee = computeFeeQuote({
+        engagementId: engagement.engagementId,
+        mode: engagement.mode,
+        currency: engagement.currency,
+        grossMinor: ms.amount.amountMinor,
+      });
+      fee.feeQuoteId = engagement.feeQuoteId;
+      store.feeQuotes.push(fee);
+    }
+  }
+  store.engagements.push(engagement);
+  if (engagement.workspaceId) {
+    const hasWs = store.workspaces.some(
+      (w) => w.workspaceId === engagement.workspaceId,
+    );
+    if (!hasWs) {
+      store.workspaces.push({
+        workspaceId: engagement.workspaceId,
+        engagementId: engagement.engagementId,
+        threads: [],
+        messages: [],
+        files: [],
+        tasks: [],
+        accessLog: [],
+      });
+    }
+  }
+
+  const provider = getSandboxPaymentProvider();
+  for (const ms of engagement.milestones) {
+    if (!["FUNDED", "IN_PROGRESS", "SUBMITTED", "ACCEPTED"].includes(ms.state)) {
+      continue;
+    }
+    const hasLedger = store.moneyLedger.some(
+      (l) => l.milestoneId === ms.milestoneId,
+    );
+    if (hasLedger) continue;
+    const hold = await provider.createHold(
+      ms.milestoneId,
+      ms.amount,
+      engagement.buyerPartyId,
+    );
+    ms.fundingRef = hold.holdId;
+    store.moneyLedger.push({
+      hold,
+      milestoneId: ms.milestoneId,
+      engagementId: engagement.engagementId,
+    });
+  }
+
+  return engagement;
+}
+
 export function listOfferings(activeOnly = true): SessionOffering[] {
   const all = getCollaborateStore().offerings;
   return activeOnly ? all.filter((o) => o.active) : all;
@@ -852,9 +984,7 @@ async function acceptAndPay(eng: Engagement, ctx: ActingContext) {
     ["SUBMITTED", "IN_PROGRESS", "FUNDED"].includes(m.state),
   )) {
     if (ms.state !== "SUBMITTED" && ms.state !== "ACCEPTED") {
-      // allow accept from submitted primarily
       if (ms.state === "IN_PROGRESS" || ms.state === "FUNDED") {
-        // force through submitted for simplicity in sandbox
         ms.state = "SUBMITTED";
         ms.submittedAt = ms.submittedAt ?? now();
       }
@@ -863,10 +993,23 @@ async function acceptAndPay(eng: Engagement, ctx: ActingContext) {
     ms.state = "ACCEPTED";
     ms.acceptedAt = now();
 
-    const ledger = store.moneyLedger.find((l) => l.milestoneId === ms.milestoneId);
-    if (!ledger?.hold) throw new Error("Missing funding hold");
+    let ledger = store.moneyLedger.find((l) => l.milestoneId === ms.milestoneId);
+    if (!ledger?.hold) {
+      const hold = await provider.createHold(
+        ms.milestoneId,
+        ms.amount,
+        eng.buyerPartyId,
+      );
+      ledger = {
+        hold,
+        milestoneId: ms.milestoneId,
+        engagementId: eng.engagementId,
+      };
+      store.moneyLedger.push(ledger);
+      ms.fundingRef = hold.holdId;
+    }
 
-    const capture = await provider.captureHold(ledger.hold);
+    const capture = await provider.captureHold(ledger.hold!);
     ledger.capture = capture;
     const payouts = await provider.releaseSplit(
       capture,
@@ -887,7 +1030,6 @@ async function acceptAndPay(eng: Engagement, ctx: ActingContext) {
       payoutIds: payouts.map((p) => p.payoutId),
     });
 
-    // Reputation — only from funded, completed, non-refunded transactions
     for (const actor of eng.actors.filter((a) => a.role === "CONTRIBUTOR")) {
       const rep = createReputationEvent({
         partyId: actor.partyId,
@@ -911,7 +1053,6 @@ async function acceptAndPay(eng: Engagement, ctx: ActingContext) {
       if (idx >= 0) store.reputationProjections[idx] = projection;
       else store.reputationProjections.push(projection);
 
-      // DELIVERY_PROVEN after N accepted milestones for a capability
       maybeMarkDeliveryProven(actor.partyId);
     }
   }
