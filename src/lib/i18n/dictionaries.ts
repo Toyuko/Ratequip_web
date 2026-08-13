@@ -40,6 +40,12 @@ export type Dictionary = {
     contact: string;
     buyerDashboard: string;
     supplierDashboard: string;
+    trust: string;
+    security: string;
+    faq: string;
+    roadmap: string;
+    economies: string;
+    capabilities: string;
   };
   home: {
     heroEyebrow: string;
@@ -187,6 +193,12 @@ const en: Dictionary = {
     contact: "Contact",
     buyerDashboard: "Buyer dashboard",
     supplierDashboard: "Supplier dashboard",
+    trust: "Trust",
+    security: "Security",
+    faq: "FAQ",
+    roadmap: "Roadmap",
+    economies: "Economies",
+    capabilities: "Capabilities",
   },
   home: {
     heroEyebrow: "Industrial equipment network",
@@ -353,6 +365,12 @@ const th: Dictionary = {
     contact: "ติดต่อ",
     buyerDashboard: "แดชบอร์ดผู้ซื้อ",
     supplierDashboard: "แดชบอร์ดซัพพลายเออร์",
+    trust: "ความน่าเชื่อถือ",
+    security: "ความปลอดภัย",
+    faq: "คำถามที่พบบ่อย",
+    roadmap: "แผนงาน",
+    economies: "ระบบเศรษฐกิจ",
+    capabilities: "ความสามารถ",
   },
   home: {
     heroEyebrow: "เครือข่ายอุปกรณ์อุตสาหกรรม",
@@ -514,6 +532,12 @@ const zh: Dictionary = {
     contact: "联系我们",
     buyerDashboard: "采购方控制台",
     supplierDashboard: "供应商控制台",
+    trust: "信任",
+    security: "安全",
+    faq: "常见问题",
+    roadmap: "路线图",
+    economies: "经济体",
+    capabilities: "能力地图",
   },
   home: {
     heroEyebrow: "工业设备网络",

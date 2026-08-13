@@ -41,6 +41,16 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/how-it-works" className="hover:text-white">
+                {t.nav.howItWorks}
+              </Link>
+            </li>
+            <li>
+              <Link href="/economies" className="hover:text-white">
+                {t.footer.economies}
+              </Link>
+            </li>
+            <li>
               <Link href="/modules" className="hover:text-white">
                 {t.footer.comingModules}
               </Link>
@@ -58,18 +68,33 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/trust" className="hover:text-white">
+                {t.footer.trust}
+              </Link>
+            </li>
+            <li>
+              <Link href="/security" className="hover:text-white">
+                {t.footer.security}
+              </Link>
+            </li>
+            <li>
+              <Link href="/faq" className="hover:text-white">
+                {t.footer.faq}
+              </Link>
+            </li>
+            <li>
+              <Link href="/roadmap" className="hover:text-white">
+                {t.footer.roadmap}
+              </Link>
+            </li>
+            <li>
+              <Link href="/capabilities" className="hover:text-white">
+                {t.footer.capabilities}
+              </Link>
+            </li>
+            <li>
               <Link href="/contact" className="hover:text-white">
                 {t.footer.contact}
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/buyer" className="hover:text-white">
-                {t.footer.buyerDashboard}
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/supplier" className="hover:text-white">
-                {t.footer.supplierDashboard}
               </Link>
             </li>
           </ul>

@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { searchAll } from "@/lib/db/queries";
 import { formatCurrency } from "@/lib/utils";
 
-export const metadata = { title: "Search" };
+export const metadata = {
+  title: "Search",
+  description: "Search RateQuip suppliers, equipment categories and open RFQs.",
+};
 
 export default async function SearchPage({
   searchParams,

@@ -31,7 +31,7 @@ export function SiteHeader() {
     { href: "/collaborate", label: "Collaborate" },
     { href: "/categories", label: t.nav.industries },
     { href: "/quotes/compare", label: t.nav.compare },
-    { href: "/#how-it-works", label: t.nav.howItWorks },
+    { href: "/how-it-works", label: t.nav.howItWorks },
     { href: "/pricing", label: t.nav.pricing },
   ];
 

@@ -7,6 +7,12 @@ import {
 } from "@/lib/db/demo-data";
 import { listCompanies, listRequests } from "@/lib/db/queries";
 
+export const metadata = {
+  title: "Industrial marketplace and RFQ platform",
+  description:
+    "Discover verified suppliers, compare equipment, issue RFQs and build evidence-backed reputation. Rate. Compare. Connect. Grow.",
+};
+
 const SHOWCASE_COMPANY_SLUGS = [
   "nordicfill-systems",
   "apex-robotics-asia",

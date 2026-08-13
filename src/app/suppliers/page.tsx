@@ -1,7 +1,10 @@
 import { SuppliersDirectory } from "@/components/suppliers/suppliers-directory";
 import { listCategories, listCompanies } from "@/lib/db/queries";
 
-export const metadata = { title: "Supplier directory" };
+export const metadata = {
+  title: "Supplier directory",
+  description: "Browse verified industrial suppliers ranked by Trust Score.",
+};
 
 export default async function SuppliersPage({
   searchParams,

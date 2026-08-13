@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { hasDatabase, mayUseRuntimeStore } from "@/lib/config";
 import { calculateTrustScore } from "@/lib/trust-score";
+import { claimHasAuthorityProof } from "@/lib/db/blueprint-policy";
 import { isPublicWebsiteUrl, slugify } from "@/lib/utils";
 import { RFQ_CREDIT_COST, getPlanByCode } from "@/lib/billing/catalog";
 import {
@@ -1407,6 +1408,7 @@ export async function persistClaim(input: {
           notes,
           status: status as typeof companyClaims.$inferInsert.status,
           verificationPayload: input.verificationPayload ?? null,
+          authorityVerified: verified,
         })
         .returning();
 
@@ -1778,10 +1780,19 @@ export async function persistModeration(input: {
         companyId = row.companyId ?? row.claim.companyId;
         companyName = row.companyName ?? companyName ?? companySlug;
         claimantEmail = row.claimantEmail ?? claimantEmail;
+        const approving = input.decision === "approved";
+        if (approving && !claimHasAuthorityProof(row.claim)) {
+          return {
+            ok: false as const,
+            message:
+              "A claim cannot be approved without authority verification (evidence or verification payload).",
+          };
+        }
         await db
           .update(companyClaims)
           .set({
             status: input.decision,
+            authorityVerified: approving ? true : row.claim.authorityVerified,
             reviewedAt: new Date(),
             updatedAt: new Date(),
           })

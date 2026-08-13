@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { listChildCategories, listTopCategories } from "@/lib/db/queries";
 
-export const metadata = { title: "Categories" };
+export const metadata = {
+  title: "Categories",
+  description: "Industrial categories on RateQuip — equipment, process and service taxonomies.",
+};
 
 export default async function CategoriesPage() {
   const parents = await listTopCategories();

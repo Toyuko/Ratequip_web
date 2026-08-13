@@ -1,5 +1,6 @@
 import {
   boolean,
+  check,
   integer,
   jsonb,
   numeric,
@@ -10,6 +11,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const accountRoleEnum = pgEnum("account_role", [
   "buyer",
@@ -179,23 +181,35 @@ export const companyCategories = pgTable("company_categories", {
     .references(() => categories.id),
 });
 
-export const companyClaims = pgTable("company_claims", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  companyId: uuid("company_id")
-    .notNull()
-    .references(() => companies.id),
-  claimantUserId: uuid("claimant_user_id")
-    .notNull()
-    .references(() => users.id),
-  organisationId: uuid("organisation_id").references(() => organisations.id),
-  evidenceUrl: text("evidence_url"),
-  notes: text("notes"),
-  status: claimStatusEnum("status").notNull().default("pending"),
-  verificationPayload: jsonb("verification_payload").$type<Record<string, unknown>>(),
-  reviewedBy: uuid("reviewed_by").references(() => users.id),
-  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
-  ...timestamps,
-});
+export const companyClaims = pgTable(
+  "company_claims",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id),
+    claimantUserId: uuid("claimant_user_id")
+      .notNull()
+      .references(() => users.id),
+    organisationId: uuid("organisation_id").references(() => organisations.id),
+    evidenceUrl: text("evidence_url"),
+    notes: text("notes"),
+    status: claimStatusEnum("status").notNull().default("pending"),
+    verificationPayload: jsonb("verification_payload").$type<
+      Record<string, unknown>
+    >(),
+    authorityVerified: boolean("authority_verified").notNull().default(false),
+    reviewedBy: uuid("reviewed_by").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    check(
+      "claim_approval_requires_authority",
+      sql`${table.status}::text not in ('approved','verified_representative','verified_controller') or ${table.authorityVerified} = true`,
+    ),
+  ],
+);
 
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -267,6 +281,7 @@ export const trustScores = pgTable("trust_scores", {
     .default("0"),
   explanation: jsonb("explanation")
     .$type<Record<string, number>>()
+    .notNull()
     .default({}),
   ...timestamps,
 });
