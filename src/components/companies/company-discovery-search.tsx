@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { writeLocalDraft } from "@/components/organic-growth/use-listing-draft";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -127,7 +127,9 @@ export function CompanyDiscoverySearch({
     status: "idle",
     count: 0,
   });
+  const [matchNoticeDismissed, setMatchNoticeDismissed] = useState(false);
   const [pending, startTransition] = useTransition();
+  const matchNoticeShownFor = useRef<string | null>(null);
 
   const showAdd = intent === "add" || intent === "both";
   const showClaim = intent === "claim" || intent === "both";
@@ -321,8 +323,87 @@ export function CompanyDiscoverySearch({
   const likely = candidates?.filter((c) => c.matchLevel === "likely") ?? [];
   const other = candidates?.filter((c) => c.matchLevel === "possible") ?? [];
 
+  const matchNotice = useMemo(() => {
+    const directoryCount = exact.length + likely.length;
+    if (searched && directoryCount > 0) {
+      const top = exact[0] ?? likely[0];
+      return {
+        key: `dir:${top?.companyId ?? directoryCount}`,
+        title:
+          directoryCount === 1
+            ? "We found a match"
+            : `We found ${directoryCount} matches`,
+        detail: top
+          ? `${top.name} on RateQuip${top.claimed ? " (already claimed)" : " — unclaimed"}`
+          : "Matching companies on RateQuip",
+      };
+    }
+    if (searched && webEnrichments.length > 0) {
+      const top = webEnrichments[0];
+      return {
+        key: `web:${top?.websiteUrl ?? top?.companyName ?? webEnrichments.length}`,
+        title:
+          webEnrichments.length === 1
+            ? "We found a match"
+            : `We found ${webEnrichments.length} matches`,
+        detail: top
+          ? `${top.companyName} on the public web`
+          : "Matching companies on the public web",
+      };
+    }
+    if (liveMatch.status === "found") {
+      return {
+        key: `live:${liveMatch.topName ?? liveMatch.count}`,
+        title:
+          liveMatch.count === 1
+            ? "We found a match"
+            : `We found ${liveMatch.count} matches`,
+        detail: liveMatch.topName
+          ? `${liveMatch.topName} on RateQuip — search companies to review`
+          : "Matching companies on RateQuip — search to review",
+      };
+    }
+    return null;
+  }, [exact, likely, liveMatch, searched, webEnrichments]);
+
+  useEffect(() => {
+    if (!matchNotice) {
+      matchNoticeShownFor.current = null;
+      return;
+    }
+    if (matchNoticeShownFor.current === matchNotice.key) return;
+    matchNoticeShownFor.current = matchNotice.key;
+    setMatchNoticeDismissed(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [matchNotice]);
+
   return (
     <div className={embedded ? "space-y-6" : "space-y-6"}>
+      {matchNotice && !matchNoticeDismissed ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-x-0 top-16 z-30 border-b border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950 shadow-sm"
+        >
+          <div className="mx-auto flex max-w-3xl items-start justify-between gap-3 sm:px-2">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">{matchNotice.title}</p>
+              <p className="mt-0.5 text-sm text-emerald-800">
+                {matchNotice.detail}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 rounded-md px-2 py-1 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
+              onClick={() => setMatchNoticeDismissed(true)}
+              aria-label="Dismiss match notification"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <form onSubmit={runSearch} className="space-y-4">
         <div>
           <Label htmlFor="discovery-q">Company name, website or location</Label>
@@ -332,6 +413,7 @@ export function CompanyDiscoverySearch({
             onChange={(e) => {
               setQ(e.target.value);
               setSearched(false);
+              setMatchNoticeDismissed(false);
               if (!manualName || manualName === q) {
                 setManualName(e.target.value);
               }
@@ -444,15 +526,6 @@ export function CompanyDiscoverySearch({
 
       {searched ? (
         <div className="mt-2 space-y-6">
-          {exact.length + likely.length > 0 ? (
-            <p className="text-sm font-medium text-emerald-700" role="status">
-              We found{" "}
-              {exact.length + likely.length === 1
-                ? `a match${exact[0]?.name || likely[0]?.name ? `: ${exact[0]?.name || likely[0]?.name}` : ""}`
-                : `${exact.length + likely.length} matches on RateQuip`}
-              .
-            </p>
-          ) : null}
           <DirectoryGroup
             title="Exact matches on RateQuip"
             items={exact}
