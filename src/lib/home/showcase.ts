@@ -35,8 +35,9 @@ export type ShowcaseCompareRow = {
 export type ShowcaseCountry = {
   name: string;
   code: string;
-  x: number;
-  y: number;
+  /** Approximate geographic center used for map pin projection. */
+  lon: number;
+  lat: number;
 };
 
 /** Soft, atmospheric industrial photography (used with blur + heavy overlay). */
@@ -241,20 +242,20 @@ export const COMPARE_ROWS: ShowcaseCompareRow[] = [
   },
 ];
 
-/** Approximate SVG map pin positions (viewBox 0 0 1000 500). */
+/** Represented markets pinned onto the homepage world silhouette. */
 export const NETWORK_COUNTRIES: ShowcaseCountry[] = [
-  { name: "Australia", code: "AU", x: 860, y: 380 },
-  { name: "Thailand", code: "TH", x: 760, y: 250 },
-  { name: "Vietnam", code: "VN", x: 780, y: 240 },
-  { name: "Singapore", code: "SG", x: 775, y: 290 },
-  { name: "Malaysia", code: "MY", x: 765, y: 285 },
-  { name: "China", code: "CN", x: 780, y: 190 },
-  { name: "Japan", code: "JP", x: 850, y: 175 },
-  { name: "Germany", code: "DE", x: 510, y: 145 },
-  { name: "Sweden", code: "SE", x: 520, y: 95 },
-  { name: "United States", code: "US", x: 220, y: 180 },
-  { name: "United Kingdom", code: "GB", x: 475, y: 130 },
-  { name: "India", code: "IN", x: 700, y: 230 },
+  { name: "Australia", code: "AU", lon: 134, lat: -25 },
+  { name: "Thailand", code: "TH", lon: 101, lat: 15 },
+  { name: "Vietnam", code: "VN", lon: 106, lat: 16 },
+  { name: "Singapore", code: "SG", lon: 104, lat: 1.3 },
+  { name: "Malaysia", code: "MY", lon: 102, lat: 4 },
+  { name: "China", code: "CN", lon: 105, lat: 35 },
+  { name: "Japan", code: "JP", lon: 138, lat: 36 },
+  { name: "Germany", code: "DE", lon: 10, lat: 51 },
+  { name: "Sweden", code: "SE", lon: 15, lat: 62 },
+  { name: "United States", code: "US", lon: -98, lat: 39 },
+  { name: "United Kingdom", code: "GB", lon: -2, lat: 54 },
+  { name: "India", code: "IN", lon: 79, lat: 22 },
 ];
 
 export const CREDIT_USES = [

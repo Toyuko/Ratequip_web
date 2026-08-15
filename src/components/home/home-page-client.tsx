@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { AuthGateLink } from "@/components/auth/auth-gate-link";
+import { NetworkWorldMap } from "@/components/home/network-world-map";
 import { useT } from "@/components/i18n/locale-provider";
 import { SupplierCard } from "@/components/suppliers/supplier-card";
 import { Badge } from "@/components/ui/badge";
@@ -346,41 +347,10 @@ export function HomePageClient({
             <p className="mt-2 text-slate-300">{t.home.networkBody}</p>
           </div>
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-4 sm:p-6">
-            <svg
-              viewBox="0 0 1000 500"
-              className="h-auto w-full"
-              role="img"
-              aria-label={t.home.networkTitle}
-            >
-              <rect width="1000" height="500" fill="#0b1220" />
-              <path
-                d="M120 140c40-30 90-40 140-20 55 22 70 18 120-10 45-25 95-20 130 10 30 25 70 35 110 20 50-18 95 5 130 35 40 35 85 40 130 15 35-20 75-15 100 15v40c-45 10-85-5-120-25-40-22-85-15-120 10-45 30-95 25-140-5-40-25-85-20-120 8-45 35-100 30-150-5-35-25-80-20-110 10-20 20-55 25-80 5z"
-                fill="#1e293b"
-                opacity="0.9"
-              />
-              <path
-                d="M180 280c55-15 100 5 140 35 35 25 80 30 120 10 50-25 100-10 140 20 30 22 75 25 110 5 40-22 90-10 120 25v35c-55 5-100-20-145-35-40-12-85 0-120 25-45 30-100 20-145-5-40-22-90-15-125 15-25 20-65 18-95-5z"
-                fill="#1e293b"
-                opacity="0.75"
-              />
-              {NETWORK_COUNTRIES.map((country) => (
-                <g key={country.code} className="rq-map-pin">
-                  <circle
-                    cx={country.x}
-                    cy={country.y}
-                    r="10"
-                    fill="rgba(249,115,22,0.2)"
-                  />
-                  <circle
-                    cx={country.x}
-                    cy={country.y}
-                    r="4.5"
-                    fill="#f97316"
-                  />
-                  <title>{country.name}</title>
-                </g>
-              ))}
-            </svg>
+            <NetworkWorldMap
+              countries={NETWORK_COUNTRIES}
+              label={t.home.networkTitle}
+            />
             <div className="mt-4 flex flex-wrap gap-2">
               {NETWORK_COUNTRIES.map((country) => (
                 <Badge key={country.code} variant="muted">
