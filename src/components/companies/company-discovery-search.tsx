@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { writeLocalDraft } from "@/components/organic-growth/use-listing-draft";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -127,9 +127,7 @@ export function CompanyDiscoverySearch({
     status: "idle",
     count: 0,
   });
-  const [matchNoticeDismissed, setMatchNoticeDismissed] = useState(false);
   const [pending, startTransition] = useTransition();
-  const matchNoticeShownFor = useRef<string | null>(null);
 
   const showAdd = intent === "add" || intent === "both";
   const showClaim = intent === "claim" || intent === "both";
@@ -328,7 +326,7 @@ export function CompanyDiscoverySearch({
     if (searched && directoryCount > 0) {
       const top = exact[0] ?? likely[0];
       return {
-        key: `dir:${top?.companyId ?? directoryCount}`,
+        tone: "success" as const,
         title:
           directoryCount === 1
             ? "We found a match"
@@ -341,7 +339,7 @@ export function CompanyDiscoverySearch({
     if (searched && webEnrichments.length > 0) {
       const top = webEnrichments[0];
       return {
-        key: `web:${top?.websiteUrl ?? top?.companyName ?? webEnrichments.length}`,
+        tone: "success" as const,
         title:
           webEnrichments.length === 1
             ? "We found a match"
@@ -351,9 +349,16 @@ export function CompanyDiscoverySearch({
           : "Matching companies on the public web",
       };
     }
+    if (liveMatch.status === "checking") {
+      return {
+        tone: "muted" as const,
+        title: null,
+        detail: "Checking RateQuip for a match…",
+      };
+    }
     if (liveMatch.status === "found") {
       return {
-        key: `live:${liveMatch.topName ?? liveMatch.count}`,
+        tone: "success" as const,
         title:
           liveMatch.count === 1
             ? "We found a match"
@@ -363,47 +368,19 @@ export function CompanyDiscoverySearch({
           : "Matching companies on RateQuip — search to review",
       };
     }
+    if (liveMatch.status === "none") {
+      return {
+        tone: "muted" as const,
+        title: null,
+        detail:
+          "No RateQuip listing yet — search to check public sources, or add it below.",
+      };
+    }
     return null;
   }, [exact, likely, liveMatch, searched, webEnrichments]);
 
-  useEffect(() => {
-    if (!matchNotice) {
-      matchNoticeShownFor.current = null;
-      return;
-    }
-    if (matchNoticeShownFor.current === matchNotice.key) return;
-    matchNoticeShownFor.current = matchNotice.key;
-    setMatchNoticeDismissed(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [matchNotice]);
-
   return (
     <div className={embedded ? "space-y-6" : "space-y-6"}>
-      {matchNotice && !matchNoticeDismissed ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed inset-x-0 top-16 z-30 border-b border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950 shadow-sm"
-        >
-          <div className="mx-auto flex max-w-3xl items-start justify-between gap-3 sm:px-2">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">{matchNotice.title}</p>
-              <p className="mt-0.5 text-sm text-emerald-800">
-                {matchNotice.detail}
-              </p>
-            </div>
-            <button
-              type="button"
-              className="shrink-0 rounded-md px-2 py-1 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
-              onClick={() => setMatchNoticeDismissed(true)}
-              aria-label="Dismiss match notification"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      ) : null}
-
       <form onSubmit={runSearch} className="space-y-4">
         <div>
           <Label htmlFor="discovery-q">Company name, website or location</Label>
@@ -413,7 +390,6 @@ export function CompanyDiscoverySearch({
             onChange={(e) => {
               setQ(e.target.value);
               setSearched(false);
-              setMatchNoticeDismissed(false);
               if (!manualName || manualName === q) {
                 setManualName(e.target.value);
               }
@@ -424,26 +400,20 @@ export function CompanyDiscoverySearch({
             minLength={2}
             aria-describedby="discovery-q-live discovery-q-help"
           />
-          <div id="discovery-q-live" className="mt-2 min-h-5" aria-live="polite">
-            {liveMatch.status === "checking" ? (
+          <div id="discovery-q-live" className="mt-2" aria-live="polite">
+            {matchNotice?.tone === "success" ? (
+              <div
+                role="status"
+                className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-emerald-950"
+              >
+                <p className="text-sm font-semibold">{matchNotice.title}</p>
+                <p className="mt-0.5 text-sm text-emerald-800">
+                  {matchNotice.detail}
+                </p>
+              </div>
+            ) : matchNotice ? (
               <p className="text-sm text-[var(--rq-muted)]">
-                Checking RateQuip for a match…
-              </p>
-            ) : liveMatch.status === "found" ? (
-              <p className="text-sm font-medium text-emerald-700">
-                {liveMatch.count === 1
-                  ? `We found a match${liveMatch.topName ? `: ${liveMatch.topName}` : ""}.`
-                  : `We found ${liveMatch.count} matches on RateQuip${
-                      liveMatch.topName ? `, including ${liveMatch.topName}` : ""
-                    }.`}{" "}
-                <span className="font-normal text-[var(--rq-slate)]">
-                  Search companies to review and claim.
-                </span>
-              </p>
-            ) : liveMatch.status === "none" ? (
-              <p className="text-sm text-[var(--rq-muted)]">
-                No RateQuip listing yet — search to check public sources, or add
-                it below.
+                {matchNotice.detail}
               </p>
             ) : null}
           </div>
