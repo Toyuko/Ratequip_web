@@ -120,6 +120,6 @@ export async function completeOnboarding(input: {
     message: result.demo
       ? `Organisation “${orgName}” ready (runtime store + cookies).${rewardNote}`
       : `Organisation “${orgName}” saved to database.${rewardNote}`,
-    redirectTo: `/v12/activation?company=${encodeURIComponent(orgName)}&role=${input.role}&from=onboarding`,
+    redirectTo: `/dashboard/${input.role}`,
   };
 }

@@ -50,12 +50,6 @@ export function DashboardNav({
           </p>
           <nav className="mt-2 space-y-1 text-sm">
             <Link
-              href="/v12/activation"
-              className="block rounded-md px-3 py-1.5 text-[var(--rq-slate)] hover:bg-[var(--rq-hover)]"
-            >
-              AI company setup
-            </Link>
-            <Link
               href="/referrals"
               className="block rounded-md px-3 py-1.5 text-[var(--rq-slate)] hover:bg-[var(--rq-hover)]"
             >

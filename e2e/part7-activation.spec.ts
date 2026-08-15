@@ -2,16 +2,15 @@ import { test, expect } from "playwright/test";
 
 /**
  * Part 7 UI smoke — does not replace Phase 2 acceptance.
- * Runs against whatever BASE_URL Playwright is configured for.
- * When ENTERPRISE_PART7_ENABLED is off, the DNA panel is simply absent.
+ * The legacy `/v12/activation` AI interview is disabled; visitors are redirected
+ * to a role dashboard. V13 index remains the enterprise overlay entry point.
  */
 test.describe("Part 7 activation overlay", () => {
-  test("activation page renders company setup shell", async ({ page }) => {
+  test("legacy activation interview redirects to dashboard", async ({
+    page,
+  }) => {
     await page.goto("/v12/activation");
-    await expect(
-      page.getByRole("heading", { name: /set up your company with ai/i }),
-    ).toBeVisible({ timeout: 30000 });
-    await expect(page.getByText(/guided set of questions/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard(\/|$)/, { timeout: 30000 });
   });
 
   test("v13 enterprise index is reachable", async ({ page }) => {

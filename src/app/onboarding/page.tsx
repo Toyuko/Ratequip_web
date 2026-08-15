@@ -60,28 +60,14 @@ export default function OnboardingPage() {
       <Suspense fallback={null}>
         <CaptureReferralRef />
       </Suspense>
-      <Badge variant="orange">Step 1 of 2</Badge>
+      <Badge variant="orange">Account setup</Badge>
       <h1 className="mt-3 text-3xl font-bold text-[var(--rq-ink)]">
         Welcome to RateQuip
       </h1>
       <p className="mt-2 text-[var(--rq-slate)]">
-        Choose your account type and create your organisation. Next, an AI
-        assistant will run a short questionnaire to build your operating profile
-        and suggest relevant companies.
+        Choose your account type and create your organisation. You will land on
+        your dashboard when you continue.
       </p>
-
-      <ol className="mt-4 grid gap-2 text-sm text-[var(--rq-slate)] sm:grid-cols-2">
-        <li className="rounded-md border border-orange-200 bg-orange-50 px-3 py-2 dark:border-orange-800 dark:bg-orange-950/40">
-          <span className="font-semibold text-orange-800 dark:text-orange-300">
-            1. Account
-          </span>
-          {" — "}role & organisation
-        </li>
-        <li className="rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 py-2">
-          <span className="font-semibold text-[var(--rq-ink)]">2. AI setup</span>
-          {" — "}profile suggestions & relevance
-        </li>
-      </ol>
 
       <div className="mt-8 grid gap-3">
         {roles.map((r) => (
@@ -270,7 +256,7 @@ export default function OnboardingPage() {
             });
           }}
         >
-          {pending ? "Saving…" : "Continue to AI company questionnaire"}
+          {pending ? "Saving…" : "Continue to dashboard"}
         </Button>
         <Button asChild variant="outline">
           <Link href="/referrals">Invite a colleague instead</Link>

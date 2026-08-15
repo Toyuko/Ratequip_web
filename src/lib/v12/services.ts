@@ -56,6 +56,7 @@ import {
   resolveSetupIndustryPack,
   summariseAnswers,
 } from "@/lib/v12/operating-profile/interview";
+import { COMPANY_SETUP_INTERVIEW_ENABLED } from "@/lib/v12/operating-profile/flags";
 import { suggestCompaniesForOperatingProfile } from "@/lib/v12/operating-profile/company-suggester";
 import type {
   CompanyRole,
@@ -1551,6 +1552,14 @@ export function startCompanySetup(input: {
   industryPack?: string;
   companyId?: string;
 }) {
+  if (!COMPANY_SETUP_INTERVIEW_ENABLED) {
+    return {
+      ok: false as const,
+      message: "AI company setup interview is temporarily disabled.",
+      code: "FEATURE_DISABLED" as const,
+    };
+  }
+
   const companyName = input.companyName.trim();
   if (!companyName) {
     return { ok: false as const, message: "Company name is required" };

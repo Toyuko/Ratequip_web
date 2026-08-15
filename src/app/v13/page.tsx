@@ -11,8 +11,8 @@ export const metadata = {
 const waves = [
   {
     title: "Wave 1 — Part 7 Business DNA",
-    href: "/v12/activation",
-    body: "Intelligent onboarding with inferred vs confirmed facts on company setup.",
+    href: "/onboarding",
+    body: "Organisation onboarding with optional Part 7 DNA overlays (AI interview retired pending redesign).",
   },
   {
     title: "Wave 2 — Taxonomy / graph / builders",

@@ -50,9 +50,6 @@ export default async function BuyerDashboardPage() {
             <Link href="/quotes/compare">Compare quotes</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/v12/activation">AI company questionnaire</Link>
-          </Button>
-          <Button asChild variant="outline">
             <Link href="/referrals">Refer & invite</Link>
           </Button>
           <Button asChild variant="outline">

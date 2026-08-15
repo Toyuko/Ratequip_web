@@ -130,11 +130,7 @@ export default function AddSuccessPage() {
             </Button>
           ) : null}
           <Button asChild variant={slug ? "outline" : "default"}>
-            <Link
-              href={`/v12/activation?company=${encodeURIComponent(submission.companyName ?? "")}&from=listing`}
-            >
-              Continue AI company setup
-            </Link>
+            <Link href="/dashboard">Go to dashboard</Link>
           </Button>
           {slug ? (
             <Button asChild variant="outline">

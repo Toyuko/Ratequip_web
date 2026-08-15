@@ -10,10 +10,10 @@ export const metadata = {
 const journey = [
   {
     step: "1",
-    title: "Set up your company",
-    body: "Answer a short AI-guided questionnaire for your role, industry and operating profile, then see trusted suppliers matched to your business.",
-    href: "/v12/activation",
-    cta: "Start setup",
+    title: "Create your organisation",
+    body: "Choose buyer, supplier or contractor and set up your organisation account — then open your role dashboard.",
+    href: "/onboarding",
+    cta: "Start onboarding",
   },
   {
     step: "2",
@@ -70,9 +70,9 @@ const tools = [
     group: "Getting started",
     items: [
       {
-        href: "/v12/activation",
-        title: "Company setup",
-        body: "AI interview for role, industry and operating profile — you confirm suggestions before they stick.",
+        href: "/onboarding",
+        title: "Organisation onboarding",
+        body: "Create your RateQuip organisation and open your role dashboard.",
       },
       {
         href: "/v12/taxonomy",
@@ -239,7 +239,7 @@ export default function V12HubPage() {
           <div>
             <div className="font-medium text-emerald-800">Ready to try</div>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-[var(--rq-slate)]">
-              <li>Company setup & matching</li>
+              <li>Organisation onboarding & matching</li>
               <li>Purchase request → RFQ → award</li>
               <li>Asset record after award</li>
               <li>Approvals & document evidence</li>
@@ -264,7 +264,7 @@ export default function V12HubPage() {
 
       <div className="mt-10 flex flex-wrap gap-3">
         <Button asChild>
-          <Link href="/v12/activation">Start with company setup</Link>
+          <Link href="/onboarding">Start onboarding</Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/v12/requirement-ledger">Try specification reading</Link>
