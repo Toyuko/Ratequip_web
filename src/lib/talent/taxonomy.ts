@@ -83,3 +83,49 @@ export const INDEED_OCCUPATION: Record<string, { titleHint: string; category: st
 export function indeedMappingFor(equipmentClass: string) {
   return INDEED_OCCUPATION[equipmentClass] ?? null;
 }
+
+/** LinkedIn industry / category hints. Fail closed if missing. */
+export const LINKEDIN_OCCUPATION: Record<
+  string,
+  { titleHint: string; industry: string; category: string }
+> = {
+  EXCAVATOR_20T: {
+    titleHint: "Excavator Operator",
+    industry: "Construction",
+    category: "Skilled Labor",
+  },
+  EXCAVATOR_5T: {
+    titleHint: "Excavator Operator",
+    industry: "Construction",
+    category: "Skilled Labor",
+  },
+  FORKLIFT: {
+    titleHint: "Forklift Operator",
+    industry: "Warehousing",
+    category: "Skilled Labor",
+  },
+  EWP_BOOM: {
+    titleHint: "EWP / Boom Lift Operator",
+    industry: "Construction",
+    category: "Skilled Labor",
+  },
+  CRANE_SLEW: {
+    titleHint: "Crane Operator",
+    industry: "Construction",
+    category: "Skilled Labor",
+  },
+  DOZER: {
+    titleHint: "Dozer Operator",
+    industry: "Construction",
+    category: "Skilled Labor",
+  },
+  LOADER: {
+    titleHint: "Loader Operator",
+    industry: "Construction",
+    category: "Skilled Labor",
+  },
+};
+
+export function linkedInMappingFor(equipmentClass: string) {
+  return LINKEDIN_OCCUPATION[equipmentClass] ?? null;
+}

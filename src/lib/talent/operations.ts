@@ -2,11 +2,15 @@ import { createParty, getParty } from "@/lib/collaborate/engine";
 import { expireIfNeeded, placementBlocks } from "@/lib/talent/credentials";
 import {
   defaultHirerContext,
-  indeedAdapter,
   indeedScreenerQuestions,
-  parseIndeedApplication,
   renderIndeedXmlFeed,
 } from "@/lib/talent/adapters/indeed";
+import {
+  defaultLinkedInHirerContext,
+  linkedInConfigured,
+  pollLinkedInTask,
+} from "@/lib/talent/adapters/linkedin";
+import { getAdapter } from "@/lib/talent/adapters/registry";
 import {
   linkId,
   newId,
@@ -42,9 +46,12 @@ import { getTalentStore } from "@/lib/talent/store";
 import {
   DEFAULT_CREDENTIALS_FOR_CLASS,
   indeedMappingFor,
+  linkedInMappingFor,
   TAXONOMY_VERSION,
 } from "@/lib/talent/taxonomy";
 import type {
+  BoardId,
+  CanonicalApplication,
   CanonicalGig,
   DispositionStatus,
   OperatorCredential,
@@ -248,12 +255,24 @@ export async function createGig(input: {
   bookingId?: string;
   hirerId?: string;
   publishToIndeed?: boolean;
+  publishToLinkedIn?: boolean;
 }): Promise<CanonicalGig> {
-  if (!indeedMappingFor(input.equipmentClass) && input.publishToIndeed !== false) {
+  const publishIndeed = input.publishToIndeed !== false;
+  const publishLinkedIn =
+    input.publishToLinkedIn === true ||
+    (input.publishToLinkedIn !== false && linkedInConfigured());
+
+  if (publishIndeed && !indeedMappingFor(input.equipmentClass)) {
     throw new Error(
       `Cannot publish unmapped equipment class ${input.equipmentClass}`,
     );
   }
+  if (publishLinkedIn && !linkedInMappingFor(input.equipmentClass)) {
+    throw new Error(
+      `Cannot publish to LinkedIn — unmapped equipment class ${input.equipmentClass}`,
+    );
+  }
+
   const gig: CanonicalGig = {
     id: newId("gig"),
     hirerId: input.hirerId ?? RATEQUIP_HIRER_ID,
@@ -278,26 +297,32 @@ export async function createGig(input: {
   };
   await persistGig(gig);
 
-  const pub = {
-    id: newId("pub"),
-    gigId: gig.id,
-    board: "indeed" as const,
-    externalPostingId: gig.id,
-    state: "PENDING" as const,
-    taxonomyVersion: TAXONOMY_VERSION,
-    adSpendCents: 0,
-  };
-  await persistPublication(pub);
-  await persistOutbox({
-    id: newId("obx"),
-    aggregateType: "gig",
-    aggregateId: gig.id,
-    board: "indeed",
-    operation: "publish",
-    payload: { publicationId: pub.id },
-    attempts: 0,
-    nextAttemptAt: new Date().toISOString(),
-  });
+  const boards: BoardId[] = [];
+  if (publishIndeed) boards.push("indeed");
+  if (publishLinkedIn) boards.push("linkedin");
+
+  for (const board of boards) {
+    const pub = {
+      id: newId("pub"),
+      gigId: gig.id,
+      board,
+      externalPostingId: gig.id,
+      state: "PENDING" as const,
+      taxonomyVersion: TAXONOMY_VERSION,
+      adSpendCents: 0,
+    };
+    await persistPublication(pub);
+    await persistOutbox({
+      id: newId("obx"),
+      aggregateType: "gig",
+      aggregateId: gig.id,
+      board,
+      operation: "publish",
+      payload: { publicationId: pub.id },
+      attempts: 0,
+      nextAttemptAt: new Date().toISOString(),
+    });
+  }
   return gig;
 }
 
@@ -335,7 +360,6 @@ export async function processOutbox() {
   const due = await loadDueOutbox();
   const gigs = await loadGigs();
   const pubs = await loadPublications();
-  const ctx = defaultHirerContext();
   const results: { id: string; ok: boolean; error?: string }[] = [];
 
   for (const row of due) {
@@ -344,13 +368,69 @@ export async function processOutbox() {
         const gig = gigs.find((g) => g.id === row.aggregateId);
         const pub = pubs.find((p) => p.id === String(row.payload.publicationId));
         if (!gig || !pub) throw new Error("gig or publication missing");
-        const res = await indeedAdapter.publishGig(ctx, gig);
-        pub.state = res.ok ? "LIVE" : "REJECTED";
-        pub.publishedAt = new Date().toISOString();
+        const adapter = getAdapter(row.board);
+        const ctx =
+          row.board === "linkedin"
+            ? defaultLinkedInHirerContext()
+            : defaultHirerContext();
+        const res = await adapter.publishGig(ctx, gig);
+        const demoTask =
+          Boolean(res.externalTaskId?.startsWith("urn:li:simpleJobPostingTask:demo-"));
+        pub.state = res.ok
+          ? adapter.capabilities().asyncPublish && !demoTask
+            ? "PENDING"
+            : "LIVE"
+          : "REJECTED";
+        if (res.ok && (!adapter.capabilities().asyncPublish || demoTask)) {
+          pub.publishedAt = new Date().toISOString();
+        }
         pub.externalPostingId = res.externalPostingId;
+        pub.externalTaskId = res.externalTaskId;
         await persistPublication(pub);
+        if (
+          res.ok &&
+          res.externalTaskId &&
+          row.board === "linkedin" &&
+          !demoTask
+        ) {
+          await persistOutbox({
+            id: newId("obx"),
+            aggregateType: "publication",
+            aggregateId: pub.id,
+            board: "linkedin",
+            operation: "poll_task",
+            payload: { taskUrn: res.externalTaskId, publicationId: pub.id },
+            attempts: 0,
+            nextAttemptAt: new Date(Date.now() + 30_000).toISOString(),
+          });
+        }
+      } else if (row.operation === "poll_task") {
+        const taskUrn = String(row.payload.taskUrn ?? "");
+        const pub = pubs.find((p) => p.id === String(row.payload.publicationId));
+        if (!pub || !taskUrn) throw new Error("poll_task missing publication/task");
+        if (taskUrn.startsWith("urn:li:simpleJobPostingTask:demo-")) {
+          pub.state = "LIVE";
+          pub.publishedAt = new Date().toISOString();
+          await persistPublication(pub);
+        } else {
+          const status = await pollLinkedInTask(taskUrn);
+          const state = String(
+            status.status ?? status.taskStatus ?? "",
+          ).toUpperCase();
+          if (state.includes("SUCCESS") || state.includes("COMPLETE")) {
+            pub.state = "LIVE";
+            pub.publishedAt = new Date().toISOString();
+            await persistPublication(pub);
+          } else if (state.includes("FAIL") || state.includes("ERROR")) {
+            pub.state = "REJECTED";
+            await persistPublication(pub);
+          } else {
+            throw new Error(`LinkedIn task still ${state || "PENDING"}`);
+          }
+        }
       } else if (row.operation === "disposition") {
-        await indeedAdapter.sendDisposition(
+        const adapter = getAdapter(row.board);
+        await adapter.sendDisposition(
           { externalApplicationId: String(row.payload.applyId) },
           row.payload.status as DispositionStatus,
           String(row.payload.changedAt),
@@ -373,10 +453,14 @@ export async function processOutbox() {
   return results;
 }
 
-export async function ingestInbound(req: RawInboundRequest) {
+export async function ingestInbound(
+  req: RawInboundRequest,
+  board: BoardId = "indeed",
+) {
+  const adapter = getAdapter(board);
   let env;
   try {
-    env = await indeedAdapter.verifyInbound(req);
+    env = await adapter.verifyInbound(req);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message === "INVALID_SIGNATURE") {
@@ -398,7 +482,8 @@ export async function ingestInbound(req: RawInboundRequest) {
   }
 
   try {
-    await processIndeedEvent(env.raw, eventId);
+    const app = await adapter.fetchApplication(env);
+    await processBoardApplication(app, env.raw, eventId);
   } catch (error) {
     await markInboundProcessed(
       eventId,
@@ -409,24 +494,35 @@ export async function ingestInbound(req: RawInboundRequest) {
   return { ok: true as const, applyId: env.externalEventId };
 }
 
-async function processIndeedEvent(raw: Record<string, unknown>, eventId: string) {
-  const app = parseIndeedApplication(raw);
-  if (app.answers.pool_consent === "No") {
+async function processBoardApplication(
+  app: CanonicalApplication,
+  raw: Record<string, unknown>,
+  eventId: string,
+) {
+  const consent = (app.answers.pool_consent ?? "").toLowerCase();
+  if (consent === "no") {
     await markInboundProcessed(eventId, "no_pool_consent");
     return;
   }
-  if (app.answers.white_card === "No") {
+  const white = (app.answers.white_card ?? "").toLowerCase();
+  if (white === "no") {
     app.pipelineState = "REJECTED";
   }
 
   const gigs = await loadGigs();
   const pubs = await loadPublications();
-  const job = (raw.job ?? {}) as Record<string, unknown>;
-  const jobId = String(job.jobId ?? job.jobid ?? app.externalApplicationId);
+  const job = (raw.job ?? raw.jobPosting ?? {}) as Record<string, unknown>;
+  const jobId = String(
+    job.jobId ??
+      job.jobid ??
+      job.externalJobPostingId ??
+      raw.externalJobPostingId ??
+      app.externalApplicationId,
+  );
   const gig =
     gigs.find((g) => g.id === jobId) ??
     gigs.find((g) => g.status === "OPEN");
-  const pub = pubs.find((p) => p.gigId === gig?.id && p.board === "indeed");
+  const pub = pubs.find((p) => p.gigId === gig?.id && p.board === app.board);
   app.gigPublicationId = pub?.id;
 
   const licences = (app.answers.ticket_numbers ?? "")
@@ -435,27 +531,30 @@ async function processIndeedEvent(raw: Record<string, unknown>, eventId: string)
     .filter(Boolean);
 
   const upserted = await upsertOperator({
-    legalName: [app.givenName, app.familyName].filter(Boolean).join(" ") || "Applicant",
-    email: app.email ?? `${app.externalApplicationId}@applicants.ratequip.invalid`,
+    legalName:
+      [app.givenName, app.familyName].filter(Boolean).join(" ") || "Applicant",
+    email:
+      app.email ??
+      `${app.externalApplicationId}@applicants.ratequip.invalid`,
     phone: app.phone,
     givenName: app.givenName,
     familyName: app.familyName,
-    createdViaBoard: "indeed",
-    poolConsent: app.answers.pool_consent !== "No",
+    createdViaBoard: app.board,
+    poolConsent: consent !== "no",
     licenceNumbers: licences,
   });
   app.partyId = upserted.operator.partyId;
 
   await persistIdentityLink({
-    id: linkId("indeed", app.externalApplicationId),
+    id: linkId(app.board, app.externalApplicationId),
     partyId: upserted.operator.partyId,
-    board: "indeed",
+    board: app.board,
     externalId: app.externalApplicationId,
     confidence: "HIGH",
-    matchedByRule: upserted.rule ?? "indeed_apply",
+    matchedByRule: upserted.rule ?? `${app.board}_apply`,
   });
 
-  if (app.answers.white_card === "Yes") {
+  if (white === "yes") {
     await addOperatorCredential({
       partyId: upserted.operator.partyId,
       credentialType: "WHITE_CARD",
@@ -466,7 +565,9 @@ async function processIndeedEvent(raw: Record<string, unknown>, eventId: string)
   }
 
   await persistApplication(app);
-  await enqueueDisposition(app.externalApplicationId, app.pipelineState);
+  if (app.board === "indeed") {
+    await enqueueDisposition(app.externalApplicationId, app.pipelineState);
+  }
   await markInboundProcessed(eventId);
 }
 
@@ -474,7 +575,13 @@ export async function processUnprocessedInbound() {
   const pending = await loadUnprocessedInbound();
   for (const event of pending) {
     try {
-      await processIndeedEvent(event.raw, event.id);
+      const adapter = getAdapter(event.board);
+      const app = await adapter.fetchApplication({
+        board: event.board,
+        externalEventId: event.externalEventId,
+        raw: event.raw,
+      });
+      await processBoardApplication(app, event.raw, event.id);
     } catch (error) {
       await markInboundProcessed(
         event.id,
@@ -511,7 +618,9 @@ export async function setApplicationState(
   if (!app) throw new Error("Application not found");
   app.pipelineState = state;
   await persistApplication(app);
-  await enqueueDisposition(app.externalApplicationId, state);
+  if (app.board === "indeed") {
+    await enqueueDisposition(app.externalApplicationId, state);
+  }
   return app;
 }
 

@@ -5,13 +5,14 @@ import {
   MarketingHero,
   MarketingSection,
 } from "@/components/marketing/page-shell";
+import { LinkedInSignInButton } from "@/components/talent/linkedin-sign-in";
 import { OperatorPoolForm } from "@/components/talent/operator-pool-form";
 import { PRIVACY_NOTICE_VERSION } from "@/lib/talent/types";
 
 export const metadata: Metadata = {
   title: "Join the operator pool",
   description:
-    "Ticketed plant operators can join the RateQuip talent pool. Indeed applications land here.",
+    "Ticketed plant operators can join the RateQuip talent pool. Indeed and LinkedIn applications land here.",
 };
 
 export default function OperatorJoinPage() {
@@ -20,7 +21,7 @@ export default function OperatorJoinPage() {
       <MarketingHero
         eyebrow="Operators"
         title="Join the RateQuip operator pool"
-        lead="Licensed plant operators apply once. RateQuip verifies tickets and matches you to wet-hire gigs — including roles advertised on Indeed."
+        lead="Licensed plant operators apply once. RateQuip verifies tickets and matches you to wet-hire gigs — including roles advertised on Indeed and LinkedIn."
         crumbs={[
           { label: "Home", href: "/" },
           { label: "Operator pool", href: "/operators/join" },
@@ -34,13 +35,16 @@ export default function OperatorJoinPage() {
           </Link>
           .
         </p>
+        <div className="mt-6">
+          <LinkedInSignInButton />
+        </div>
         <div className="mt-8">
           <OperatorPoolForm />
         </div>
       </MarketingSection>
       <MarketingCta
         title="Hiring a ticketed operator?"
-        body="Add operator supply on your RFQ and RateQuip will publish the gig to Indeed."
+        body="Add operator supply on your RFQ and RateQuip will publish the gig to Indeed and LinkedIn when those boards are configured."
         primary={{ label: "Post an RFQ", href: "/requests/new" }}
       />
     </>

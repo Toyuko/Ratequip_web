@@ -1,6 +1,6 @@
 /**
- * Talent pool Phase 1 / Indeed 2a smoke.
- * Operator → credential → gig → XML feed → signed Apply ingest → match → placement block.
+ * Talent pool Phase 1 / Indeed 2a / LinkedIn Apply Connect smoke.
+ * Operator → credential → gig → XML feed → Indeed + LinkedIn ingest → match → placement.
  */
 import { createHmac } from "crypto";
 import { resetCollaborateRuntime } from "@/lib/collaborate";
@@ -17,6 +17,8 @@ import {
   upsertOperator,
 } from "@/lib/talent";
 import { signIndeedBody } from "@/lib/talent/adapters/indeed";
+import { signLinkedInBody } from "@/lib/talent/adapters/linkedin";
+import { getTalentStore } from "@/lib/talent/store";
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(msg);
@@ -84,8 +86,16 @@ async function main() {
     endsAt: new Date(Date.now() + 3 * 86400000).toISOString(),
     rateCents: 6800,
     currency: "AUD",
+    publishToLinkedIn: true,
   });
   await processOutbox();
+
+  const store = getTalentStore();
+  const liPub = store.publications.find(
+    (p) => p.gigId === gig.id && p.board === "linkedin",
+  );
+  assert(liPub, "LinkedIn publication created");
+  assert(liPub!.state === "LIVE", `LinkedIn demo pub should be LIVE, got ${liPub!.state}`);
 
   const xml = await indeedXml();
   assert(xml.includes(gig.id), "XML feed should list the gig");
@@ -129,6 +139,35 @@ async function main() {
   });
   assert(!forged.ok && forged.status === 401, "invalid signature rejected");
 
+  const liPayload = JSON.stringify({
+    id: "li-apply-smoke-1",
+    externalJobPostingId: gig.id,
+    jobPosting: { externalJobPostingId: gig.id },
+    applicant: {
+      firstName: "Alex",
+      lastName: "Crane",
+      contactInfo: {
+        email: "alex.crane.li@gmail.com",
+        phoneNumber: "0412000111",
+      },
+    },
+    questionResponses: [
+      { partnerQuestionIdentifier: "white_card", answer: "yes" },
+      { partnerQuestionIdentifier: "pool_consent", answer: "yes" },
+      { partnerQuestionIdentifier: "ticket_numbers", answer: "LF-1" },
+    ],
+  });
+  process.env.LINKEDIN_WEBHOOK_SECRET = "li-smoke-secret";
+  const liSig = signLinkedInBody(liPayload, "li-smoke-secret");
+  const liIngest = await ingestInbound(
+    {
+      headers: { "x-linkedin-signature": liSig },
+      rawBody: liPayload,
+    },
+    "linkedin",
+  );
+  assert(liIngest.ok, "LinkedIn ingest should succeed");
+
   const matches = await matchGig(gig.id);
   const hit = matches.find((m) => m.partyId === first.operator.partyId);
   assert(hit, "operator should be a match candidate");
@@ -149,6 +188,7 @@ async function main() {
   console.log("talent smoke ok", {
     partyId: first.operator.partyId,
     gigId: gig.id,
+    linkedInPub: liPub!.state,
     xmlBytes: xml.length,
   });
 }
