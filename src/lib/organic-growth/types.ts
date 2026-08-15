@@ -24,6 +24,7 @@ export const CONTACT_SOURCES = [
 export type ContactSource = (typeof CONTACT_SOURCES)[number];
 
 export const RELATIONSHIPS = [
+  "owner_representative",
   "customer_buyer",
   "supplier",
   "project_participant",
@@ -36,6 +37,7 @@ export const RELATIONSHIPS = [
 export type Relationship = (typeof RELATIONSHIPS)[number];
 
 export const INTENDED_PURPOSES = [
+  "claim_own_company",
   "leave_review",
   "include_rfq",
   "invite_project",
@@ -45,6 +47,14 @@ export const INTENDED_PURPOSES = [
 ] as const;
 
 export type IntendedPurpose = (typeof INTENDED_PURPOSES)[number];
+
+export const LISTING_INTENTS = [
+  "self_claim",
+  "invite_others",
+  "leave_unclaimed",
+] as const;
+
+export type ListingIntent = (typeof LISTING_INTENTS)[number];
 
 export const DISCLOSURE_PREFERENCES = [
   "user_display_name",
@@ -136,6 +146,8 @@ export type ListingSubmissionDraft = {
   description?: string;
   privateNotes?: string;
   categories: string[];
+  /** Why this listing is being created — owner claim vs invite vs leave unclaimed. */
+  listingIntent?: ListingIntent;
   relationship?: Relationship;
   intendedPurpose?: IntendedPurpose;
   conflictDeclared: boolean;

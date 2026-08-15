@@ -39,6 +39,8 @@ export default function AddConfirmPage() {
     ? []
     : draft.contacts.filter((c) => c.sendAfterPublish !== false);
   const hasRecipients = recipients.length > 0;
+  const selfClaim = draft.listingIntent === "self_claim";
+  const leaveUnclaimed = draft.listingIntent === "leave_unclaimed";
 
   function onPublish() {
     if (!accepted) {
@@ -48,6 +50,7 @@ export default function AddConfirmPage() {
     const current = draft;
     if (!current) return;
     startTransition(async () => {
+      if (selfClaim) markClaimAfterPublish();
       const result = await publishListingSubmission({
         id: current.id,
         declarationsAccepted: true,
@@ -60,7 +63,7 @@ export default function AddConfirmPage() {
       save(result.submission as never);
       clearLocalDraft();
       writePublishedId(result.submission.id);
-      const claimAfter = readClaimAfterPublish();
+      const claimAfter = selfClaim || readClaimAfterPublish();
       if (claimAfter && result.companySlug) {
         clearClaimAfterPublish();
         router.push(
@@ -76,7 +79,11 @@ export default function AddConfirmPage() {
     <AddCompanyWizardShell
       step="confirm"
       title="Review and publish"
-      description="Confirm the public profile facts, private recipients and declarations. Retry-safe: double submit creates one company only."
+      description={
+        selfClaim
+          ? "Confirm the public profile facts. After publish you’ll continue into claim & verify for your company."
+          : "Confirm the public profile facts, private recipients and declarations. Retry-safe: double submit creates one company only."
+      }
       submissionId={draft.id}
     >
       <div className="space-y-6">
@@ -99,13 +106,32 @@ export default function AddConfirmPage() {
           <Badge variant="warning" className="mt-3">
             Will publish as Unclaimed
           </Badge>
+          {selfClaim ? (
+            <p className="mt-2 text-sm text-[var(--rq-slate)]">
+              Then you&apos;ll claim it immediately in the next step.
+            </p>
+          ) : null}
         </section>
 
         <section>
           <h2 className="font-semibold text-[var(--rq-ink)]">
-            Private referral contacts
+            {selfClaim
+              ? "Claim path"
+              : leaveUnclaimed
+                ? "Claim invitations"
+                : "Private referral contacts"}
           </h2>
-          {hasRecipients ? (
+          {selfClaim ? (
+            <p className="mt-2 text-sm text-[var(--rq-slate)]">
+              No invitation emails. You&apos;re claiming{" "}
+              <strong>{draft.companyName || "this company"}</strong> yourself
+              after publish
+              {draft.relationship
+                ? ` as ${draft.relationship.replaceAll("_", " ")}`
+                : ""}
+              .
+            </p>
+          ) : hasRecipients ? (
             <ul className="mt-3 space-y-2 text-sm">
               {recipients.map((c) => (
                 <li
@@ -136,26 +162,30 @@ export default function AddConfirmPage() {
         <section className="rounded-md bg-[var(--rq-surface)] p-4 text-sm">
           <p className="font-semibold text-[var(--rq-ink)]">Credit summary</p>
           <p className="mt-1 text-[var(--rq-slate)]">
-            Listing creation: <strong>0 credits</strong>. Initial claim
-            invitation: <strong>0 credits</strong>.
+            Listing creation: <strong>0 credits</strong>.{" "}
+            {selfClaim
+              ? "Self-claim verification: 0 credits."
+              : "Initial claim invitation: 0 credits."}
           </p>
         </section>
 
-        <div>
-          <Label htmlFor="disclosure">Invitation disclosure preference</Label>
-          <select
-            id="disclosure"
-            className="mt-1 h-11 w-full rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 text-sm"
-            value={disclosure}
-            onChange={(e) =>
-              setDisclosure(e.target.value as DisclosurePreference)
-            }
-          >
-            <option value="anonymous_ratequip_user">A RateQuip user</option>
-            <option value="user_display_name">My display name</option>
-            <option value="verified_business_name">My verified business name</option>
-          </select>
-        </div>
+        {!selfClaim && hasRecipients ? (
+          <div>
+            <Label htmlFor="disclosure">Invitation disclosure preference</Label>
+            <select
+              id="disclosure"
+              className="mt-1 h-11 w-full rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 text-sm"
+              value={disclosure}
+              onChange={(e) =>
+                setDisclosure(e.target.value as DisclosurePreference)
+              }
+            >
+              <option value="anonymous_ratequip_user">A RateQuip user</option>
+              <option value="user_display_name">My display name</option>
+              <option value="verified_business_name">My verified business name</option>
+            </select>
+          </div>
+        ) : null}
 
         <label className="flex items-start gap-3 text-sm text-[var(--rq-slate)]">
           <input
@@ -165,12 +195,9 @@ export default function AddConfirmPage() {
             onChange={(e) => setAccepted(e.target.checked)}
           />
           <span>
-            I confirm the company is real, the information is accurate to the
-            best of my knowledge, any contact addresses were obtained through a
-            legitimate business relationship or source, and I am not creating
-            this listing to impersonate, harass or obtain fraudulent rewards. I
-            understand RateQuip will notify listed recipients and retain an
-            audit record.
+            {selfClaim
+              ? "I confirm I am authorised to represent this company, the information is accurate to the best of my knowledge, and I am not creating this listing to impersonate or harass. I understand RateQuip will require verification before the profile is marked claimed."
+              : "I confirm the company is real, the information is accurate to the best of my knowledge, any contact addresses were obtained through a legitimate business relationship or source, and I am not creating this listing to impersonate, harass or obtain fraudulent rewards. I understand RateQuip will notify listed recipients and retain an audit record."}
           </span>
         </label>
 
@@ -179,9 +206,11 @@ export default function AddConfirmPage() {
         <Button onClick={onPublish} disabled={pending || !accepted}>
           {pending
             ? "Publishing…"
-            : hasRecipients
-              ? "Create company and send invitation"
-              : "Create company"}
+            : selfClaim
+              ? "Create company and continue to claim"
+              : hasRecipients
+                ? "Create company and send invitation"
+                : "Create company"}
         </Button>
       </div>
     </AddCompanyWizardShell>
@@ -210,6 +239,14 @@ function readClaimAfterPublish() {
     return window.sessionStorage.getItem(CLAIM_AFTER_PUBLISH_KEY) === "1";
   } catch {
     return false;
+  }
+}
+
+function markClaimAfterPublish() {
+  try {
+    window.sessionStorage.setItem(CLAIM_AFTER_PUBLISH_KEY, "1");
+  } catch {
+    /* ignore */
   }
 }
 
