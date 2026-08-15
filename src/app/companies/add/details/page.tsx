@@ -47,6 +47,7 @@ export default function AddDetailsPage() {
     phoneDisplay: "",
     category: "",
     publicSourceUrl: "",
+    description: "",
     privateNotes: "",
   });
 
@@ -66,6 +67,7 @@ export default function AddDetailsPage() {
       phoneDisplay: draft.phoneDisplay ?? "",
       category: draft.categories[0] ?? "",
       publicSourceUrl: draft.publicSourceUrl ?? "",
+      description: draft.description ?? draft.headline ?? "",
       privateNotes: draft.privateNotes ?? "",
     });
   }, [ready, draft, router]);
@@ -110,6 +112,8 @@ export default function AddDetailsPage() {
         phoneDisplay: form.phoneDisplay.trim() || undefined,
         categories: [form.category],
         publicSourceUrl: form.publicSourceUrl.trim() || undefined,
+        description: form.description.trim() || undefined,
+        headline: form.description.trim().slice(0, 180) || undefined,
         privateNotes: form.privateNotes.trim() || undefined,
         status: "details_complete" as const,
       };
@@ -158,6 +162,8 @@ export default function AddDetailsPage() {
         phoneDisplay: e.phoneDisplay || e.phoneNumbers?.[0] || prev.phoneDisplay,
         category: e.categories[0] || prev.category,
         publicSourceUrl: e.publicSourceUrl || prev.publicSourceUrl,
+        description:
+          e.description || e.headline || prev.description,
         privateNotes: e.privateNotes || prev.privateNotes,
       }));
       const contactBits = [
@@ -225,6 +231,22 @@ export default function AddDetailsPage() {
             onChange={(e) => setForm({ ...form, websiteUrl: e.target.value })}
             placeholder="https://…"
           />
+        </div>
+        <div>
+          <Label htmlFor="description">Brief public description</Label>
+          <Textarea
+            id="description"
+            className="mt-1"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="What the company does, products/services, and locality…"
+            maxLength={600}
+            rows={3}
+          />
+          <p className="mt-1 text-xs text-[var(--rq-muted)]">
+            Shown on the unclaimed profile. Auto-fill may populate this from the
+            company website.
+          </p>
         </div>
         <fieldset>
           <legend className="text-sm font-medium">Company type</legend>

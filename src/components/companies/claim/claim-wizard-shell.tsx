@@ -32,17 +32,33 @@ export function ClaimWizardShell({
   title,
   description,
   children,
+  onCancel,
+  onSelectStep,
 }: {
   step: ClaimWizardStepId;
   title: string;
   description: string;
   children: React.ReactNode;
+  onCancel?: () => void;
+  /** Jump back to an earlier progress segment. */
+  onSelectStep?: (step: ClaimWizardStepId) => void;
 }) {
   const activeIndex = STEPS.findIndex((s) => s.id === step);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-bold text-[var(--rq-ink)]">{title}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="text-3xl font-bold text-[var(--rq-ink)]">{title}</h1>
+        {onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-sm font-medium text-[var(--rq-muted)] hover:text-[var(--rq-orange)]"
+          >
+            Cancel &amp; start again
+          </button>
+        ) : null}
+      </div>
       <p className="mt-2 text-[var(--rq-slate)]">{description}</p>
 
       <div
@@ -55,6 +71,8 @@ export function ClaimWizardShell({
       >
         {STEPS.map((s, index) => {
           const filled = index <= activeIndex;
+          const canJump =
+            Boolean(onSelectStep) && index < activeIndex && s.id !== step;
           return (
             <div key={s.id} className="min-w-0">
               <div
@@ -63,14 +81,26 @@ export function ClaimWizardShell({
                   filled ? "bg-[var(--rq-orange)]" : "bg-[var(--rq-border)]",
                 )}
               />
-              <p
-                className={cn(
-                  "mt-2 truncate text-[10px] font-semibold uppercase tracking-wide sm:text-xs",
-                  filled ? "text-[var(--rq-orange)]" : "text-[var(--rq-muted)]",
-                )}
-              >
-                {s.label}
-              </p>
+              {canJump ? (
+                <button
+                  type="button"
+                  className="mt-2 truncate text-left text-[10px] font-semibold uppercase tracking-wide text-[var(--rq-orange)] hover:underline sm:text-xs"
+                  onClick={() => onSelectStep?.(s.id)}
+                >
+                  {s.label}
+                </button>
+              ) : (
+                <p
+                  className={cn(
+                    "mt-2 truncate text-[10px] font-semibold uppercase tracking-wide sm:text-xs",
+                    filled
+                      ? "text-[var(--rq-orange)]"
+                      : "text-[var(--rq-muted)]",
+                  )}
+                >
+                  {s.label}
+                </p>
+              )}
             </div>
           );
         })}

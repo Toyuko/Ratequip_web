@@ -204,6 +204,8 @@ export async function startListingSubmission(input: {
     emailCandidates?: string[];
     abnOrRegistry?: string;
     publicSourceUrl?: string;
+    headline?: string;
+    description?: string;
     privateNotes?: string;
     categories?: string[];
   };
@@ -248,6 +250,8 @@ export async function startListingSubmission(input: {
     emailCandidates: enrichment?.emailCandidates,
     abnOrRegistry: enrichment?.abnOrRegistry,
     publicSourceUrl: enrichment?.publicSourceUrl,
+    headline: enrichment?.headline,
+    description: enrichment?.description,
     privateNotes: enrichment?.privateNotes,
     categories: enrichment?.categories ?? [],
     contacts: seededContacts,

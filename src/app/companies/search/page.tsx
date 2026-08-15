@@ -18,8 +18,8 @@ function SearchForm() {
       title="Search before adding"
       description={
         fromClaim
-          ? "Find an existing RateQuip company to claim, or add it from public sources first — we’ll return you to the claim wizard after publish."
-          : "Search RateQuip’s directory and the open web. Claim an unclaimed match, or add a new company from public sources and review before publishing."
+          ? "Find an existing RateQuip company to claim, or add it from public sources first — we’ll return you to the claim wizard after publish. You can also enter a company name and brief description if it isn’t listed yet."
+          : "Search RateQuip’s directory and the open web. Claim an unclaimed match, add from a public website scrape, or enter a company name and brief description yourself."
       }
     >
       <CaptureReferralRef />

@@ -252,6 +252,41 @@ export function AutomatedClaimForm({
     });
   }
 
+  function resetClaim() {
+    setError(null);
+    setCompany(null);
+    setSources([]);
+    setSelectedSourceIds([]);
+    setRelationship(null);
+    setMethod("company_email");
+    setWorkEmail("");
+    setEmailCode("");
+    setDemoCode(undefined);
+    setCodeSent(false);
+    setOutcome(null);
+    setResultMessage(null);
+    setStage("lookup");
+    router.replace("/companies/claim", { scroll: false });
+  }
+
+  function jumpToStep(step: ReturnType<typeof claimProgressStep>) {
+    if (step === "lookup") {
+      if (company) {
+        setStage("confirm");
+        return;
+      }
+      resetClaim();
+      return;
+    }
+    if (!company) {
+      setStage("lookup");
+      return;
+    }
+    if (step === "relationship") setStage("relationship");
+    else if (step === "verify") setStage(relationship ? "verify" : "relationship");
+    else setStage(relationship ? "review" : "relationship");
+  }
+
   const shellTitle =
     stage === "lookup" || stage === "confirm"
       ? "Claim a company profile"
@@ -282,6 +317,7 @@ export function AutomatedClaimForm({
         step="lookup"
         title="Claim a company profile"
         description="Loading company details…"
+        onCancel={resetClaim}
       >
         <p className="text-sm text-[var(--rq-muted)]">Loading…</p>
       </ClaimWizardShell>
@@ -293,6 +329,8 @@ export function AutomatedClaimForm({
       step={progressStep}
       title={shellTitle}
       description={shellDescription}
+      onCancel={stage === "result" ? undefined : resetClaim}
+      onSelectStep={stage === "result" ? undefined : jumpToStep}
     >
       {stage === "lookup" ? (
         <section className="rounded-lg border border-[var(--rq-border)] bg-[var(--rq-card)] p-6">

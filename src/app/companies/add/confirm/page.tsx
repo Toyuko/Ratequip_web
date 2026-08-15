@@ -86,6 +86,10 @@ export default function AddConfirmPage() {
             <Row label="Name" value={draft.companyName} />
             <Row label="Website" value={draft.websiteUrl || "—"} />
             <Row
+              label="Description"
+              value={draft.description || draft.headline || "—"}
+            />
+            <Row
               label="Location"
               value={`${draft.locality ?? "—"}, ${draft.countryCode ?? "—"}`}
             />

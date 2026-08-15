@@ -93,9 +93,6 @@ export default function AddDuplicatesPage() {
             >
               Not the same company — continue
             </Button>
-            <Button asChild variant="outline">
-              <Link href="/companies/search">Back to search</Link>
-            </Button>
           </div>
         </div>
       ) : null}

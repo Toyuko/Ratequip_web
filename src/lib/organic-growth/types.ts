@@ -130,6 +130,10 @@ export type ListingSubmissionDraft = {
   emailCandidates?: string[];
   abnOrRegistry?: string;
   publicSourceUrl?: string;
+  /** Short public profile blurb shown on the company page. */
+  headline?: string;
+  /** Longer public description for the unclaimed profile. */
+  description?: string;
   privateNotes?: string;
   categories: string[];
   relationship?: Relationship;

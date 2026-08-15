@@ -174,8 +174,11 @@ export function publishSubmission(submissionId: string) {
     name,
     slug,
     legalName: name,
-    headline: `${existing.companyTypes[0]} listed by a RateQuip contributor`,
+    headline:
+      existing.headline?.trim() ||
+      `${existing.companyTypes[0]} listed by a RateQuip contributor`,
     description:
+      existing.description?.trim() ||
       existing.privateNotes?.trim() ||
       `${name} was added by a RateQuip user. This profile is unclaimed until a company representative verifies authority.`,
     country: existing.countryCode,

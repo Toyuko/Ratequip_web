@@ -642,32 +642,125 @@ async function gatherCompanyPages(baseUrl: string): Promise<{
   };
 }
 
-async function searchDuckDuckGo(query: string): Promise<
-  Array<{ title: string; url: string; snippet: string }>
-> {
-  const q = query.trim();
-  if (q.length < 2) return [];
+function isBlockedSearchHost(host: string) {
+  return (
+    host.includes("duckduckgo.") ||
+    host.includes("facebook.") ||
+    host.includes("twitter.") ||
+    host.includes("x.com") ||
+    host.includes("youtube.") ||
+    host.includes("instagram.com")
+  );
+}
 
+function pushUniqueHit(
+  hits: Array<{ title: string; url: string; snippet: string }>,
+  hit: { title: string; url: string; snippet: string },
+  limit = 8,
+) {
+  if (hits.length >= limit) return;
+  const safe = normalizePublicHttpUrl(hit.url);
+  if (!safe) return;
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10_000);
+    const host = new URL(safe).hostname.toLowerCase();
+    if (isBlockedSearchHost(host)) return;
+    if (hits.some((h) => h.url === safe)) return;
+    hits.push({
+      title: hit.title || host,
+      url: safe,
+      snippet: hit.snippet.slice(0, 280),
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
+async function searchDuckDuckGoInstant(query: string) {
+  const hits: Array<{ title: string; url: string; snippet: string }> = [];
+  try {
+    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(
+      query,
+    )}&format=json&no_html=1&skip_disambig=1`;
+    const res = await fetch(url, {
+      method: "GET",
+      signal: AbortSignal.timeout(8_000),
+      headers: {
+        Accept: "application/json",
+        "User-Agent":
+          "RateQuipCompanyEnrich/1.0 (+https://ratequip.com; business listing assist)",
+      },
+    });
+    if (!res.ok) return hits;
+    const data = (await res.json()) as {
+      AbstractURL?: string;
+      AbstractText?: string;
+      Heading?: string;
+      Results?: Array<{ FirstURL?: string; Text?: string }>;
+      RelatedTopics?: Array<
+        | { FirstURL?: string; Text?: string }
+        | { Topics?: Array<{ FirstURL?: string; Text?: string }> }
+      >;
+    };
+
+    if (data.AbstractURL) {
+      pushUniqueHit(hits, {
+        title: data.Heading || query,
+        url: data.AbstractURL,
+        snippet: data.AbstractText || "",
+      });
+    }
+    for (const row of data.Results ?? []) {
+      if (row.FirstURL) {
+        pushUniqueHit(hits, {
+          title: stripHtmlToText(row.Text || ""),
+          url: row.FirstURL,
+          snippet: stripHtmlToText(row.Text || ""),
+        });
+      }
+    }
+    for (const topic of data.RelatedTopics ?? []) {
+      if ("FirstURL" in topic && topic.FirstURL) {
+        pushUniqueHit(hits, {
+          title: stripHtmlToText(topic.Text || ""),
+          url: topic.FirstURL,
+          snippet: stripHtmlToText(topic.Text || ""),
+        });
+      } else if ("Topics" in topic) {
+        for (const nested of topic.Topics ?? []) {
+          if (nested.FirstURL) {
+            pushUniqueHit(hits, {
+              title: stripHtmlToText(nested.Text || ""),
+              url: nested.FirstURL,
+              snippet: stripHtmlToText(nested.Text || ""),
+            });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.warn("[company-web-enrich] instant search failed", error);
+  }
+  return hits;
+}
+
+async function searchDuckDuckGoHtml(query: string) {
+  const hits: Array<{ title: string; url: string; snippet: string }> = [];
+  try {
     const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(
-      `${q} official company website`,
+      `${query} official company website`,
     )}`;
     const res = await fetch(url, {
       method: "GET",
-      signal: controller.signal,
+      signal: AbortSignal.timeout(10_000),
       headers: {
         "User-Agent":
           "RateQuipCompanyEnrich/1.0 (+https://ratequip.com; business listing assist)",
         Accept: "text/html",
       },
     });
-    clearTimeout(timer);
-    if (!res.ok) return [];
+    if (!res.ok) return hits;
 
     const html = await res.text();
-    const hits: Array<{ title: string; url: string; snippet: string }> = [];
     const resultRe =
       /<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
     let match: RegExpExecArray | null;
@@ -675,7 +768,6 @@ async function searchDuckDuckGo(query: string): Promise<
       const hrefRaw = match[1] ?? "";
       const title = stripHtmlToText(match[2] ?? "");
       let href = hrefRaw;
-      // DuckDuckGo wraps redirects as //duckduckgo.com/l/?uddg=<encoded>
       const uddg = href.match(/[?&]uddg=([^&]+)/);
       if (uddg?.[1]) {
         try {
@@ -684,30 +776,112 @@ async function searchDuckDuckGo(query: string): Promise<
           /* keep href */
         }
       }
-      const safe = normalizePublicHttpUrl(href);
-      if (!safe) continue;
-      const host = new URL(safe).hostname.toLowerCase();
-      if (
-        host.includes("duckduckgo.") ||
-        host.includes("facebook.") ||
-        host.includes("twitter.") ||
-        host.includes("x.com") ||
-        host.includes("youtube.") ||
-        host.includes("wikipedia.org")
-      ) {
-        continue;
-      }
-      hits.push({
-        title: title || host,
-        url: safe,
-        snippet: "",
-      });
+      pushUniqueHit(hits, { title, url: href, snippet: "" });
     }
-    return hits;
+
+    // Snippets sit near result links in DDG HTML.
+    const snippetRe =
+      /class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/(?:a|td|div)>/gi;
+    let snippetMatch: RegExpExecArray | null;
+    let index = 0;
+    while ((snippetMatch = snippetRe.exec(html)) && index < hits.length) {
+      const snippet = stripHtmlToText(snippetMatch[1] ?? "");
+      if (snippet && hits[index]) hits[index].snippet = snippet.slice(0, 280);
+      index += 1;
+    }
   } catch (error) {
-    console.warn("[company-web-enrich] search failed", error);
-    return [];
+    console.warn("[company-web-enrich] html search failed", error);
   }
+  return hits;
+}
+
+/** Guess common company website hosts when search APIs are blocked. */
+function heuristicWebsiteGuesses(query: string) {
+  const trimmed = query.trim();
+  const cleaned = trimmed
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/[^a-z0-9.-]+/g, "");
+  if (cleaned.includes(".") && cleaned.length >= 4) {
+    const url = normalizePublicHttpUrl(`https://${cleaned}`);
+    return url
+      ? [{ title: query, url, snippet: "Parsed from query as a website." }]
+      : [];
+  }
+
+  // Only invent hostnames for compact brand-like queries (no spaces).
+  if (/\s/.test(trimmed)) return [];
+
+  const slug = trimmed
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .slice(0, 40);
+  if (slug.length < 3) return [];
+
+  const guesses = [
+    `https://www.${slug}.com`,
+    `https://www.${slug}.com.au`,
+    `https://${slug}.com`,
+    `https://${slug}.com.au`,
+  ];
+  return guesses
+    .map((url) => {
+      const safe = normalizePublicHttpUrl(url);
+      return safe
+        ? {
+            title: `${query} (${new URL(safe).hostname})`,
+            url: safe,
+            snippet: "Heuristic website guess — will verify by fetching.",
+          }
+        : null;
+    })
+    .filter(Boolean) as Array<{ title: string; url: string; snippet: string }>;
+}
+
+async function searchDuckDuckGo(query: string): Promise<
+  Array<{ title: string; url: string; snippet: string }>
+> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+
+  const merged: Array<{ title: string; url: string; snippet: string }> = [];
+  const [instant, html] = await Promise.all([
+    searchDuckDuckGoInstant(q),
+    searchDuckDuckGoHtml(q),
+  ]);
+  for (const hit of [...instant, ...html]) {
+    pushUniqueHit(merged, hit);
+  }
+
+  if (merged.length === 0) {
+    for (const guess of heuristicWebsiteGuesses(q)) {
+      // Only keep guesses that actually respond — cheap HEAD/GET probe.
+      try {
+        const probe = await fetch(guess.url, {
+          method: "GET",
+          signal: AbortSignal.timeout(5_000),
+          headers: {
+            "User-Agent":
+              "RateQuipCompanyEnrich/1.0 (+https://ratequip.com; business listing assist)",
+            Accept: "text/html",
+          },
+          redirect: "follow",
+        });
+        if (probe.ok || (probe.status >= 300 && probe.status < 400)) {
+          pushUniqueHit(merged, {
+            ...guess,
+            url: probe.url || guess.url,
+          });
+        }
+      } catch {
+        /* skip dead guess */
+      }
+      if (merged.length >= 3) break;
+    }
+  }
+
+  return merged;
 }
 
 function heuristicFromPage(input: {
@@ -1130,7 +1304,33 @@ export async function discoverCompaniesFromWeb(input: {
         ],
       });
     } catch {
-      continue;
+      // Keep the public search result so the user can still pick / scrape it.
+      const title =
+        hit.title.split(/[|\-–—]/)[0]?.trim() || query;
+      enrichments.push({
+        companyName: title.slice(0, 160),
+        websiteUrl: hit.url,
+        phones: [],
+        emails: [],
+        addresses: [],
+        companyTypes: ["supplier"],
+        categoryHints: [],
+        publicProfiles: [],
+        confidence: 0.35,
+        countryCode: input.country,
+        headline: hit.snippet?.slice(0, 180) || undefined,
+        description: hit.snippet?.slice(0, 600) || undefined,
+        publicSourceUrl: hit.url,
+        source: "web_search",
+        usedAi: false,
+        fetchedUrl: hit.url,
+        matchReasons: [
+          "Found via public web search",
+          hit.snippet
+            ? "Snippet available — open site or continue to scrape in Details"
+            : "Website candidate — details not fully scraped yet",
+        ],
+      });
     }
   }
 
@@ -1149,8 +1349,8 @@ export async function discoverCompaniesFromWeb(input: {
     usedWebSearch: searchHits.length > 0,
     message:
       enrichments.length > 0
-        ? `Found ${enrichments.length} web candidate${enrichments.length === 1 ? "" : "s"} and extracted public business details.`
-        : "No enrichable public websites found. Try a company website URL.",
+        ? `Found ${enrichments.length} public web candidate${enrichments.length === 1 ? "" : "s"}. Review extracted details or add the company with your own brief description.`
+        : "No public websites found yet. Enter the company name and a brief description below, or try a full website URL.",
   };
 }
 
@@ -1201,12 +1401,13 @@ export function enrichmentToListingFields(enrichment: CompanyEnrichment) {
     phoneNumbers: phones,
     emailCandidates: emails,
     publicSourceUrl: enrichment.publicSourceUrl || enrichment.websiteUrl,
+    headline: enrichment.headline?.trim() || undefined,
+    description: enrichment.description?.trim() || undefined,
     privateNotes: [
       "Auto-filled from public web sources. Review before publishing.",
       enrichment.registryMeta
         ? `Tier-1 registry: ABN Lookup (${enrichment.registryMeta.transport || "unknown"})`
         : null,
-      enrichment.description?.trim(),
       contactSummary,
     ]
       .filter(Boolean)

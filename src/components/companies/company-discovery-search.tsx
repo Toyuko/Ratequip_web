@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   searchCompaniesForAdd,
   startListingSubmission,
@@ -35,6 +36,8 @@ export type WebEnrichmentCard = {
   phoneNumbers?: string[];
   emailCandidates?: string[];
   publicSourceUrl?: string;
+  headline?: string;
+  description?: string;
   privateNotes?: string;
   categories: string[];
   enrichmentMeta?: {
@@ -62,6 +65,8 @@ export type WebEnrichmentCard = {
   };
 };
 
+type WebSearchHit = { title: string; url: string; snippet: string };
+
 type CompanyDiscoverySearchProps = {
   intent?: DiscoveryIntent;
   initialQuery?: string;
@@ -87,12 +92,16 @@ export function CompanyDiscoverySearch({
   const router = useRouter();
   const [q, setQ] = useState(initialQuery);
   const [country, setCountry] = useState(initialCountry);
+  const [manualName, setManualName] = useState(initialQuery);
+  const [manualDescription, setManualDescription] = useState("");
+  const [manualWebsite, setManualWebsite] = useState("");
   const [candidates, setCandidates] = useState<DuplicateCandidate[] | null>(
     null,
   );
   const [webEnrichments, setWebEnrichments] = useState<WebEnrichmentCard[]>(
     [],
   );
+  const [webSearchHits, setWebSearchHits] = useState<WebSearchHit[]>([]);
   const [webMessage, setWebMessage] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -100,11 +109,13 @@ export function CompanyDiscoverySearch({
 
   const showAdd = intent === "add" || intent === "both";
   const showClaim = intent === "claim" || intent === "both";
+  const claimLoop = intent === "claim" || returnToClaimAfterPublish;
 
   function runSearch(e?: React.FormEvent) {
     e?.preventDefault();
     const query = q.trim();
     if (query.length < 2) return;
+    if (!manualName.trim()) setManualName(query);
     startTransition(async () => {
       const result = await searchCompaniesForAdd({
         q: query,
@@ -115,6 +126,7 @@ export function CompanyDiscoverySearch({
         setMessage(result.message);
         setCandidates([]);
         setWebEnrichments([]);
+        setWebSearchHits([]);
         setWebMessage(null);
         setSearched(false);
         return;
@@ -122,6 +134,7 @@ export function CompanyDiscoverySearch({
       setMessage(null);
       setCandidates(result.candidates);
       setWebEnrichments((result.webEnrichments ?? []) as WebEnrichmentCard[]);
+      setWebSearchHits(result.webSearchHits ?? []);
       setWebMessage(result.webMessage ?? null);
       setSearched(true);
     });
@@ -141,13 +154,11 @@ export function CompanyDiscoverySearch({
     }
   }
 
-  function startAdd(enrichment?: WebEnrichmentCard) {
-    const claimLoop =
-      intent === "claim" || returnToClaimAfterPublish;
+  function startAdd(enrichment?: WebEnrichmentCard, skipDuplicates = false) {
     if (claimLoop) markClaimAfterPublish();
     startTransition(async () => {
       const result = await startListingSubmission({
-        searchQuery: enrichment?.companyName || q,
+        searchQuery: enrichment?.companyName || manualName.trim() || q,
         enrichment: enrichment
           ? {
               companyName: enrichment.companyName,
@@ -165,19 +176,48 @@ export function CompanyDiscoverySearch({
                 enrichment.emailCandidates ?? enrichment.enrichmentMeta?.emails,
               abnOrRegistry: enrichment.enrichmentMeta?.abnOrRegistry,
               publicSourceUrl: enrichment.publicSourceUrl,
+              headline: enrichment.headline,
+              description: enrichment.description,
               privateNotes: enrichment.privateNotes,
               categories: enrichment.categories,
             }
-          : undefined,
+          : {
+              companyName: manualName.trim() || q.trim(),
+              websiteUrl: manualWebsite.trim() || undefined,
+              description: manualDescription.trim() || undefined,
+              headline: manualDescription.trim().slice(0, 180) || undefined,
+            },
       });
       if (!result.ok) return;
       writeLocalDraft(result.submission as never);
       const fromClaim = claimLoop ? "&from=claim" : "";
-      const next = enrichment
-        ? `/companies/add/details?submissionId=${result.submission.id}${fromClaim}`
-        : `/companies/add/duplicates?submissionId=${result.submission.id}${fromClaim}`;
+      const next =
+        enrichment || skipDuplicates
+          ? `/companies/add/details?submissionId=${result.submission.id}${fromClaim}`
+          : `/companies/add/duplicates?submissionId=${result.submission.id}${fromClaim}`;
       router.push(next);
     });
+  }
+
+  function startManualAdd(e?: React.FormEvent) {
+    e?.preventDefault();
+    const name = manualName.trim() || q.trim();
+    if (name.length < 2) {
+      setMessage("Enter a company name (at least 2 characters).");
+      return;
+    }
+    setMessage(null);
+    startAdd(
+      {
+        companyName: name,
+        websiteUrl: manualWebsite.trim() || undefined,
+        description: manualDescription.trim() || undefined,
+        headline: manualDescription.trim().slice(0, 180) || undefined,
+        companyTypes: [],
+        categories: [],
+      },
+      true,
+    );
   }
 
   function claimDirectory(slug: string) {
@@ -193,22 +233,28 @@ export function CompanyDiscoverySearch({
   const other = candidates?.filter((c) => c.matchLevel === "possible") ?? [];
 
   return (
-    <div className={embedded ? "" : "space-y-6"}>
+    <div className={embedded ? "space-y-6" : "space-y-6"}>
       <form onSubmit={runSearch} className="space-y-4">
         <div>
           <Label htmlFor="discovery-q">Company name, website or location</Label>
           <Input
             id="discovery-q"
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => {
+              setQ(e.target.value);
+              if (!manualName || manualName === q) {
+                setManualName(e.target.value);
+              }
+            }}
             className="mt-1"
             placeholder="e.g. InkjetPrint or inkjetprint.com.au"
             required
             minLength={2}
           />
           <p className="mt-2 text-sm text-[var(--rq-muted)]">
-            We&apos;ll search RateQuip&apos;s directory and public sources
-            (registry, website, marketplaces, socials).
+            Searches RateQuip&apos;s directory and publicly available company
+            websites / registries. You can also add a company that isn&apos;t
+            listed yet.
           </p>
         </div>
         <div>
@@ -227,8 +273,63 @@ export function CompanyDiscoverySearch({
         {message ? <p className="text-sm text-amber-700">{message}</p> : null}
       </form>
 
+      <section className="rounded-md border border-dashed border-[var(--rq-border)] bg-[var(--rq-surface)] p-4">
+        <h2 className="text-sm font-semibold text-[var(--rq-ink)]">
+          Not in our directory? Add it yourself
+        </h2>
+        <p className="mt-1 text-sm text-[var(--rq-slate)]">
+          Enter the company name and a brief description. Optional website helps
+          AI scrape public contact details on the next step.
+        </p>
+        <form onSubmit={startManualAdd} className="mt-4 space-y-3">
+          <div>
+            <Label htmlFor="manual-name">Company name</Label>
+            <Input
+              id="manual-name"
+              className="mt-1"
+              value={manualName}
+              onChange={(e) => setManualName(e.target.value)}
+              placeholder="Trading or legal name"
+              minLength={2}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="manual-description">Brief description</Label>
+            <Textarea
+              id="manual-description"
+              className="mt-1"
+              value={manualDescription}
+              onChange={(e) => setManualDescription(e.target.value)}
+              placeholder="What they supply or do, city, and any useful public context…"
+              maxLength={600}
+              rows={3}
+            />
+          </div>
+          <div>
+            <Label htmlFor="manual-website">Website (optional)</Label>
+            <Input
+              id="manual-website"
+              className="mt-1"
+              value={manualWebsite}
+              onChange={(e) => setManualWebsite(e.target.value)}
+              placeholder="https://…"
+            />
+          </div>
+          <Button
+            type="submit"
+            variant="secondary"
+            disabled={pending || (manualName.trim() || q.trim()).length < 2}
+          >
+            {claimLoop
+              ? "Continue with this company, then claim"
+              : "Continue with this company"}
+          </Button>
+        </form>
+      </section>
+
       {searched ? (
-        <div className="mt-8 space-y-6">
+        <div className="mt-2 space-y-6">
           <DirectoryGroup
             title="Exact matches on RateQuip"
             items={exact}
@@ -286,14 +387,15 @@ export function CompanyDiscoverySearch({
 
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--rq-muted)]">
-              Found on the web
+              Found on the public web
             </h2>
             {webMessage ? (
               <p className="mt-2 text-sm text-[var(--rq-slate)]">{webMessage}</p>
             ) : null}
             {webEnrichments.length === 0 ? (
               <p className="mt-2 text-sm text-[var(--rq-muted)]">
-                No enrichable public websites found yet. Try a full website URL.
+                No enrichable public websites found yet. Use the manual form
+                above, or try a full website URL in search.
               </p>
             ) : (
               <ul className="mt-3 space-y-3">
@@ -307,6 +409,14 @@ export function CompanyDiscoverySearch({
                         <p className="font-semibold text-[var(--rq-ink)]">
                           {item.companyName}
                         </p>
+                        {item.headline || item.description ? (
+                          <p className="mt-1 text-sm text-[var(--rq-slate)]">
+                            {(item.headline || item.description || "").slice(
+                              0,
+                              220,
+                            )}
+                          </p>
+                        ) : null}
                         <p className="mt-1 text-sm text-[var(--rq-slate)]">
                           {[item.locality, item.region, item.countryCode]
                             .filter(Boolean)
@@ -365,7 +475,9 @@ export function CompanyDiscoverySearch({
                             ? "Registry + web"
                             : item.enrichmentMeta?.usedAi
                               ? "AI extracted"
-                              : "Web scrape"}
+                              : item.enrichmentMeta?.source === "web_search"
+                                ? "Web search"
+                                : "Web scrape"}
                         </Badge>
                         {typeof item.enrichmentMeta?.confidence ===
                         "number" ? (
@@ -397,13 +509,13 @@ export function CompanyDiscoverySearch({
                           disabled={pending}
                           onClick={() => startAdd(item)}
                         >
-                          {intent === "claim" || returnToClaimAfterPublish
+                          {claimLoop
                             ? "Add company, then claim"
                             : "Use data — add company"}
                         </Button>
                       ) : null}
                     </div>
-                    {intent === "claim" || returnToClaimAfterPublish ? (
+                    {claimLoop ? (
                       <p className="mt-2 text-xs text-[var(--rq-muted)]">
                         This business isn&apos;t on RateQuip yet. Add the
                         listing first — we&apos;ll bring you straight back to
@@ -416,24 +528,63 @@ export function CompanyDiscoverySearch({
             )}
           </section>
 
-          {showAdd || intent === "claim" ? (
-            <div className="rounded-md border border-dashed border-[var(--rq-border)] bg-[var(--rq-surface)] p-4">
-              <p className="text-sm text-[var(--rq-slate)]">
-                {intent === "claim" || returnToClaimAfterPublish
-                  ? "No match? Add the company with public facts, then continue claiming."
-                  : "You can add an unclaimed company and invite them to claim it. Web-scraped fields are public facts only — always review before publishing."}
-              </p>
-              <Button
-                className="mt-4"
-                onClick={() => startAdd()}
-                disabled={pending || q.trim().length < 2}
-                variant="outline"
-              >
-                {intent === "claim" || returnToClaimAfterPublish
-                  ? "Add manually, then claim"
-                  : "None of these — add manually"}
-              </Button>
-            </div>
+          {webSearchHits.length > 0 ? (
+            <section>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--rq-muted)]">
+                Other public search hits
+              </h2>
+              <ul className="mt-3 space-y-2">
+                {webSearchHits.slice(0, 6).map((hit) => (
+                  <li
+                    key={hit.url}
+                    className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-[var(--rq-border)] px-3 py-2 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-[var(--rq-ink)]">
+                        {hit.title}
+                      </p>
+                      <p className="truncate text-[var(--rq-muted)]">
+                        {hit.url.replace(/^https?:\/\//, "")}
+                      </p>
+                      {hit.snippet ? (
+                        <p className="mt-1 text-[var(--rq-slate)]">
+                          {hit.snippet.slice(0, 160)}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button asChild size="sm" variant="outline">
+                        <a href={hit.url} target="_blank" rel="noreferrer">
+                          Open
+                        </a>
+                      </Button>
+                      {showAdd || intent === "claim" ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={pending}
+                          onClick={() =>
+                            startAdd({
+                              companyName:
+                                hit.title.split(/[|\-–—]/)[0]?.trim() ||
+                                q.trim(),
+                              websiteUrl: hit.url,
+                              description: hit.snippet || undefined,
+                              headline: hit.snippet?.slice(0, 180),
+                              publicSourceUrl: hit.url,
+                              companyTypes: [],
+                              categories: [],
+                            })
+                          }
+                        >
+                          Use this site
+                        </Button>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ) : null}
         </div>
       ) : null}
