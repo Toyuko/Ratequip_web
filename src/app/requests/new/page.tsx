@@ -15,6 +15,7 @@ import {
   SCOPE_OF_SUPPLY_OPTIONS,
   type TechnicalRequirement,
 } from "@/lib/rfq/types";
+import { EQUIPMENT_CLASSES, EQUIPMENT_LABELS } from "@/lib/talent/taxonomy";
 
 type LineItemDraft = {
   key: string;
@@ -76,6 +77,7 @@ function NewRequestForm() {
   const [deliveryWeeksRequired, setDeliveryWeeksRequired] = useState("");
   const [complianceStandards, setComplianceStandards] = useState<string[]>([]);
   const [scopeOfSupply, setScopeOfSupply] = useState<string[]>(["supply"]);
+  const [equipmentClass, setEquipmentClass] = useState("EXCAVATOR_20T");
   const [items, setItems] = useState<LineItemDraft[]>([emptyItem()]);
   const [requirements, setRequirements] = useState<RequirementDraft[]>([
     emptyRequirement(),
@@ -184,6 +186,9 @@ function NewRequestForm() {
                 ? Number(deliveryWeeksRequired)
                 : undefined,
               scopeOfSupply,
+              equipmentClass: scopeOfSupply.includes("operator")
+                ? equipmentClass
+                : undefined,
               technicalRequirements: requirements
                 .filter((req) => req.text.trim())
                 .map(({ text, priority }) => ({ text, priority })),
@@ -480,6 +485,27 @@ function NewRequestForm() {
               ))}
             </div>
           </div>
+          {scopeOfSupply.includes("operator") ? (
+            <div>
+              <Label htmlFor="equipmentClass">Operator equipment class</Label>
+              <select
+                id="equipmentClass"
+                className="mt-2 flex h-11 w-full rounded-md border border-[var(--rq-border)] bg-[var(--rq-card)] px-3 text-sm"
+                value={equipmentClass}
+                onChange={(e) => setEquipmentClass(e.target.value)}
+              >
+                {EQUIPMENT_CLASSES.map((cls) => (
+                  <option key={cls} value={cls}>
+                    {EQUIPMENT_LABELS[cls]}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-[var(--rq-muted)]">
+                RateQuip will open an operator gig and list it on the Indeed XML
+                feed.
+              </p>
+            </div>
+          ) : null}
         </fieldset>
 
         <fieldset className="space-y-4 border-t border-[var(--rq-border)] pt-6">

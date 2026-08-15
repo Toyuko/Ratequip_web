@@ -21,6 +21,9 @@ export default function ContractorDashboardPage() {
         <Button asChild variant="outline">
           <Link href="/companies/claim">Claim company profile</Link>
         </Button>
+        <Button asChild variant="outline">
+          <Link href="/dashboard/contractor/operator">Operator talent pool</Link>
+        </Button>
       </div>
     </DashboardShell>
   );

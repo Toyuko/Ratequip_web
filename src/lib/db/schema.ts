@@ -1,6 +1,8 @@
 import {
   boolean,
   check,
+  doublePrecision,
+  index,
   integer,
   jsonb,
   numeric,
@@ -8,6 +10,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -335,11 +338,16 @@ export const requests = pgTable("requests", {
   utilitiesNotes: text("utilities_notes"),
   warrantyMonthsRequired: integer("warranty_months_required"),
   deliveryWeeksRequired: integer("delivery_weeks_required"),
-  /** supply | install | commission | validation | training | spares */
+  /** supply | install | commission | validation | training | spares | operator */
   scopeOfSupply: jsonb("scope_of_supply").$type<string[]>().default([]),
   /** Must / prefer / optional technical requirements (URS-style checklist) */
   technicalRequirements: jsonb("technical_requirements")
     .$type<{ text: string; priority: "must" | "prefer" | "optional" }[]>()
+    .default([]),
+  needsOperator: boolean("needs_operator").notNull().default(false),
+  equipmentClass: varchar("equipment_class", { length: 64 }),
+  requiredCredentials: jsonb("required_credentials")
+    .$type<string[]>()
     .default([]),
   status: requestStatusEnum("status").notNull().default("open"),
   dueDate: timestamp("due_date", { withTimezone: true }),
@@ -669,3 +677,265 @@ export const growthInvitationRecipients = pgTable(
  * rq_asset, rq_digital_passport, rq_asset_event, rq_supplier_scorecard,
  * rq_risk_signal, rq_compliance_*, rq_api_*, rq_course, rq_event_exhibitor
  */
+
+/** Collaborate parties — durable identity for experts and operators. */
+export const collaborateParties = pgTable("collaborate_parties", {
+  partyId: text("party_id").primaryKey(),
+  kind: text("kind").notNull(),
+  legalName: text("legal_name").notNull(),
+  jurisdiction: text("jurisdiction").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  timezone: text("timezone").notNull(),
+  verificationTier: text("verification_tier").notNull().default("T0"),
+  userId: uuid("user_id"),
+  organisationId: uuid("organisation_id"),
+  primaryEmailNorm: text("primary_email_norm"),
+  primaryPhoneE164: text("primary_phone_e164"),
+  givenName: text("given_name"),
+  familyName: text("family_name"),
+  verifiedIdentityAt: timestamp("verified_identity_at", { withTimezone: true }),
+  homeLat: doublePrecision("home_lat"),
+  homeLng: doublePrecision("home_lng"),
+  createdViaBoard: text("created_via_board"),
+  operatorStatus: text("operator_status").notNull().default("ACTIVE"),
+  poolConsentAt: timestamp("pool_consent_at", { withTimezone: true }),
+  privacyNoticeVersion: text("privacy_notice_version"),
+  rightToWorkVerifiedAt: timestamp("right_to_work_verified_at", {
+    withTimezone: true,
+  }),
+  ...timestamps,
+});
+
+export const collaborateRuntime = pgTable("collaborate_runtime", {
+  id: text("id").primaryKey().default("default"),
+  snapshot: jsonb("snapshot").$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const talentOperatorIdentityLinks = pgTable(
+  "talent_operator_identity_links",
+  {
+    id: text("id").primaryKey(),
+    partyId: text("party_id")
+      .notNull()
+      .references(() => collaborateParties.partyId),
+    board: text("board").notNull(),
+    externalId: text("external_id").notNull(),
+    confidence: text("confidence").notNull().default("HIGH"),
+    matchedByRule: text("matched_by_rule"),
+    mergedFrom: text("merged_from"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [
+    uniqueIndex("talent_identity_board_ext_uniq").on(t.board, t.externalId),
+  ],
+);
+
+export const talentMergeSnapshots = pgTable("talent_merge_snapshots", {
+  id: text("id").primaryKey(),
+  survivingPartyId: text("surviving_party_id")
+    .notNull()
+    .references(() => collaborateParties.partyId),
+  absorbedPartyId: text("absorbed_party_id").notNull(),
+  preMerge: jsonb("pre_merge").$type<Record<string, unknown>>().notNull(),
+  rule: text("rule").notNull(),
+  reversedAt: timestamp("reversed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const talentOperatorCredentials = pgTable(
+  "talent_operator_credentials",
+  {
+    id: text("id").primaryKey(),
+    partyId: text("party_id")
+      .notNull()
+      .references(() => collaborateParties.partyId),
+    credentialType: text("credential_type").notNull(),
+    identifier: text("identifier"),
+    issuingJurisdiction: text("issuing_jurisdiction").notNull().default("AU-NSW"),
+    issuedAt: timestamp("issued_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    verificationMethod: text("verification_method")
+      .notNull()
+      .default("DOCUMENT_CAPTURE"),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    verifiedBy: text("verified_by"),
+    documentBlobUrl: text("document_blob_url"),
+    status: text("status").notNull().default("ACTIVE"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [
+    uniqueIndex("talent_credentials_active_uniq")
+      .on(t.partyId, t.credentialType, t.issuingJurisdiction)
+      .where(sql`${t.status} = 'ACTIVE'`),
+    index("talent_credentials_expiry")
+      .on(t.expiresAt)
+      .where(sql`${t.status} = 'ACTIVE'`),
+  ],
+);
+
+export const talentOperatorAvailability = pgTable(
+  "talent_operator_availability",
+  {
+    id: text("id").primaryKey(),
+    partyId: text("party_id")
+      .notNull()
+      .references(() => collaborateParties.partyId),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    windowEnd: timestamp("window_end", { withTimezone: true }).notNull(),
+    radiusKm: integer("radius_km").notNull().default(40),
+    baseLat: doublePrecision("base_lat"),
+    baseLng: doublePrecision("base_lng"),
+    exclusivity: boolean("exclusivity").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+);
+
+export const talentGigs = pgTable("talent_gigs", {
+  id: text("id").primaryKey(),
+  hirerId: text("hirer_id").notNull(),
+  bookingId: text("booking_id"),
+  requestId: uuid("request_id"),
+  engagementId: text("engagement_id"),
+  equipmentClass: text("equipment_class").notNull(),
+  requiredCredentials: jsonb("required_credentials")
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  siteLat: doublePrecision("site_lat"),
+  siteLng: doublePrecision("site_lng"),
+  siteLabel: text("site_label"),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+  endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+  rateCents: integer("rate_cents").notNull(),
+  currency: text("currency").notNull().default("AUD"),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("OPEN"),
+  ...timestamps,
+});
+
+export const talentGigPublications = pgTable(
+  "talent_gig_publications",
+  {
+    id: text("id").primaryKey(),
+    gigId: text("gig_id")
+      .notNull()
+      .references(() => talentGigs.id),
+    board: text("board").notNull(),
+    externalPostingId: text("external_posting_id"),
+    externalTaskId: text("external_task_id"),
+    state: text("state").notNull().default("PENDING"),
+    taxonomyVersion: text("taxonomy_version"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    lastReconciledAt: timestamp("last_reconciled_at", { withTimezone: true }),
+    adSpendCents: integer("ad_spend_cents").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [uniqueIndex("talent_gig_publications_gig_board_uniq").on(t.gigId, t.board)],
+);
+
+export const talentApplications = pgTable(
+  "talent_applications",
+  {
+    id: text("id").primaryKey(),
+    gigPublicationId: text("gig_publication_id").references(
+      () => talentGigPublications.id,
+    ),
+    partyId: text("party_id").references(() => collaborateParties.partyId),
+    board: text("board").notNull(),
+    externalApplicationId: text("external_application_id").notNull(),
+    receivedAt: timestamp("received_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    sourcePayloadBlobUrl: text("source_payload_blob_url"),
+    pipelineState: text("pipeline_state").notNull().default("APPLIED"),
+    dispositionSentAt: timestamp("disposition_sent_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("talent_applications_board_ext_uniq").on(
+      t.board,
+      t.externalApplicationId,
+    ),
+  ],
+);
+
+export const talentInboundEvents = pgTable(
+  "talent_inbound_events",
+  {
+    id: text("id").primaryKey(),
+    board: text("board").notNull(),
+    externalEventId: text("external_event_id").notNull(),
+    receivedAt: timestamp("received_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    raw: jsonb("raw").$type<Record<string, unknown>>().notNull(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    error: text("error"),
+  },
+  (t) => [
+    uniqueIndex("talent_inbound_events_board_ext_uniq").on(
+      t.board,
+      t.externalEventId,
+    ),
+  ],
+);
+
+export const talentOutbox = pgTable(
+  "talent_outbox",
+  {
+    id: text("id").primaryKey(),
+    aggregateType: text("aggregate_type").notNull(),
+    aggregateId: text("aggregate_id").notNull(),
+    board: text("board").notNull(),
+    operation: text("operation").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    lockedBy: text("locked_by"),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [
+    index("talent_outbox_due")
+      .on(t.nextAttemptAt)
+      .where(sql`${t.processedAt} IS NULL`),
+  ],
+);
+
+export const talentBoardHirerLinks = pgTable(
+  "talent_board_hirer_links",
+  {
+    id: text("id").primaryKey(),
+    hirerId: text("hirer_id").notNull(),
+    board: text("board").notNull(),
+    boardAccountRef: text("board_account_ref"),
+    credentialsSecretName: text("credentials_secret_name"),
+    disabledFeatures: jsonb("disabled_features").$type<string[]>().notNull().default([]),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [uniqueIndex("talent_board_hirer_uniq").on(t.hirerId, t.board)],
+);

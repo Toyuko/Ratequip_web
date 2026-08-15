@@ -148,6 +148,9 @@ export type DemoRequest = {
   warrantyMonthsRequired?: number;
   deliveryWeeksRequired?: number;
   scopeOfSupply: string[];
+  needsOperator?: boolean;
+  equipmentClass?: string;
+  requiredCredentials?: string[];
   technicalRequirements: DemoTechnicalRequirement[];
   status: "open" | "closed" | "awarded";
   quoteCount: number;

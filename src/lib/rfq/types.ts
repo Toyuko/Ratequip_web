@@ -12,6 +12,7 @@ export const SCOPE_OF_SUPPLY_OPTIONS = [
   "validation",
   "training",
   "spares",
+  "operator",
 ] as const;
 
 export type ScopeOfSupply = (typeof SCOPE_OF_SUPPLY_OPTIONS)[number];

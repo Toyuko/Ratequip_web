@@ -92,6 +92,9 @@ export default function CollaborateHubPage() {
         <Button asChild variant="outline">
           <Link href="/collaborate/jobs/new">Post a job</Link>
         </Button>
+        <Button asChild variant="outline">
+          <Link href="/operators/gigs">Operator gigs</Link>
+        </Button>
       </div>
 
       <ul className="mt-10 grid gap-4 sm:grid-cols-2">

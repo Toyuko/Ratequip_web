@@ -30,6 +30,9 @@ const STATIC_ROUTES: { path: string; changeFrequency: MetadataRoute.Sitemap[numb
   { path: "/capabilities", changeFrequency: "monthly", priority: 0.7 },
   { path: "/modules", changeFrequency: "monthly", priority: 0.5 },
   { path: "/collaborate", changeFrequency: "weekly", priority: 0.6 },
+  { path: "/operators/join", changeFrequency: "weekly", priority: 0.5 },
+  { path: "/operators/gigs", changeFrequency: "hourly", priority: 0.5 },
+  { path: "/legal/operator-pool-notice", changeFrequency: "monthly", priority: 0.3 },
   { path: "/referrals", changeFrequency: "monthly", priority: 0.4 },
 ];
 

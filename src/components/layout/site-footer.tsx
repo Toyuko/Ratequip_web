@@ -46,6 +46,11 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/operators/join" className="hover:text-white">
+                Operator pool
+              </Link>
+            </li>
+            <li>
               <Link href="/economies" className="hover:text-white">
                 {t.footer.economies}
               </Link>

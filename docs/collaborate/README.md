@@ -6,7 +6,7 @@ Spec: `RateQuip-Collaborate-Technical-Build-Spec.docx` (10 Aug 2026).
 
 ## What shipped
 
-**Phase 0 foundation** (in-process store + SQL schema target):
+**Phase 0 foundation** (in-process store + Neon snapshot + SQL schema):
 
 - Party (Individual / Organisation) + memberships + acting-as on writes
 - Capability (Skill / Credential / Asset / Capacity) + verifiedState ladder

@@ -28,6 +28,7 @@
     "smoke:v12": "tsx scripts/v12-smoke.ts",
     "smoke:part7": "ENTERPRISE_PART7_ENABLED=true ENTERPRISE_GRAPH_MATCH_ENABLED=true tsx scripts/part7-smoke.ts",
     "smoke:collaborate": "tsx scripts/collaborate-smoke.ts",
+    "smoke:talent": "tsx scripts/talent-smoke.ts",
     "smoke:catalogue-ledger": "ENTERPRISE_CATALOGUE_LEDGER_ENABLED=true tsx scripts/catalogue-ledger-smoke.ts",
     "test:trust": "tsx scripts/trust-score-check.ts",
     "stripe:setup": "tsx scripts/stripe-setup-local.ts",

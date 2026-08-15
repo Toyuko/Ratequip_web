@@ -225,6 +225,8 @@ export async function createRequest(input: {
   warrantyMonthsRequired?: number;
   deliveryWeeksRequired?: number;
   scopeOfSupply?: string[];
+  equipmentClass?: string;
+  requiredCredentials?: string[];
   technicalRequirements?: {
     text: string;
     priority: "must" | "prefer" | "optional";
@@ -333,6 +335,8 @@ export async function createRequest(input: {
     warrantyMonthsRequired: input.warrantyMonthsRequired,
     deliveryWeeksRequired: input.deliveryWeeksRequired,
     scopeOfSupply: input.scopeOfSupply,
+    equipmentClass: input.equipmentClass,
+    requiredCredentials: input.requiredCredentials,
     technicalRequirements: input.technicalRequirements,
     items,
     actor: gate.actor,
@@ -343,6 +347,28 @@ export async function createRequest(input: {
   });
 
   if (created.ok) {
+    const wantsOperator =
+      (input.scopeOfSupply ?? []).includes("operator") ||
+      Boolean(input.equipmentClass);
+    if (wantsOperator) {
+      try {
+        const { createGigFromRequest } = await import("@/lib/talent/operations");
+        await createGigFromRequest({
+          requestId: created.id,
+          title: input.title,
+          description: input.description,
+          equipmentClass: input.equipmentClass,
+          requiredCredentials: input.requiredCredentials,
+          siteLabel: [input.deliveryCity, input.deliveryCountry]
+            .filter(Boolean)
+            .join(", "),
+          dueDate: input.dueDate,
+          currency: currency === "AUD" ? "AUD" : currency,
+        });
+      } catch (error) {
+        console.warn("[marketplace] operator gig from RFQ failed", error);
+      }
+    }
     try {
       await releaseReferralReward({
         event: "first_enquiry",

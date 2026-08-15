@@ -722,6 +722,9 @@ export async function listRequestsAsync(): Promise<DemoRequest[]> {
           warrantyMonthsRequired: r.warrantyMonthsRequired ?? undefined,
           deliveryWeeksRequired: r.deliveryWeeksRequired ?? undefined,
           scopeOfSupply: normalizeStringList(r.scopeOfSupply),
+          needsOperator: Boolean(r.needsOperator),
+          equipmentClass: r.equipmentClass ?? undefined,
+          requiredCredentials: normalizeStringList(r.requiredCredentials),
           technicalRequirements: normalizeRequirements(r.technicalRequirements),
           status: r.status as DemoRequest["status"],
           quoteCount: countByRequest.get(r.id) ?? 0,
@@ -1868,6 +1871,8 @@ export async function persistRequest(input: {
   warrantyMonthsRequired?: number;
   deliveryWeeksRequired?: number;
   scopeOfSupply?: string[];
+  equipmentClass?: string;
+  requiredCredentials?: string[];
   technicalRequirements?: TechnicalRequirement[];
   items?: RequestItemInput[];
   actor?: string;
@@ -1950,6 +1955,10 @@ export async function persistRequest(input: {
           warrantyMonthsRequired: input.warrantyMonthsRequired ?? null,
           deliveryWeeksRequired: input.deliveryWeeksRequired ?? null,
           scopeOfSupply,
+          needsOperator:
+            scopeOfSupply.includes("operator") || Boolean(input.equipmentClass),
+          equipmentClass: input.equipmentClass?.trim() || null,
+          requiredCredentials: normalizeStringList(input.requiredCredentials),
           technicalRequirements,
           status: "open",
           attachmentUrl: input.attachmentUrl,
@@ -2029,6 +2038,9 @@ export async function persistRequest(input: {
         warrantyMonthsRequired: created.warrantyMonthsRequired ?? undefined,
         deliveryWeeksRequired: created.deliveryWeeksRequired ?? undefined,
         scopeOfSupply: normalizeStringList(created.scopeOfSupply),
+        needsOperator: Boolean(created.needsOperator),
+        equipmentClass: created.equipmentClass ?? undefined,
+        requiredCredentials: normalizeStringList(created.requiredCredentials),
         technicalRequirements: normalizeRequirements(
           created.technicalRequirements,
         ),
@@ -2099,6 +2111,10 @@ export async function persistRequest(input: {
     warrantyMonthsRequired: input.warrantyMonthsRequired,
     deliveryWeeksRequired: input.deliveryWeeksRequired,
     scopeOfSupply,
+    needsOperator:
+      scopeOfSupply.includes("operator") || Boolean(input.equipmentClass),
+    equipmentClass: input.equipmentClass?.trim() || undefined,
+    requiredCredentials: normalizeStringList(input.requiredCredentials),
     technicalRequirements,
     status: "open",
     quoteCount: 0,

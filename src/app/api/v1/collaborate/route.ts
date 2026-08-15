@@ -25,6 +25,10 @@ import {
 import { getCollaborateStore } from "@/lib/collaborate/store";
 import { matchRequirement } from "@/lib/collaborate/matching";
 import { formatMoney } from "@/lib/collaborate/money";
+import {
+  flushCollaborateStore,
+  hydrateCollaborateStore,
+} from "@/lib/collaborate/neon";
 import type { Engagement, SessionOffering } from "@/lib/collaborate/types";
 
 export const runtime = "nodejs";
@@ -54,6 +58,7 @@ type Action =
   | "ensure_engagement";
 
 export async function GET(req: Request) {
+  await hydrateCollaborateStore();
   const url = new URL(req.url);
   const action = (url.searchParams.get("action") ?? "snapshot") as Action;
 
@@ -138,10 +143,13 @@ export async function GET(req: Request) {
     }
   } catch (e) {
     return bad(e instanceof Error ? e.message : "error", 400);
+  } finally {
+    await flushCollaborateStore();
   }
 }
 
 export async function POST(req: Request) {
+  await hydrateCollaborateStore();
   try {
     const body = (await req.json()) as Record<string, unknown>;
     const action = body.action as Action;
@@ -376,6 +384,8 @@ export async function POST(req: Request) {
     }
   } catch (e) {
     return bad(e instanceof Error ? e.message : "error", 400);
+  } finally {
+    await flushCollaborateStore();
   }
 }
 
