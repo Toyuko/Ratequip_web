@@ -67,6 +67,23 @@ export type WebEnrichmentCard = {
 
 type WebSearchHit = { title: string; url: string; snippet: string };
 
+type LiveMatchPreview = {
+  status: "idle" | "checking" | "found" | "none";
+  count: number;
+  topName?: string;
+};
+
+/** Treat pasted URLs / bare domains as website lookups for domain matching. */
+function websiteUrlFromQuery(query: string): string | undefined {
+  const trimmed = query.trim();
+  if (!trimmed) return undefined;
+  if (isPublicWebsiteUrl(trimmed)) return trimmed;
+  if (/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(\/.*)?$/i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return undefined;
+}
+
 type CompanyDiscoverySearchProps = {
   intent?: DiscoveryIntent;
   initialQuery?: string;
@@ -106,6 +123,10 @@ export function CompanyDiscoverySearch({
   const [coverageSummary, setCoverageSummary] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [liveMatch, setLiveMatch] = useState<LiveMatchPreview>({
+    status: "idle",
+    count: 0,
+  });
   const [pending, startTransition] = useTransition();
 
   const showAdd = intent === "add" || intent === "both";
@@ -121,6 +142,7 @@ export function CompanyDiscoverySearch({
       const result = await searchCompaniesForAdd({
         q: query,
         country,
+        websiteUrl: websiteUrlFromQuery(query),
         includeWeb: true,
       });
       if (!result.ok) {
@@ -168,6 +190,50 @@ export function CompanyDiscoverySearch({
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot on mount
   }, []);
+
+  useEffect(() => {
+    const query = q.trim();
+    if (query.length < 2) {
+      setLiveMatch({ status: "idle", count: 0 });
+      return;
+    }
+
+    let cancelled = false;
+    setLiveMatch((prev) => ({ ...prev, status: "checking" }));
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const result = await searchCompaniesForAdd({
+          q: query,
+          country,
+          websiteUrl: websiteUrlFromQuery(query),
+          includeWeb: false,
+        });
+        if (cancelled) return;
+        if (!result.ok) {
+          setLiveMatch({ status: "idle", count: 0 });
+          return;
+        }
+        const strong = result.candidates.filter(
+          (c) => c.matchLevel === "exact" || c.matchLevel === "likely",
+        );
+        const hits = strong.length > 0 ? strong : result.candidates;
+        if (hits.length === 0) {
+          setLiveMatch({ status: "none", count: 0 });
+          return;
+        }
+        setLiveMatch({
+          status: "found",
+          count: hits.length,
+          topName: hits[0]?.name,
+        });
+      })();
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [q, country]);
 
   function markClaimAfterPublish() {
     try {
@@ -265,6 +331,7 @@ export function CompanyDiscoverySearch({
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
+              setSearched(false);
               if (!manualName || manualName === q) {
                 setManualName(e.target.value);
               }
@@ -273,8 +340,32 @@ export function CompanyDiscoverySearch({
             placeholder="e.g. InkjetPrint or inkjetprint.com.au"
             required
             minLength={2}
+            aria-describedby="discovery-q-live discovery-q-help"
           />
-          <p className="mt-2 text-sm text-[var(--rq-muted)]">
+          <div id="discovery-q-live" className="mt-2 min-h-5" aria-live="polite">
+            {liveMatch.status === "checking" ? (
+              <p className="text-sm text-[var(--rq-muted)]">
+                Checking RateQuip for a match…
+              </p>
+            ) : liveMatch.status === "found" ? (
+              <p className="text-sm font-medium text-emerald-700">
+                {liveMatch.count === 1
+                  ? `We found a match${liveMatch.topName ? `: ${liveMatch.topName}` : ""}.`
+                  : `We found ${liveMatch.count} matches on RateQuip${
+                      liveMatch.topName ? `, including ${liveMatch.topName}` : ""
+                    }.`}{" "}
+                <span className="font-normal text-[var(--rq-slate)]">
+                  Search companies to review and claim.
+                </span>
+              </p>
+            ) : liveMatch.status === "none" ? (
+              <p className="text-sm text-[var(--rq-muted)]">
+                No RateQuip listing yet — search to check public sources, or add
+                it below.
+              </p>
+            ) : null}
+          </div>
+          <p id="discovery-q-help" className="mt-2 text-sm text-[var(--rq-muted)]">
             Searches RateQuip&apos;s directory plus public company sites, trade
             fair / association lists, and distributor brand pages. Add a country
             to unlock regional and in-language coverage probes.
@@ -353,6 +444,15 @@ export function CompanyDiscoverySearch({
 
       {searched ? (
         <div className="mt-2 space-y-6">
+          {exact.length + likely.length > 0 ? (
+            <p className="text-sm font-medium text-emerald-700" role="status">
+              We found{" "}
+              {exact.length + likely.length === 1
+                ? `a match${exact[0]?.name || likely[0]?.name ? `: ${exact[0]?.name || likely[0]?.name}` : ""}`
+                : `${exact.length + likely.length} matches on RateQuip`}
+              .
+            </p>
+          ) : null}
           <DirectoryGroup
             title="Exact matches on RateQuip"
             items={exact}
