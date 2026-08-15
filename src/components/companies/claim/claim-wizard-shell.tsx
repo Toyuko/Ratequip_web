@@ -1,5 +1,6 @@
 "use client";
 
+import { WizardSignUpPrompt } from "@/components/auth/wizard-sign-up-prompt";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
@@ -60,6 +61,7 @@ export function ClaimWizardShell({
         ) : null}
       </div>
       <p className="mt-2 text-[var(--rq-slate)]">{description}</p>
+      <WizardSignUpPrompt />
 
       <div
         className="mt-8 grid grid-cols-4 gap-2"

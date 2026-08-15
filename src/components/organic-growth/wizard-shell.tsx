@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { WizardSignUpPrompt } from "@/components/auth/wizard-sign-up-prompt";
 import { clearLocalDraft } from "@/components/organic-growth/use-listing-draft";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -99,6 +100,7 @@ export function AddCompanyWizardShell({
       </div>
       <h1 className="mt-2 text-3xl font-bold text-[var(--rq-ink)]">{title}</h1>
       <p className="mt-2 text-[var(--rq-slate)]">{description}</p>
+      <WizardSignUpPrompt />
 
       {step !== "success" ? (
         <ol className="mt-8 flex flex-wrap gap-2">

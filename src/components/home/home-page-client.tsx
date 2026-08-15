@@ -210,6 +210,16 @@ export function HomePageClient({
                     variant="outline"
                     className="h-12 border-white/35 bg-white/5 text-white hover:bg-white/10"
                   >
+                    <Link href="/companies/search">
+                      {t.home.searchCreateCompany}
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="h-12 border-white/35 bg-white/5 text-white hover:bg-white/10"
+                  >
                     <AuthGateLink href={postRfqHref}>
                       {t.home.postRfq}
                     </AuthGateLink>
@@ -766,9 +776,16 @@ export function HomePageClient({
             <p className="mt-5 text-sm font-semibold text-[var(--rq-ink)]">
               Find → Compare → RFQ → Connect → Procure
             </p>
-            <Button asChild className="mt-6">
-              <AuthGateLink href={postRfqHref}>{t.home.buyerCta}</AuthGateLink>
-            </Button>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button asChild>
+                <AuthGateLink href={postRfqHref}>{t.home.buyerCta}</AuthGateLink>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/companies/search">
+                  {t.home.searchCreateCompany}
+                </Link>
+              </Button>
+            </div>
           </div>
           <div className="rounded-2xl border border-[var(--rq-border)] bg-[var(--rq-navy)] p-6 text-white sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-300">
@@ -857,6 +874,16 @@ export function HomePageClient({
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
               <Link href="/search">{t.home.exploreCta}</Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white/30 bg-white/5 text-white hover:bg-white/10"
+            >
+              <Link href="/companies/search">
+                {t.home.searchCreateCompany}
+              </Link>
             </Button>
             <Button
               asChild

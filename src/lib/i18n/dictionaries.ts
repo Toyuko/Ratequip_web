@@ -55,6 +55,7 @@ export type Dictionary = {
     heroSearchPlaceholder: string;
     searchRateQuip: string;
     postRfq: string;
+    searchCreateCompany: string;
     filterEquipment: string;
     filterSupplier: string;
     filterCategory: string;
@@ -212,6 +213,7 @@ const en: Dictionary = {
       "Search equipment, suppliers, manufacturers or categories…",
     searchRateQuip: "Search RateQuip",
     postRfq: "Post an RFQ",
+    searchCreateCompany: "Search or create a company",
     filterEquipment: "Equipment",
     filterSupplier: "Supplier",
     filterCategory: "Category",
@@ -226,8 +228,9 @@ const en: Dictionary = {
     exploreSuppliersBody: "Find manufacturers, distributors and integrators.",
     exploreRfqs: "RFQs & Opportunities",
     exploreRfqsBody: "Post requirements or discover active projects.",
-    exploreNetwork: "Industry Network",
-    exploreNetworkBody: "Build connections, reputation and partnerships.",
+    exploreNetwork: "Companies",
+    exploreNetworkBody:
+      "Search the directory or create a company profile to join the network.",
     featuredEquipment: "Featured equipment",
     featuredEquipmentBody:
       "Machinery with real specifications — not empty catalogue placeholders.",
@@ -382,6 +385,7 @@ const th: Dictionary = {
     heroSearchPlaceholder: "ค้นหาอุปกรณ์ ซัพพลายเออร์ ผู้ผลิต หรือหมวดหมู่…",
     searchRateQuip: "ค้นหา RateQuip",
     postRfq: "โพสต์ RFQ",
+    searchCreateCompany: "ค้นหาหรือสร้างบริษัท",
     filterEquipment: "อุปกรณ์",
     filterSupplier: "ซัพพลายเออร์",
     filterCategory: "หมวดหมู่",
@@ -396,8 +400,9 @@ const th: Dictionary = {
     exploreSuppliersBody: "ค้นหาผู้ผลิต ผู้จัดจำหน่าย และอินทิเกรเตอร์",
     exploreRfqs: "RFQ และโอกาส",
     exploreRfqsBody: "โพสต์ความต้องการหรือค้นหาโปรเจกต์ที่เปิดอยู่",
-    exploreNetwork: "เครือข่ายอุตสาหกรรม",
-    exploreNetworkBody: "สร้างการเชื่อมต่อ ชื่อเสียง และพันธมิตร",
+    exploreNetwork: "บริษัท",
+    exploreNetworkBody:
+      "ค้นหาในไดเรกทอรี หรือสร้างโปรไฟล์บริษัทเพื่อเข้าร่วมเครือข่าย",
     featuredEquipment: "อุปกรณ์แนะนำ",
     featuredEquipmentBody: "เครื่องจักรพร้อมสเปกจริง — ไม่ใช่แคตตาล็อกว่าง",
     viewEquipment: "ดูอุปกรณ์",
@@ -548,6 +553,7 @@ const zh: Dictionary = {
     heroSearchPlaceholder: "搜索设备、供应商、制造商或分类…",
     searchRateQuip: "搜索 RateQuip",
     postRfq: "发布询价",
+    searchCreateCompany: "搜索或创建公司",
     filterEquipment: "设备",
     filterSupplier: "供应商",
     filterCategory: "分类",
@@ -562,8 +568,8 @@ const zh: Dictionary = {
     exploreSuppliersBody: "查找制造商、经销商与集成商。",
     exploreRfqs: "询价与商机",
     exploreRfqsBody: "发布需求或发现进行中的项目。",
-    exploreNetwork: "产业网络",
-    exploreNetworkBody: "建立连接、信誉与合作伙伴关系。",
+    exploreNetwork: "公司",
+    exploreNetworkBody: "搜索名录，或创建公司档案加入网络。",
     featuredEquipment: "精选设备",
     featuredEquipmentBody: "带真实规格的机械——不是空洞目录占位。",
     viewEquipment: "查看设备",
