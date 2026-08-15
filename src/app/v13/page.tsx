@@ -16,18 +16,18 @@ const waves = [
   },
   {
     title: "Wave 2 — Taxonomy / graph / builders",
-    href: "/v12/taxonomy",
-    body: "Universal taxonomy, capability graph proximity, opportunity & contractor builders.",
+    href: "/dashboard",
+    body: "V12 taxonomy and builders are gated off — use the role dashboard for live Phase 2 work.",
   },
   {
     title: "Wave 3 — Catalogue factory",
-    href: "/v12/catalogue-factory",
-    body: "Module 68 pricing, credit reservation ledger, publishability rules.",
+    href: "/dashboard",
+    body: "Catalogue factory UI is gated with the V12 hub. Credit/ledger APIs remain for internal demos.",
   },
   {
     title: "Compatibility contract",
-    href: "/v12",
-    body: "Phase 2 MVP surfaces stay frozen. Enterprise work is additive overlays.",
+    href: "/dashboard",
+    body: "Phase 2 MVP dashboards are the product surface. Enterprise overlays stay additive and flag-gated.",
   },
 ];
 

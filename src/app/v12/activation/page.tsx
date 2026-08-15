@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { COMPANY_SETUP_INTERVIEW_ENABLED } from "@/lib/v12/operating-profile/flags";
+import { COMPANY_SETUP_INTERVIEW_ENABLED } from "@/lib/v12/flags";
 import CompanySetupWizardPage from "./wizard";
 
 export const metadata = {

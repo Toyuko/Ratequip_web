@@ -57,27 +57,6 @@ export function DashboardNav({
             </Link>
           </nav>
         </div>
-        <div className="mt-6 hidden md:block">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--rq-muted)]">
-            Coming soon
-          </p>
-          <nav className="mt-2 space-y-1 text-sm">
-            {[
-              ["intelligence", "Intelligence"],
-              ["srm", "SRM"],
-              ["asset-register", "Assets"],
-              ["academy", "Academy"],
-            ].map(([slug, label]) => (
-              <Link
-                key={slug}
-                href={`/modules/${slug}`}
-                className="block rounded-md px-3 py-1.5 text-[var(--rq-muted)] hover:bg-[var(--rq-hover)]"
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
-        </div>
       </div>
     </aside>
   );

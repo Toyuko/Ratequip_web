@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { Button } from "@/components/ui/button";
 import { hasClerk } from "@/lib/config";
@@ -33,16 +33,8 @@ export default async function ModuleComingSoonPage({
   const { slug } = await params;
   const signedIn = await isSignedInUser();
 
-  // Signed-in users can jump into live V12 surfaces; guests stay on public
-  // coming-soon pages so footer/nav links are not dead ends.
-  if (signedIn) {
-    if (slug === "v12") redirect("/v12");
-    if (slug === "srm") redirect("/v12/srm");
-    if (slug === "intelligence" || slug === "ai-copilot") {
-      redirect("/v12/intelligence");
-    }
-  }
-
+  // Do not divert signed-in users into the V12 overlay — keep module pages as
+  // public coming-soon surfaces so dashboards stay focused on core work.
   const mod = upcomingModules.find((m) => m.slug === slug);
   if (!mod) notFound();
 
