@@ -10,6 +10,7 @@ import {
   registrableDomainFromUrl,
 } from "@/lib/organic-growth/privacy";
 import { findDuplicateCandidates } from "@/lib/organic-growth/search";
+import { annotateDuplicatesWithResolution } from "@/lib/ai/coverage/entity-resolution";
 import {
   createEmptySubmission,
   ensureSubmission,
@@ -124,10 +125,16 @@ export async function searchCompaniesForAdd(input: {
     return { ok: false as const, message: "Enter at least 2 characters to search." };
   }
 
-  const candidates = await findDuplicateCandidates({
+  const rawCandidates = await findDuplicateCandidates({
     query: q,
     websiteUrl: input.websiteUrl,
     country: input.country,
+  });
+  const candidates = annotateDuplicatesWithResolution({
+    query: q,
+    websiteUrl: input.websiteUrl,
+    country: input.country,
+    duplicates: rawCandidates,
   });
 
   let web: Awaited<ReturnType<typeof discoverCompaniesFromWeb>> | null = null;
@@ -140,13 +147,14 @@ export async function searchCompaniesForAdd(input: {
         webMessage:
           "Web enrichment rate-limited — RateQuip directory results only. Try again shortly.",
         webSearchHits: [] as Array<{ title: string; url: string; snippet: string }>,
+        coverage: undefined,
       };
     }
     try {
       web = await discoverCompaniesFromWeb({
         query: q,
         country: input.country,
-        limit: 4,
+        limit: 6,
       });
     } catch (error) {
       console.warn("[organic-growth] web discovery failed", error);
@@ -159,6 +167,7 @@ export async function searchCompaniesForAdd(input: {
     webEnrichments: (web?.enrichments ?? []).map(serializeEnrichment),
     webMessage: web?.message,
     webSearchHits: web?.searchHits ?? [],
+    coverage: web?.coverage,
   };
 }
 

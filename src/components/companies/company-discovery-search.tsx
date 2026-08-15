@@ -103,6 +103,7 @@ export function CompanyDiscoverySearch({
   );
   const [webSearchHits, setWebSearchHits] = useState<WebSearchHit[]>([]);
   const [webMessage, setWebMessage] = useState<string | null>(null);
+  const [coverageSummary, setCoverageSummary] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -128,6 +129,7 @@ export function CompanyDiscoverySearch({
         setWebEnrichments([]);
         setWebSearchHits([]);
         setWebMessage(null);
+        setCoverageSummary(null);
         setSearched(false);
         return;
       }
@@ -136,6 +138,27 @@ export function CompanyDiscoverySearch({
       setWebEnrichments((result.webEnrichments ?? []) as WebEnrichmentCard[]);
       setWebSearchHits(result.webSearchHits ?? []);
       setWebMessage(result.webMessage ?? null);
+      const cov = result.coverage;
+      setCoverageSummary(
+        cov
+          ? [
+              cov.lanesUsed.length
+                ? `Lanes: ${cov.lanesUsed.join(", ")}`
+                : null,
+              cov.rosterPagesFetched
+                ? `${cov.rosterPagesFetched} roster page${cov.rosterPagesFetched === 1 ? "" : "s"}`
+                : null,
+              cov.candidatesFromRosters
+                ? `${cov.candidatesFromRosters} from lists`
+                : null,
+              cov.candidatesFromLateral
+                ? `${cov.candidatesFromLateral} related`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || null
+          : null,
+      );
       setSearched(true);
     });
   }
@@ -252,9 +275,9 @@ export function CompanyDiscoverySearch({
             minLength={2}
           />
           <p className="mt-2 text-sm text-[var(--rq-muted)]">
-            Searches RateQuip&apos;s directory and publicly available company
-            websites / registries. You can also add a company that isn&apos;t
-            listed yet.
+            Searches RateQuip&apos;s directory plus public company sites, trade
+            fair / association lists, and distributor brand pages. Add a country
+            to unlock regional and in-language coverage probes.
           </p>
         </div>
         <div>
@@ -268,7 +291,7 @@ export function CompanyDiscoverySearch({
           />
         </div>
         <Button type="submit" disabled={pending || q.trim().length < 2}>
-          {pending ? "Searching directory + web…" : "Search companies"}
+          {pending ? "Coverage search in progress…" : "Search companies"}
         </Button>
         {message ? <p className="text-sm text-amber-700">{message}</p> : null}
       </form>
@@ -391,6 +414,11 @@ export function CompanyDiscoverySearch({
             </h2>
             {webMessage ? (
               <p className="mt-2 text-sm text-[var(--rq-slate)]">{webMessage}</p>
+            ) : null}
+            {coverageSummary ? (
+              <p className="mt-1 text-xs text-[var(--rq-muted)]">
+                Coverage discovery · {coverageSummary}
+              </p>
             ) : null}
             {webEnrichments.length === 0 ? (
               <p className="mt-2 text-sm text-[var(--rq-muted)]">

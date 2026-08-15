@@ -7,6 +7,9 @@ import {
   resolveAbrEntity,
   type AbrEntity,
 } from "@/lib/ai/abr-lookup";
+import { COVERAGE_EXTRACTION_RULES } from "@/lib/ai/coverage/shared-rules";
+import { discoverCompaniesWithCoverage } from "@/lib/ai/coverage/discover";
+import type { CoverageDiscoveryMeta } from "@/lib/ai/coverage/types";
 import { COMPANY_TYPES, type CompanyType } from "@/lib/organic-growth/types";
 import { registrableDomainFromUrl } from "@/lib/organic-growth/privacy";
 import { isPublicWebsiteUrl } from "@/lib/utils";
@@ -97,6 +100,7 @@ export type WebCompanyDiscovery = {
   searchHits: Array<{ title: string; url: string; snippet: string }>;
   usedWebSearch: boolean;
   message: string;
+  coverage?: CoverageDiscoveryMeta;
 };
 
 function isBlockedHostname(hostname: string) {
@@ -600,7 +604,18 @@ async function gatherCompanyPages(baseUrl: string): Promise<{
   }
 
   const origin = new URL(home.url).origin;
-  const paths = ["/contact", "/contact-us", "/about", "/about-us", "/locations"];
+  // P6-inspired crawl order: contact/about + European legal-identity pages.
+  const paths = [
+    "/contact",
+    "/contact-us",
+    "/about",
+    "/about-us",
+    "/locations",
+    "/impressum",
+    "/legal",
+    "/legal-notice",
+    "/company",
+  ];
   let mergedHtml = home.html;
   let mergedText = home.text;
   const extras = extractContactsFromHtml(home.html, home.text);
@@ -839,7 +854,7 @@ function heuristicWebsiteGuesses(query: string) {
     .filter(Boolean) as Array<{ title: string; url: string; snippet: string }>;
 }
 
-async function searchDuckDuckGo(query: string): Promise<
+export async function searchDuckDuckGo(query: string): Promise<
   Array<{ title: string; url: string; snippet: string }>
 > {
   const q = query.trim();
@@ -1042,13 +1057,14 @@ async function aiEnrichFromPage(input: {
       maxRetries: RFQ_AI_MAX_RETRIES,
       temperature: 0.1,
       abortSignal: AbortSignal.timeout(20_000),
-      system: `You extract a complete public business profile for RateQuip from website text.
-Only use facts present in the provided page content and pre-extracted contacts.
+      system: `${COVERAGE_EXTRACTION_RULES}
+
+Extract a complete public business profile for RateQuip from website text and pre-extracted contacts.
 Extract every public phone, email, street address, locality, region/state, postal code, ABN/registry and social profile you can find.
-Do not invent phone numbers, emails, ABN values, or addresses.
-Prefer company/sales/info emails over personal consumer inboxes.
-categoryHints should be short industrial category labels (e.g. packaging-machinery, inkjet-printers).
-companyTypes must be from: ${COMPANY_TYPES.join(", ")}.`,
+If a fact is not on the page, omit it (do not guess).
+categoryHints should be short industrial category labels copied or closely paraphrased from the page (e.g. packaging-machinery, inkjet-printers).
+companyTypes must be from: ${COMPANY_TYPES.join(", ")}.
+A firm may be both manufacturer and supplier — include all roles the page supports.`,
       prompt: JSON.stringify({
         searchQuery: input.query,
         preferredCountry: input.country,
@@ -1231,6 +1247,8 @@ export async function enrichCompanyFromWeb(input: {
 
 /**
  * Search the web for several company candidates and enrich the top results.
+ * Uses coverage-first discovery (roster harvest + lateral expansion) when the
+ * query is not a direct URL.
  */
 export async function discoverCompaniesFromWeb(input: {
   query: string;
@@ -1238,8 +1256,7 @@ export async function discoverCompaniesFromWeb(input: {
   limit?: number;
 }): Promise<WebCompanyDiscovery> {
   const query = input.query.trim();
-  const limit = Math.min(input.limit ?? 4, 5);
-  const enrichments: CompanyEnrichment[] = [];
+  const limit = Math.min(input.limit ?? 6, 8);
 
   // Direct URL query → single scrape
   const directUrl = looksLikeUrlQuery(query)
@@ -1261,27 +1278,22 @@ export async function discoverCompaniesFromWeb(input: {
         message: one.enrichment.usedAi
           ? "Filled from the company website with AI extraction."
           : "Filled from the company website.",
+        coverage: {
+          lanesUsed: ["direct_lookup"],
+          queriesExecuted: [],
+          rosterPagesFetched: 0,
+          candidatesFromRosters: 0,
+          candidatesFromLateral: 0,
+        },
       };
     }
   }
 
-  const searchHits = await searchDuckDuckGo(
-    [query, input.country].filter(Boolean).join(" "),
-  );
-
-  const seenHosts = new Set<string>();
-  for (const hit of searchHits) {
-    if (enrichments.length >= limit) break;
-    const host = (() => {
-      try {
-        return new URL(hit.url).hostname.replace(/^www\./, "");
-      } catch {
-        return hit.url;
-      }
-    })();
-    if (seenHosts.has(host)) continue;
-    seenHosts.add(host);
-
+  const enrichHit = async (hit: {
+    title: string;
+    url: string;
+    snippet: string;
+  }): Promise<CompanyEnrichment | null> => {
     try {
       const bundle = await gatherCompanyPages(hit.url);
       const enrichment = await aiEnrichFromPage({
@@ -1296,18 +1308,15 @@ export async function discoverCompaniesFromWeb(input: {
         },
         contacts: bundle.contactExtras,
       });
-      enrichments.push({
-        ...enrichment,
-        matchReasons: [
-          ...enrichment.matchReasons,
-          `Web search hit: ${hit.title}`,
-        ],
+      const withRegistry = await applyAustralianRegistry(enrichment, {
+        query,
+        country: input.country,
+        websiteUrl: hit.url,
       });
+      return withRegistry;
     } catch {
-      // Keep the public search result so the user can still pick / scrape it.
-      const title =
-        hit.title.split(/[|\-–—]/)[0]?.trim() || query;
-      enrichments.push({
+      const title = hit.title.split(/[|\-–—]/)[0]?.trim() || query;
+      return {
         companyName: title.slice(0, 160),
         websiteUrl: hit.url,
         phones: [],
@@ -1330,28 +1339,37 @@ export async function discoverCompaniesFromWeb(input: {
             ? "Snippet available — open site or continue to scrape in Details"
             : "Website candidate — details not fully scraped yet",
         ],
-      });
+      };
     }
-  }
+  };
 
-  if (enrichments.length === 0 && query.length >= 2) {
+  const covered = await discoverCompaniesWithCoverage({
+    query,
+    country: input.country,
+    limit,
+    allowAi: true,
+    searchWeb: searchDuckDuckGo,
+    fetchPage: fetchPublicPageText,
+    enrichHit,
+  });
+
+  if (covered.enrichments.length === 0 && query.length >= 2) {
     const fallback = await enrichCompanyFromWeb({
       query,
       country: input.country,
     });
-    if (fallback.ok) enrichments.push(fallback.enrichment);
+    if (fallback.ok) {
+      return {
+        ...covered,
+        enrichments: [fallback.enrichment],
+        message: fallback.enrichment.usedAi
+          ? "Filled from public sources with AI extraction."
+          : covered.message,
+      };
+    }
   }
 
-  return {
-    query,
-    enrichments,
-    searchHits,
-    usedWebSearch: searchHits.length > 0,
-    message:
-      enrichments.length > 0
-        ? `Found ${enrichments.length} public web candidate${enrichments.length === 1 ? "" : "s"}. Review extracted details or add the company with your own brief description.`
-        : "No public websites found yet. Enter the company name and a brief description below, or try a full website URL.",
-  };
+  return covered;
 }
 
 export function enrichmentToListingFields(enrichment: CompanyEnrichment) {

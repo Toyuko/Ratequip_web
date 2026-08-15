@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       webEnrichments: result.webEnrichments,
       webMessage: result.webMessage,
       webSearchHits: result.webSearchHits,
+      coverage: result.coverage,
     }),
   );
 }

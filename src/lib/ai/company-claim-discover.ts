@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { generateObject } from "ai";
 import { RFQ_AI_MAX_RETRIES, RFQ_AI_MODEL } from "@/lib/ai/model";
+import { COVERAGE_EXTRACTION_RULES } from "@/lib/ai/coverage/shared-rules";
 import { registrableDomainFromUrl } from "@/lib/organic-growth/privacy";
 import type { DiscoveredSource } from "@/lib/claims/types";
 
@@ -147,7 +148,9 @@ export async function discoverCompanyClaimSources(input: {
       maxRetries: RFQ_AI_MAX_RETRIES,
       temperature: 0.2,
       abortSignal: AbortSignal.timeout(15000),
-      system: `You help RateQuip pre-fill company claim verification sources.
+      system: `${COVERAGE_EXTRACTION_RULES}
+
+You help RateQuip pre-fill company claim verification sources.
 Only suggest plausible public business sources from the provided company facts.
 Never invent registry numbers or phone numbers that were not implied.
 Prefer website domain, work email domain, phone, ABN/registry, LinkedIn, Google Business, Alibaba, YouTube/social.
