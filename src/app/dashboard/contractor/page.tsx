@@ -21,9 +21,6 @@ export default function ContractorDashboardPage() {
         <Button asChild variant="outline">
           <Link href="/companies/claim">Claim company profile</Link>
         </Button>
-        <Button asChild variant="outline">
-          <Link href="/modules/compliance">Compliance centre</Link>
-        </Button>
       </div>
     </DashboardShell>
   );
