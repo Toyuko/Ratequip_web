@@ -356,6 +356,67 @@ function listingsToSourceText(
   ].join("\n");
 }
 
+/** Deterministic dealer stock used for evidence videos / demos. */
+export const EVIDENCE_DEALER_LISTINGS: MarketplaceListing[] = [
+  {
+    title: "2021 Caterpillar 320 Excavator",
+    summary: "4,850 hours · AUX hydraulics · Sydney",
+    specs: { year: "2021", hours: "4850", price: "$215,000", brand: "Caterpillar" },
+  },
+  {
+    title: "2019 Komatsu WA380 Wheel Loader",
+    summary: "6,200 hours · 3.5m³ bucket · Newcastle",
+    specs: { year: "2019", hours: "6200", price: "$168,500", brand: "Komatsu" },
+  },
+  {
+    title: "2020 Volvo EC220EL Excavator",
+    summary: "4,200 hours · 22 ton · Wollongong",
+    specs: { year: "2020", hours: "4200", price: "$189,000", brand: "Volvo" },
+  },
+  {
+    title: "2018 JCB 540-170 Telehandler",
+    summary: "3,100 hours · 17m reach · Canberra",
+    specs: { year: "2018", hours: "3100", price: "$96,000", brand: "JCB" },
+  },
+  {
+    title: "2022 Atlas Copco QAS 150 Generator",
+    summary: "890 hours · 150 kVA · Brisbane",
+    specs: { year: "2022", hours: "890", price: "$42,500", brand: "Atlas Copco" },
+  },
+];
+
+export function isMarketplaceEvidenceUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname.includes("machines4u-dealer-sample")) return true;
+    if (parsed.searchParams.get("rq_demo") === "marketplace_import") return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function evidenceFixtureResult(sourceUrl: string): MarketplaceUrlFetchResult {
+  const listings = EVIDENCE_DEALER_LISTINGS.map((l) => ({
+    ...l,
+    sourceUrl,
+    sourceText: l.title,
+  }));
+  const title = "Pacific Plant Hire — Machines4u stock list";
+  const bodyText = listings
+    .map((l) => `${l.title}. ${l.summary ?? ""}`)
+    .join("\n");
+  return {
+    ok: true,
+    sourceUrl,
+    title,
+    sourceText: listingsToSourceText(title, sourceUrl, listings, bodyText),
+    listings,
+    adapter: "machines4u",
+    htmlLength: bodyText.length,
+  };
+}
+
 export async function fetchMarketplaceCatalogueUrl(
   rawUrl: string,
 ): Promise<MarketplaceUrlFetchResult | { ok: false; message: string }> {
@@ -365,6 +426,11 @@ export async function fetchMarketplaceCatalogueUrl(
       ok: false,
       message: "Enter a public http(s) URL (e.g. your Machines4u dealer page).",
     };
+  }
+
+  // Evidence / demo URLs: deterministic listings so walkthrough videos stay reliable.
+  if (isMarketplaceEvidenceUrl(safe)) {
+    return evidenceFixtureResult(safe);
   }
 
   const { adapter, label } = resolveMarketplaceAdapter(safe);

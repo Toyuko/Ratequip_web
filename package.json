@@ -24,6 +24,8 @@
     "evidence:v13": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-v13-client-demo.mjs",
     "evidence:phase2-payment": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-phase2-client-payment-video.mjs",
     "evidence:collaborate": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-collaborate-demo.mjs",
+    "evidence:talent": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-talent-pool-demo.mjs",
+    "evidence:marketplace-import": "EVIDENCE_BASE_URL=https://ratequip-web.vercel.app node scripts/record-marketplace-import-demo.mjs",
     "uat:db": "tsx scripts/uat-db-demo.ts",
     "smoke:v12": "tsx scripts/v12-smoke.ts",
     "smoke:part7": "ENTERPRISE_PART7_ENABLED=true ENTERPRISE_GRAPH_MATCH_ENABLED=true tsx scripts/part7-smoke.ts",
