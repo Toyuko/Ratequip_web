@@ -36,6 +36,7 @@ import {
   upsertOpportunity,
   confirmUsagePreview,
   createCatalogImport,
+  createCatalogImportFromUrl,
   previewCatalogImportUsage,
   processCatalogImport,
   reviewCatalogDraft,
@@ -278,6 +279,14 @@ export async function v12CreateCatalogImport(
   await requireServerV12Session();
 
   return createCatalogImport(input);
+}
+
+export async function v12CreateCatalogImportFromUrl(
+  input: Parameters<typeof createCatalogImportFromUrl>[0],
+) {
+  await requireServerV12Session();
+
+  return createCatalogImportFromUrl(input);
 }
 
 export async function v12PreviewCatalogImport(jobId: string) {

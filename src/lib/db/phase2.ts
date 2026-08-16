@@ -624,6 +624,122 @@ export async function getCompanyProductsAsync(slug: string) {
   return getStore().products.filter((p) => p.companySlug === slug);
 }
 
+export async function persistCompanyProducts(input: {
+  companySlug: string;
+  products: Array<{
+    name: string;
+    summary?: string;
+    specs?: Record<string, string>;
+  }>;
+  sourceUrl?: string;
+  actor?: string;
+}): Promise<
+  | {
+      ok: true;
+      products: Array<{ id: string; name: string; slug: string }>;
+      demo: boolean;
+      message: string;
+    }
+  | { ok: false; message: string }
+> {
+  if (!input.products.length) {
+    return { ok: false as const, message: "No products to publish." };
+  }
+  if (!getDb() && runtimeWriteBlocked("persistCompanyProducts: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
+  const company = await getCompanyBySlugAsync(input.companySlug);
+  if (!company) {
+    return { ok: false as const, message: "Company not found." };
+  }
+
+  const prepared = input.products.map((p, index) => {
+    const name = p.name.trim().slice(0, 255);
+    const baseSlug = slugify(name) || `product-${index + 1}`;
+    const slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}${index}`;
+    const specs: Record<string, string> = { ...(p.specs ?? {}) };
+    if (input.sourceUrl && !specs.source_url) {
+      specs.source_url = input.sourceUrl;
+    }
+    return {
+      name,
+      slug: slug.slice(0, 255),
+      summary: (p.summary ?? "").trim().slice(0, 2000),
+      specs,
+    };
+  });
+
+  const db = getDb();
+  if (db && hasDatabase()) {
+    try {
+      const neonCompany =
+        (await ensureNeonCompanyBySlug(db, company.slug)) ??
+        (isUuid(company.id) ? company : null);
+      if (!neonCompany || !isUuid(neonCompany.id)) {
+        throw new Error("Company is not writable in Neon");
+      }
+
+      const created: Array<{ id: string; name: string; slug: string }> = [];
+      for (const row of prepared) {
+        const [inserted] = await db
+          .insert(products)
+          .values({
+            companyId: neonCompany.id,
+            name: row.name,
+            slug: row.slug,
+            summary: row.summary || null,
+            specs: row.specs,
+          })
+          .returning();
+        created.push({
+          id: inserted.id,
+          name: inserted.name,
+          slug: inserted.slug,
+        });
+      }
+
+      appendAudit(
+        "catalog.products.published",
+        "product",
+        input.actor ?? "supplier",
+      );
+      return {
+        ok: true as const,
+        products: created,
+        demo: false,
+        message: `Published ${created.length} product${created.length === 1 ? "" : "s"} to your catalogue.`,
+      };
+    } catch (error) {
+      console.warn("[phase2] Neon product publish failed", error);
+    }
+  }
+
+  const store = getStore();
+  const created = prepared.map((row) => {
+    const id = `prod-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    store.products.unshift({
+      id,
+      companySlug: company.slug,
+      name: row.name,
+      summary: row.summary,
+    });
+    return { id, name: row.name, slug: row.slug };
+  });
+
+  appendAudit(
+    "catalog.products.published",
+    "product",
+    input.actor ?? "supplier",
+  );
+  return {
+    ok: true as const,
+    products: created,
+    demo: true,
+    message: `Published ${created.length} product${created.length === 1 ? "" : "s"} to your catalogue.`,
+  };
+}
+
 export async function getCompanyReviewsAsync(slug: string): Promise<DemoReview[]> {
   const company = await getCompanyBySlugAsync(slug);
   if (!company) return [];

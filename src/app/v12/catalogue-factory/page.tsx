@@ -76,9 +76,17 @@ export default function CatalogueFactoryPage() {
         Turn my catalogue into product drafts
       </h1>
       <p className="mt-2 text-[var(--rq-slate)]">
-        Paste supplier catalogue text. RateQuip estimates the credit cost, then
-        builds draft products for you to accept or reject. Nothing goes public
-        until you publish accepted drafts.{" "}
+        Paste supplier catalogue text, or import from a Machines4u-style dealer
+        URL via{" "}
+        <Link
+          href="/dashboard/supplier/products"
+          className="text-orange-700 underline"
+        >
+          Supplier → Product catalogue
+        </Link>
+        . RateQuip estimates the credit cost, then builds draft products for you
+        to accept or reject. Nothing goes public until you publish accepted
+        drafts.{" "}
         <Link href="/v12" className="text-orange-700 underline">
           Back to guide
         </Link>

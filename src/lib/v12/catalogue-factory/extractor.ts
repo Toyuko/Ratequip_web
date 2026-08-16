@@ -1,5 +1,6 @@
 /**
  * Deterministic catalogue stub extractor for Release 6A (no live OCR/LLM).
+ * Marketplace URL imports feed structured listings through the same draft shape.
  */
 import packagingManifest from "@/data/v12/part6/packaging_line_manifest.json";
 import {
@@ -7,6 +8,7 @@ import {
   scanDocumentText,
   type ExtractedField,
 } from "@/lib/v12/catalogue-factory/domain";
+import type { MarketplaceListing } from "@/lib/v12/catalogue-factory/marketplace-url";
 
 export type DraftProduct = {
   id: string;
@@ -18,6 +20,9 @@ export type DraftProduct = {
   fields: ExtractedField[];
   publishable: boolean;
   createdAt: string;
+  summary?: string;
+  specs?: Record<string, string>;
+  sourceUrl?: string;
 };
 
 function id(prefix: string) {
@@ -145,6 +150,76 @@ export function extractDraftProducts(input: {
     });
     page += 1;
   }
+
+  return { drafts, firewall };
+}
+
+/** Build drafts from structured marketplace listings (Machines4u, etc.). */
+export function extractDraftProductsFromListings(input: {
+  jobId: string;
+  listings: MarketplaceListing[];
+  documentId: string;
+  versionId: string;
+}): { drafts: DraftProduct[]; firewall: ReturnType<typeof scanDocumentText> } {
+  const joined = input.listings
+    .map((l) => [l.title, l.summary, l.sourceText].filter(Boolean).join("\n"))
+    .join("\n");
+  const firewall = scanDocumentText(joined);
+  if (!firewall.safeForExtraction) {
+    return { drafts: [], firewall };
+  }
+
+  const drafts: DraftProduct[] = input.listings.map((listing, index) => {
+    const page = index + 1;
+    const title = listing.title.slice(0, 160);
+    const evidenceText = listing.sourceText || title;
+    const fields: ExtractedField[] = [
+      {
+        name: "title",
+        value: title,
+        classification: "EXTERNALLY_ENRICHED",
+        confidence: 0.88,
+        evidence: [
+          {
+            documentId: input.documentId,
+            versionId: input.versionId,
+            page,
+            sourceText: evidenceText.slice(0, 240),
+          },
+        ],
+      },
+    ];
+    if (listing.summary) {
+      fields.push({
+        name: "summary",
+        value: listing.summary.slice(0, 400),
+        classification: "EXTERNALLY_ENRICHED",
+        confidence: 0.85,
+        evidence: [
+          {
+            documentId: input.documentId,
+            versionId: input.versionId,
+            page,
+            sourceText: listing.summary.slice(0, 240),
+          },
+        ],
+      });
+    }
+    return {
+      id: id("cprod"),
+      jobId: input.jobId,
+      title,
+      pageClass: "marketplace_listing",
+      page,
+      status: "draft" as const,
+      fields,
+      publishable: false,
+      createdAt: new Date().toISOString(),
+      summary: listing.summary,
+      specs: listing.specs,
+      sourceUrl: listing.sourceUrl,
+    };
+  });
 
   return { drafts, firewall };
 }

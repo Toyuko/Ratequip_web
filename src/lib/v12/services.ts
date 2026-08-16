@@ -24,8 +24,11 @@ import { capabilityKeysForIndustry } from "@/lib/v13/part7/graph";
 import { buildCommandEnvelope } from "@/lib/v13/command-envelope";
 import {
   extractDraftProducts,
+  extractDraftProductsFromListings,
   preflightFromText,
 } from "@/lib/v12/catalogue-factory/extractor";
+import { fetchMarketplaceCatalogueUrl } from "@/lib/v12/catalogue-factory/marketplace-url";
+import { persistCompanyProducts } from "@/lib/db/phase2";
 import {
   CHARGEABLE_ACTIONS,
   createUsagePreview,
@@ -1313,6 +1316,11 @@ export function createCatalogImport(input: {
   sourceText: string;
   createdBy: string;
   rightsAttested: boolean;
+  companySlug?: string;
+  sourceKind?: "text" | "marketplace_url";
+  sourceUrl?: string;
+  marketplaceAdapter?: string;
+  listings?: CatalogImportJob["listings"];
 }) {
   if (!input.rightsAttested) {
     return {
@@ -1328,7 +1336,19 @@ export function createCatalogImport(input: {
     createdBy: input.createdBy,
     linkedType: "catalog_import",
   });
-  const preflight = preflightFromText(input.sourceText);
+  const listingCount = input.listings?.length ?? 0;
+  const preflight =
+    listingCount > 0
+      ? {
+          pages: Math.max(1, Math.ceil(listingCount / 6)),
+          scannedPages: 0,
+          complexTables: 0,
+          products: listingCount,
+          variants: 0,
+          images: Math.min(listingCount, 12),
+          lineCount: listingCount,
+        }
+      : preflightFromText(input.sourceText);
   const estimatedCredits = estimateCredits({
     pages: preflight.pages,
     scannedPages: preflight.scannedPages,
@@ -1345,6 +1365,11 @@ export function createCatalogImport(input: {
     status: "AWAITING_COST_APPROVAL",
     rightsAttested: true,
     sourceText: input.sourceText,
+    sourceKind: input.sourceKind ?? "text",
+    sourceUrl: input.sourceUrl,
+    companySlug: input.companySlug,
+    marketplaceAdapter: input.marketplaceAdapter,
+    listings: input.listings,
     documentId: vault.document.id,
     versionId: vault.version.id,
     estimatedCredits,
@@ -1354,6 +1379,37 @@ export function createCatalogImport(input: {
   };
   store.catalogJobs.unshift(job);
   return { ok: true as const, job, vault, reservation };
+}
+
+/** Paste a Machines4u (or similar) dealer URL → catalogue import job. */
+export async function createCatalogImportFromUrl(input: {
+  sourceUrl: string;
+  createdBy: string;
+  rightsAttested: boolean;
+  companySlug?: string;
+  title?: string;
+}) {
+  if (!input.rightsAttested) {
+    return {
+      ok: false as const,
+      message: "You must confirm you have rights to use this catalogue",
+    };
+  }
+  const fetched = await fetchMarketplaceCatalogueUrl(input.sourceUrl);
+  if (!fetched.ok) {
+    return { ok: false as const, message: fetched.message };
+  }
+  return createCatalogImport({
+    title: input.title?.trim() || fetched.title,
+    sourceText: fetched.sourceText,
+    createdBy: input.createdBy,
+    rightsAttested: true,
+    companySlug: input.companySlug,
+    sourceKind: "marketplace_url",
+    sourceUrl: fetched.sourceUrl,
+    marketplaceAdapter: fetched.adapter,
+    listings: fetched.listings,
+  });
 }
 
 export function previewCatalogImportUsage(jobId: string) {
@@ -1438,13 +1494,26 @@ export function processCatalogImport(input: {
     actionClass: "catalog.import_process",
   });
 
-  const { drafts, firewall } = extractDraftProducts({
-    jobId: job.id,
-    sourceText: job.sourceText,
-    documentId: job.documentId ?? "doc",
-    versionId: job.versionId ?? "ver",
-    usePackagingFixture: input.usePackagingFixture ?? true,
-  });
+  const usePackagingFixture =
+    input.usePackagingFixture ?? job.sourceKind !== "marketplace_url";
+
+  const extracted =
+    job.listings && job.listings.length > 0
+      ? extractDraftProductsFromListings({
+          jobId: job.id,
+          listings: job.listings,
+          documentId: job.documentId ?? "doc",
+          versionId: job.versionId ?? "ver",
+        })
+      : extractDraftProducts({
+          jobId: job.id,
+          sourceText: job.sourceText,
+          documentId: job.documentId ?? "doc",
+          versionId: job.versionId ?? "ver",
+          usePackagingFixture,
+        });
+
+  const { drafts, firewall } = extracted;
 
   if (!firewall.safeForExtraction) {
     job.status = "BLOCKED";
@@ -1494,9 +1563,10 @@ export function reviewCatalogDraft(input: {
   return { ok: true as const, draft };
 }
 
-export function publishCatalogJob(input: {
+export async function publishCatalogJob(input: {
   jobId: string;
   publisherId: string;
+  companySlug?: string;
 }) {
   const store = getV12Store();
   const job = store.catalogJobs.find((j) => j.id === input.jobId);
@@ -1524,13 +1594,56 @@ export function publishCatalogJob(input: {
       }
     }
   }
+
+  const companySlug = input.companySlug ?? job.companySlug;
+  let persisted:
+    | {
+        ok: true;
+        products: Array<{ id: string; name: string; slug: string }>;
+        demo: boolean;
+      }
+    | { ok: false; message: string }
+    | null = null;
+
+  if (companySlug) {
+    persisted = await persistCompanyProducts({
+      companySlug,
+      actor: input.publisherId,
+      sourceUrl: job.sourceUrl,
+      products: accepted.map((d) => ({
+        name: d.title,
+        summary:
+          d.summary ||
+          d.fields.find((f) => f.name === "summary")?.value ||
+          undefined,
+        specs: {
+          ...(d.specs ?? {}),
+          ...(job.sourceUrl ? { source_url: job.sourceUrl } : {}),
+          ...(d.sourceUrl ? { listing_url: d.sourceUrl } : {}),
+          catalog_job_id: job.id,
+        },
+      })),
+    });
+    if (!persisted.ok) {
+      return {
+        ok: false as const,
+        message: persisted.message,
+      };
+    }
+    job.publishedProductIds = persisted.products.map((p) => p.id);
+  }
+
   job.status = "PUBLISHED";
+  if (companySlug) job.companySlug = companySlug;
   void input.publisherId;
   return {
     ok: true as const,
     job,
     publishedCount: accepted.length,
     heldCount: drafts.length - accepted.length,
+    companySlug: companySlug ?? null,
+    products: persisted && persisted.ok ? persisted.products : [],
+    demo: persisted && persisted.ok ? persisted.demo : undefined,
   };
 }
 

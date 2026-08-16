@@ -4,6 +4,7 @@ import { ok, err } from "@/lib/api/envelope";
 import { apiResponse, handleOptions } from "@/lib/api/respond";
 import {
   createCatalogImport,
+  createCatalogImportFromUrl,
   listCatalogFactory,
   previewCatalogImportUsage,
   processCatalogImport,
@@ -30,6 +31,8 @@ export async function POST(req: NextRequest) {
     action?: string;
     title?: string;
     sourceText?: string;
+    sourceUrl?: string;
+    companySlug?: string;
     createdBy?: string;
     rightsAttested?: boolean;
     jobId?: string;
@@ -50,6 +53,21 @@ export async function POST(req: NextRequest) {
       sourceText: body.sourceText,
       createdBy: body.createdBy ?? "api",
       rightsAttested: Boolean(body.rightsAttested),
+      companySlug: body.companySlug,
+    });
+    return apiResponse(req, res.ok ? ok(res) : err(res.message));
+  }
+
+  if (body.action === "create_from_url") {
+    if (!body.sourceUrl) {
+      return apiResponse(req, err("sourceUrl required"));
+    }
+    const res = await createCatalogImportFromUrl({
+      sourceUrl: body.sourceUrl,
+      title: body.title,
+      createdBy: body.createdBy ?? gate.user?.email ?? "api",
+      rightsAttested: Boolean(body.rightsAttested),
+      companySlug: body.companySlug,
     });
     return apiResponse(req, res.ok ? ok(res) : err(res.message));
   }
@@ -87,9 +105,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.action === "publish" && body.jobId && body.publisherId) {
-    const res = publishCatalogJob({
+    const res = await publishCatalogJob({
       jobId: body.jobId,
       publisherId: body.publisherId,
+      companySlug: body.companySlug,
     });
     return apiResponse(req, res.ok ? ok(res) : err(res.message));
   }

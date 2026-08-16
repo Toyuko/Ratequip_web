@@ -750,6 +750,24 @@ export function AutomatedClaimForm({
               stronger check.
             </p>
           ) : null}
+          {outcome.startsWith("verified") ? (
+            <div className="mt-5 rounded-md border border-dashed border-[var(--rq-border)] bg-[var(--rq-bg)] p-4">
+              <p className="text-sm font-medium text-[var(--rq-ink)]">
+                Optional: import your Machines4u stock
+              </p>
+              <p className="mt-1 text-sm text-[var(--rq-slate)]">
+                Paste your dealer listing URL and we&apos;ll draft products for
+                your catalogue — review before anything goes public.
+              </p>
+              <Button asChild className="mt-3" variant="outline" size="sm">
+                <Link
+                  href={`/dashboard/supplier/products?import=1&company=${encodeURIComponent(company.slug)}`}
+                >
+                  Import marketplace products
+                </Link>
+              </Button>
+            </div>
+          ) : null}
           <div className="mt-6 flex flex-wrap gap-3">
             {outcome.startsWith("verified") ? (
               <Button asChild>

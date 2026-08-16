@@ -39,6 +39,17 @@ export type CatalogImportJob = {
     | "BLOCKED";
   rightsAttested: boolean;
   sourceText: string;
+  sourceKind?: "text" | "marketplace_url";
+  sourceUrl?: string;
+  companySlug?: string;
+  marketplaceAdapter?: string;
+  listings?: Array<{
+    title: string;
+    summary?: string;
+    specs?: Record<string, string>;
+    sourceUrl?: string;
+    sourceText?: string;
+  }>;
   documentId?: string;
   versionId?: string;
   estimatedCredits?: number;
@@ -47,6 +58,7 @@ export type CatalogImportJob = {
   createdBy: string;
   createdAt: string;
   firewallBlocked?: boolean;
+  publishedProductIds?: string[];
 };
 
 export type OpportunityProfile = {
