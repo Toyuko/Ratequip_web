@@ -15,6 +15,7 @@ import {
   persistRequest,
   persistReview,
   persistSubscription,
+  persistUnclaimedCompanyListing,
   getRuntimeWallet,
   getRuntimeRequests,
   getWalletAsync,
@@ -109,22 +110,41 @@ async function main() {
     throw new Error("Trust/review count not updated after approve");
   }
 
+  const listing = await persistUnclaimedCompanyListing({
+    name: `Smoke Claim Co ${Date.now()}`,
+    headline: "Unclaimed supplier listed for claim persistence proof",
+    description:
+      "Temporary directory listing used to prove claim insert and admin approval land on Neon.",
+    country: "Thailand",
+    city: "Bangkok",
+    categories: ["packaging-machinery"],
+  });
+  if (!listing.ok) throw new Error(listing.message);
+  if (usingNeon && listing.demo) {
+    throw new Error("Company listing fell back to in-memory store");
+  }
+
   const claim = await persistClaim({
-    companySlug: "harbor-heavy-freight",
+    companySlug: listing.slug,
     notes: "Smoke claim",
     claimant: "ops@harbor.example",
+    verificationPayload: { source: "phase2-smoke", method: "authority_evidence" },
   });
   if (!claim.ok) throw new Error(claim.message);
+  if (usingNeon && claim.demo) {
+    throw new Error("Claim fell back to in-memory store");
+  }
 
-  await persistModeration({
+  const claimMod = await persistModeration({
     entityType: "claim",
     entityId: claim.id!,
     decision: "approved",
   });
+  if (!claimMod.ok) throw new Error(claimMod.message);
 
   const claimed = usingNeon
-    ? await getCompanyBySlugAsync("harbor-heavy-freight")
-    : getStore().companies.find((c) => c.slug === "harbor-heavy-freight");
+    ? await getCompanyBySlugAsync(listing.slug)
+    : getStore().companies.find((c) => c.slug === listing.slug);
   if (!claimed?.claimed || !claimed.verified) {
     throw new Error("Claim approve did not mark company claimed/verified");
   }

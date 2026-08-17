@@ -337,7 +337,7 @@ export async function publishListingSubmission(input: {
     status: "publishing",
   });
 
-  const result = publishSubmission(input.id);
+  const result = await publishSubmission(input.id);
   if (!result.ok) return result;
 
   const baseUrl = publicAppUrl();

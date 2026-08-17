@@ -28,6 +28,7 @@ import {
   persistReviewAppeal,
   persistReviewResponse,
   persistSubscription,
+  persistUnclaimedCompanyListing,
   updateRequestFields,
   updateRequestStatus,
   getRuntimeWallet,
@@ -280,26 +281,56 @@ async function main() {
     appeal.ok ? appeal.message : appeal.message,
   );
 
-  // Company claim/admin
-  const claim = await persistClaim({
-    companySlug: "harbor-heavy-freight",
-    notes: "Acceptance claim with authority evidence",
-    claimant: "ops@harbor.example",
+  // Company claim/admin — persist a fresh listing so this is not a false pass
+  // against a company that was already claimed on a previous run.
+  const listing = await persistUnclaimedCompanyListing({
+    name: `Acceptance Claim Co ${Date.now()}`,
+    headline: "Unclaimed supplier listed for claim persistence proof",
+    description:
+      "Temporary directory listing used to prove claim insert and admin approval land on Neon.",
+    country: "Thailand",
+    city: "Bangkok",
+    categories: ["packaging-machinery"],
   });
-  await persistModeration({
+  const claimTargetSlug = listing.ok ? listing.slug : "harbor-heavy-freight";
+  const claim = await persistClaim({
+    companySlug: claimTargetSlug,
+    notes: "Acceptance claim with authority evidence",
+    claimant: "ops@acceptance.example",
+    verificationPayload: {
+      source: "phase2-acceptance",
+      method: "authority_evidence",
+    },
+  });
+  const claimMod = await persistModeration({
     entityType: "claim",
     entityId: claim.id!,
     decision: "approved",
   });
   const claimed = usingNeon
-    ? await getCompanyBySlugAsync("harbor-heavy-freight")
-    : getStore().companies.find((c) => c.slug === "harbor-heavy-freight");
+    ? await getCompanyBySlugAsync(claimTargetSlug)
+    : getStore().companies.find((c) => c.slug === claimTargetSlug);
+  const claimId = claim.ok ? claim.id ?? "" : "";
+  const neonClaim =
+    listing.ok &&
+    listing.demo === false &&
+    claim.ok &&
+    claim.demo === false &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      claimId,
+    ) &&
+    Boolean(claimMod.ok) &&
+    Boolean(claimed?.claimed && claimed?.verified);
   record(
     "Company profiles",
     "CO-02",
     "Claim + admin approve marks company claimed/verified",
-    Boolean(claimed?.claimed && claimed?.verified),
-    claimed ? `slug=${claimed.slug} verified=${claimed.verified}` : "missing",
+    usingNeon ? neonClaim : Boolean(claimed?.claimed && claimed?.verified),
+    listing.ok && claim.ok
+      ? `slug=${claimed?.slug} verified=${claimed?.verified} claimId=${claim.id} demo=${claim.demo}`
+      : !listing.ok
+        ? listing.message
+        : claim.message,
   );
 
   // Billing subscription + pack + refund + reconcile

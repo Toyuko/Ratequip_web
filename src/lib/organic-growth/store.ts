@@ -1,6 +1,6 @@
+import { persistUnclaimedCompanyListing } from "@/lib/db/phase2";
 import { type DemoCompany } from "@/lib/db/demo-data";
 import { getStore } from "@/lib/db/runtime-store";
-import { slugify } from "@/lib/utils";
 import { mintClaimInviteToken } from "./claim-token";
 import {
   encryptEmailDemo,
@@ -127,7 +127,10 @@ export function getClaimByToken(token: string) {
   return { submission, invitation };
 }
 
-export function publishSubmission(submissionId: string) {
+export async function publishSubmission(
+  submissionId: string,
+  persisted?: { id: string; slug: string },
+) {
   const existing = getSubmission(submissionId);
   if (!existing) {
     return { ok: false as const, message: "Submission not found." };
@@ -162,32 +165,50 @@ export function publishSubmission(submissionId: string) {
     return { ok: false as const, message: "Accept the declarations to publish." };
   }
 
-  const store = getStore();
-  let slug = slugify(name);
-  const taken = new Set(store.companies.map((c) => c.slug));
-  if (taken.has(slug)) {
-    slug = `${slug}-${Date.now().toString(36)}`;
+  const website = existing.websiteUrl?.startsWith("http")
+    ? existing.websiteUrl
+    : existing.websiteUrl
+      ? `https://${existing.websiteUrl}`
+      : "";
+  const headline =
+    existing.headline?.trim() ||
+    `${existing.companyTypes[0]} listed by a RateQuip contributor`;
+  const description =
+    existing.description?.trim() ||
+    existing.privateNotes?.trim() ||
+    `${name} was added by a RateQuip user. This profile is unclaimed until a company representative verifies authority.`;
+
+  let companyId: string;
+  let companySlug: string;
+  if (persisted) {
+    companyId = persisted.id;
+    companySlug = persisted.slug;
+  } else {
+    const listing = await persistUnclaimedCompanyListing({
+      name,
+      headline,
+      description,
+      country: existing.countryCode,
+      city: existing.locality,
+      website,
+      categories: existing.categories,
+    });
+    if (!listing.ok) return listing;
+    companyId = listing.id;
+    companySlug = listing.slug;
   }
 
+  const store = getStore();
   const company: DemoCompany = {
-    id: `co-og-${existing.id}`,
+    id: companyId,
     name,
-    slug,
+    slug: companySlug,
     legalName: name,
-    headline:
-      existing.headline?.trim() ||
-      `${existing.companyTypes[0]} listed by a RateQuip contributor`,
-    description:
-      existing.description?.trim() ||
-      existing.privateNotes?.trim() ||
-      `${name} was added by a RateQuip user. This profile is unclaimed until a company representative verifies authority.`,
+    headline,
+    description,
     country: existing.countryCode,
     city: existing.locality,
-    website: existing.websiteUrl?.startsWith("http")
-      ? existing.websiteUrl
-      : existing.websiteUrl
-        ? `https://${existing.websiteUrl}`
-        : "",
+    website,
     phone: existing.phoneDisplay,
     phones: existing.phoneNumbers,
     emails: existing.emailCandidates,
@@ -205,7 +226,9 @@ export function publishSubmission(submissionId: string) {
     categories: existing.categories,
   };
 
-  store.companies.unshift(company);
+  if (!store.companies.some((c) => c.slug === company.slug)) {
+    store.companies.unshift(company);
+  }
 
   const sendContacts = existing.skipContacts
     ? []
@@ -225,7 +248,7 @@ export function publishSubmission(submissionId: string) {
       invitationId,
       submissionId: existing.id,
       companyName: name,
-      companySlug: slug,
+      companySlug: company.slug,
       locality: existing.locality,
       countryCode: existing.countryCode,
       domain:
@@ -260,7 +283,8 @@ export function publishSubmission(submissionId: string) {
     publishedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     registrableDomain:
-      existing.registrableDomain ?? registrableDomainFromUrl(existing.websiteUrl),
+      existing.registrableDomain ??
+      registrableDomainFromUrl(existing.websiteUrl),
     invitations,
     contacts: existing.contacts.map((c) => ({
       ...c,

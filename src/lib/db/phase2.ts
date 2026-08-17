@@ -1278,8 +1278,14 @@ export async function persistCompanyProfile(input: {
         demo: false,
       };
     } catch (error) {
-      console.warn("[phase2] Neon company profile failed", error);
+      if (runtimeWriteBlocked("[phase2] Neon company profile failed", error)) {
+        return { ok: false as const, message: "Could not save company profile." };
+      }
     }
+  }
+
+  if (!mayUseRuntimeStore()) {
+    return { ok: false as const, message: "Database unavailable." };
   }
 
   const store = getStore();
@@ -1297,6 +1303,132 @@ export async function persistCompanyProfile(input: {
     message: `Profile for ${input.name} saved.`,
     demo: true,
   };
+}
+
+export async function persistUnclaimedCompanyListing(input: {
+  name: string;
+  slug?: string;
+  headline: string;
+  description: string;
+  country: string;
+  city: string;
+  website?: string;
+  employeeRange?: string;
+  yearFounded?: number;
+  categories?: string[];
+}) {
+  if (!getDb() && runtimeWriteBlocked("persistUnclaimedCompanyListing: no database")) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
+  const baseSlug = slugify(input.slug ?? input.name) || `company-${Date.now()}`;
+  const website = input.website?.trim()
+    ? input.website.startsWith("http")
+      ? input.website
+      : `https://${input.website}`
+    : "";
+  const categorySlugs = input.categories ?? [];
+
+  const db = getDb();
+  if (db && hasDatabase()) {
+    try {
+      let slug = baseSlug;
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const [taken] = await db
+          .select({ id: companies.id })
+          .from(companies)
+          .where(eq(companies.slug, slug))
+          .limit(1);
+        if (!taken) break;
+        slug = `${baseSlug}-${Date.now().toString(36)}`;
+      }
+
+      const [created] = await db
+        .insert(companies)
+        .values({
+          name: input.name,
+          slug,
+          headline: input.headline || null,
+          description: input.description || null,
+          country: input.country || null,
+          city: input.city || null,
+          website: website || null,
+          verified: false,
+          claimed: false,
+          trustScore: "0",
+          reviewCount: 0,
+          employeeRange: input.employeeRange || null,
+          yearFounded: input.yearFounded ?? null,
+        })
+        .returning();
+
+      if (categorySlugs.length > 0) {
+        const catRows = await db
+          .select({ id: categories.id, slug: categories.slug })
+          .from(categories)
+          .where(inArray(categories.slug, categorySlugs));
+        if (catRows.length > 0) {
+          await db.insert(companyCategories).values(
+            catRows.map((cat) => ({
+              companyId: created.id,
+              categoryId: cat.id,
+            })),
+          );
+        }
+      }
+
+      appendAudit("company.listed", "company", "organic-growth");
+      return {
+        ok: true as const,
+        id: created.id,
+        slug: created.slug,
+        demo: false,
+      };
+    } catch (error) {
+      if (
+        runtimeWriteBlocked(
+          "[phase2] Neon unclaimed listing failed",
+          error,
+        )
+      ) {
+        return {
+          ok: false as const,
+          message: "Could not publish company to the directory.",
+        };
+      }
+    }
+  }
+
+  if (!mayUseRuntimeStore()) {
+    return { ok: false as const, message: "Database unavailable." };
+  }
+
+  const store = getStore();
+  let slug = baseSlug;
+  if (store.companies.some((c) => c.slug === slug)) {
+    slug = `${baseSlug}-${Date.now().toString(36)}`;
+  }
+  const id = `co-og-${Date.now().toString(36)}`;
+  store.companies.unshift({
+    id,
+    name: input.name,
+    slug,
+    legalName: input.name,
+    headline: input.headline,
+    description: input.description,
+    country: input.country,
+    city: input.city,
+    website,
+    verified: false,
+    claimed: false,
+    trustScore: 0,
+    reviewCount: 0,
+    employeeRange: input.employeeRange ?? "Unknown",
+    yearFounded: input.yearFounded ?? new Date().getFullYear(),
+    categories: categorySlugs,
+  });
+  appendAudit("company.listed", "company", "organic-growth");
+  return { ok: true as const, id, slug, demo: true };
 }
 
 export async function listCompanyMediaAsync(
@@ -1553,8 +1685,14 @@ export async function persistClaim(input: {
         demo: false,
       };
     } catch (error) {
-      console.warn("[phase2] Neon claim failed", error);
+      if (runtimeWriteBlocked("[phase2] Neon claim failed", error)) {
+        return { ok: false as const, message: "Could not record claim." };
+      }
     }
+  }
+
+  if (!mayUseRuntimeStore()) {
+    return { ok: false as const, message: "Database unavailable." };
   }
 
   const store = getStore();
@@ -1941,7 +2079,9 @@ export async function persistModeration(input: {
         }
       }
     } catch (error) {
-      console.warn("[phase2] Neon claim moderation failed", error);
+      if (runtimeWriteBlocked("[phase2] Neon claim moderation failed", error)) {
+        return { ok: false as const, message: "Could not moderate claim." };
+      }
     }
   }
 
